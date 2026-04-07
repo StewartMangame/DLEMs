@@ -1,0 +1,199 @@
+import { getSession } from "@/lib/session";
+import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import styles from "./page.module.css";
+import RepaymentButton from "./RepaymentButton";
+
+export const metadata = { title: "My Loans | DLEM Malawi" };
+
+interface LoanApp {
+  id: number;
+  createdAt: Date;
+  amount: number;
+  purpose: string;
+  durationMonths: number;
+  riskScore: number;
+  riskCategory: string;
+  dtiRatio: number;
+  status: string;
+  institution: { name: string };
+}
+
+interface LoanExtended {
+  id: number;
+  loanAmount: number;
+  monthlyDeduction: number;
+  loanTermMonths: number;
+  paidMonths: number;
+  remainingBalance: number;
+  startDate: Date;
+  isActive: boolean;
+  providerInstitution: { name: string };
+  application?: { purpose: string } | null;
+}
+
+const STATUS_BADGE: Record<string, string> = {
+  PENDING: "badge-warning", APPROVED: "badge-success",
+  REJECTED: "badge-danger", ACTIVE: "badge-info",
+};
+
+const RISK_BADGE: Record<string, string> = {
+  EXCELLENT: "badge-success", GOOD: "badge-info",
+  FAIR: "badge-warning", POOR: "badge-danger", UNKNOWN: "badge-neutral",
+};
+
+export default async function LoansPage() {
+  const session = await getSession();
+  if (!session.userId) redirect("/login");
+
+  const applications = (await (prisma as any).loanApplication.findMany({
+    where: { userId: session.userId },
+    include: { institution: true },
+    orderBy: { createdAt: "desc" },
+  })) as any[];
+
+  const activeLoans = (await (prisma as any).loan.findMany({
+    where: { userId: session.userId, isActive: true },
+    include: { 
+      providerInstitution: true,
+      application: true 
+    },
+  })) as any[];
+
+  return (
+    <div className={styles.page}>
+      <div className={styles.header}>
+        <div>
+          <h1 className="text-h2">My Loans</h1>
+          <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+            Track your active loans and application history
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: 12 }}>
+          <Link href="/dashboard/loans/add" className="btn btn-outline btn-sm">Record Manual Loan</Link>
+          <Link href="/dashboard/apply" className="btn btn-primary btn-sm">+ New Application</Link>
+        </div>
+      </div>
+
+      {/* Active Loans */}
+      {activeLoans.length > 0 && (
+        <section className={styles.section}>
+          <h2 className="text-h3">Active Loans</h2>
+          <div className={styles.activeGrid}>
+            {activeLoans.map((loan: LoanExtended) => {
+              const progress = (loan.paidMonths / loan.loanTermMonths) * 100;
+              return (
+                <div key={loan.id} className={`card ${styles.activeLoanCard}`}>
+                  <div className={styles.loanTop}>
+                    <div>
+                      <div className="text-sm" style={{ color: "var(--color-text-muted)" }}>
+                        {loan.application?.purpose || "Manual Record"} · {loan.providerInstitution.name}
+                      </div>
+                      <div className="stat-value text-gradient">
+                        MK {loan.loanAmount.toLocaleString()}
+                      </div>
+                    </div>
+                    <span className="badge badge-info">Active</span>
+                  </div>
+                  <div className={styles.loanStats}>
+                    <div>
+                      <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>Monthly</div>
+                      <div style={{ fontWeight: 600 }}>
+                        MK {loan.monthlyDeduction.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>Paid Months</div>
+                      <div style={{ fontWeight: 600 }}>{loan.paidMonths}/{loan.loanTermMonths}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>Remaining</div>
+                      <div style={{ fontWeight: 600, color: "var(--color-warning)" }}>
+                        MK {Math.max(0, loan.remainingBalance || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>Start Date</div>
+                      <div style={{ fontWeight: 600 }}>
+                        {new Date(loan.startDate).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ margin: "16px 0" }}>
+                    <div className="text-xs" style={{ color: "var(--color-text-muted)", marginBottom: 8 }}>
+                      Repayment Progress — {progress.toFixed(0)}%
+                    </div>
+                    <div className="progress-bar" style={{ height: 10 }}>
+                      <div className="progress-fill success" style={{ width: `${progress}%` }} />
+                    </div>
+                  </div>
+                  <RepaymentButton loanId={loan.id} monthlyInstallment={loan.monthlyDeduction} />
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* Applications */}
+      <section className={styles.section}>
+        <h2 className="text-h3">Application History</h2>
+        {applications.length === 0 ? (
+          <div className={`card ${styles.empty}`}>
+            <div className={styles.emptyIcon}>📋</div>
+            <h3 className="text-h3">No Applications Yet</h3>
+            <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+              Start by checking your eligibility or directly applying for a loan.
+            </p>
+            <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+              <Link href="/dashboard/eligibility" className="btn btn-outline btn-sm">Check Eligibility</Link>
+              <Link href="/dashboard/apply" className="btn btn-primary btn-sm">Apply Now</Link>
+            </div>
+          </div>
+        ) : (
+          <div className="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Amount</th>
+                  <th>Purpose</th>
+                  <th>Duration</th>
+                  <th>Risk Score</th>
+                  <th>DTI</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {applications.map((app) => (
+                  <tr key={app.id}>
+                    <td>{new Date(app.createdAt).toLocaleDateString()}</td>
+                    <td>MK {app.amount.toLocaleString()}</td>
+                    <td>{app.purpose || "N/A"}</td>
+                    <td>{app.institution.name}</td>
+                    <td>{app.durationMonths} mo</td>
+                    <td>
+                      <span className={`badge ${RISK_BADGE[app.riskCategory] ?? "badge-neutral"}`}>
+                        {app.riskScore}/120 {app.riskCategory}
+                      </span>
+                    </td>
+                    <td style={{ color: app.dtiRatio > 33 ? "var(--color-danger)" : "var(--color-success)" }}>
+                      {app.dtiRatio.toFixed(1)}%
+                    </td>
+                    <td>
+                      <span className={`badge ${STATUS_BADGE[app.status] ?? "badge-neutral"}`}>
+                        {app.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+

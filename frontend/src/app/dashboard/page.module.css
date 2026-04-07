@@ -1,0 +1,66 @@
+.page { display: flex; flex-direction: column; gap: var(--space-xl); }
+
+.header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-md); }
+
+.profileAlert { margin-bottom: 0; }
+
+.kpiGrid { margin: 0; }
+
+.kpiCard {
+  display: flex; flex-direction: column; gap: var(--space-xs);
+  padding: var(--space-lg);
+}
+
+.dtiCard { padding: var(--space-xl); }
+.dtiHeader { display: flex; align-items: flex-start; justify-content: space-between; }
+.dtiScale { display: flex; justify-content: space-between; margin-top: 8px; }
+.dtiScale span { font-size: 0.7rem; color: var(--color-text-muted); }
+
+.actionsSection { display: flex; flex-direction: column; gap: var(--space-lg); }
+
+.actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-md); }
+
+.actionCard {
+  display: flex; align-items: center; gap: var(--space-md);
+  padding: var(--space-lg); text-decoration: none; color: inherit;
+}
+
+.actionIcon {
+  width: 48px; height: 48px; border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; flex-shrink: 0;
+}
+
+.appsSection { display: flex; flex-direction: column; gap: var(--space-lg); }
+.appsHeader { display: flex; align-items: center; justify-content: space-between; }
+
+.healthRow { margin-top: var(--space-md); }
+.healthCard { padding: var(--space-xl); display: flex; flex-direction: column; }
+
+.insightList { list-style: none; padding: 0; display: flex; flex-direction: column; gap: var(--space-md); margin-top: var(--space-lg); }
+.insightItem {
+  display: flex; align-items: center; gap: var(--space-md);
+  padding: var(--space-md); border-radius: var(--radius-md);
+  font-size: 0.9rem; font-weight: 500;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.insightDot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.success { background: rgba(0, 200, 150, 0.05); border-color: rgba(0, 200, 150, 0.15); }
+.success .insightDot { background: var(--color-success); box-shadow: 0 0 10px var(--color-success); }
+
+.warning { background: rgba(255, 184, 0, 0.05); border-color: rgba(255, 184, 0, 0.15); }
+.warning .insightDot { background: var(--color-warning); box-shadow: 0 0 10px var(--color-warning); }
+
+.danger { background: rgba(255, 59, 92, 0.05); border-color: rgba(255, 59, 92, 0.15); }
+.danger .insightDot { background: var(--color-danger); box-shadow: 0 0 10px var(--color-danger); }
+
+@media (max-width: 900px) {
+  .actions { grid-template-columns: 1fr 1fr; }
+  .healthRow { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .actions { grid-template-columns: 1fr; }
+  .kpiGrid { grid-template-columns: 1fr 1fr; }
+}

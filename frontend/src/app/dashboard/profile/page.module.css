@@ -1,0 +1,6 @@
+.page { display: flex; flex-direction: column; gap: var(--space-xl); }
+.header { margin-bottom: 0; }
+.form { display: flex; flex-direction: column; gap: var(--space-xl); }
+.section { display: flex; flex-direction: column; gap: var(--space-lg); }
+.section h2 { color: var(--color-text-secondary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.formActions { display: flex; justify-content: flex-end; }

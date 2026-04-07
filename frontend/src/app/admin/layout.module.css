@@ -1,0 +1,35 @@
+.layout { display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: 260px; flex-shrink: 0;
+  background: var(--color-bg-card);
+  border-right: 1px solid var(--color-border);
+  display: flex; flex-direction: column;
+  position: sticky; top: 0; height: 100vh;
+}
+
+.sidebarTop { padding: var(--space-xl) var(--space-lg); border-bottom: 1px solid var(--color-border); }
+
+.logo { display: flex; align-items: center; gap: var(--space-md); }
+.logoIcon { font-size: 1.8rem; color: var(--color-danger); }
+.logoText { font-size: 1rem; font-weight: 800; color: var(--color-text-primary); }
+
+.nav { flex: 1; padding: var(--space-lg) var(--space-md); display: flex; flex-direction: column; gap: 4px; }
+.navItem {
+  display: flex; align-items: center; gap: var(--space-md);
+  padding: 11px var(--space-md); border-radius: var(--radius-md);
+  color: var(--color-text-secondary); font-size: 0.9rem; font-weight: 500;
+  text-decoration: none; transition: all var(--transition-fast);
+}
+.navItem:hover { background: rgba(255,255,255,0.05); color: var(--color-text-primary); }
+
+.sidebarBottom { padding: var(--space-lg); border-top: 1px solid var(--color-border); }
+
+.officerBadge { display: flex; align-items: center; gap: var(--space-md); }
+.officerAvatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--gradient-primary); display: flex; align-items: center;
+  justify-content: center; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+
+.main { flex: 1; padding: var(--space-xl); overflow-y: auto; }

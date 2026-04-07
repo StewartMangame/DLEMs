@@ -1,0 +1,78 @@
+.page { display: flex; flex-direction: column; gap: var(--space-xl); }
+.header { margin-bottom: 0; }
+.paramsCard { display: flex; flex-direction: column; }
+
+.results { display: flex; flex-direction: column; gap: var(--space-lg); }
+
+/* Verdict */
+.verdictCard {
+  display: flex; align-items: center; gap: var(--space-xl); flex-wrap: wrap;
+  padding: var(--space-xl);
+}
+.verdictPass { border-color: rgba(0,200,150,0.4); background: linear-gradient(135deg, rgba(0,200,150,0.08), rgba(0,200,150,0.03)); }
+.verdictFail { border-color: rgba(255,59,92,0.4); background: linear-gradient(135deg, rgba(255,59,92,0.08), rgba(255,59,92,0.03)); }
+
+.verdictIcon {
+  font-size: 2.5rem; width: 64px; height: 64px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  font-weight: 700;
+}
+.verdictPass .verdictIcon { background: var(--color-success-bg); color: var(--color-success); }
+.verdictFail .verdictIcon { background: var(--color-danger-bg); color: var(--color-danger); }
+
+/* Score Card */
+.scoreCard { display: flex; flex-direction: column; align-items: center; gap: var(--space-lg); text-align: center; }
+
+.scoreCircle { position: relative; width: 140px; height: 140px; }
+.scoreSvg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.scoreLabel {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.scoreNum { font-size: 2rem; font-weight: 800; line-height: 1; }
+
+/* Financials */
+.financialsCard { display: flex; flex-direction: column; gap: var(--space-lg); }
+.financialRows { display: flex; flex-direction: column; gap: 12px; }
+.finRow {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid var(--color-border);
+  font-size: 0.9rem; color: var(--color-text-secondary);
+}
+.finRow:last-child { border-bottom: none; }
+.finRow strong { font-size: 1rem; color: var(--color-text-primary); }
+
+/* Breakdown */
+.breakdownCard { display: flex; flex-direction: column; gap: var(--space-lg); }
+.breakdownGrid { display: flex; flex-direction: column; gap: var(--space-md); }
+.breakdownRow { display: flex; flex-direction: column; gap: 8px; }
+.breakdownLabel { display: flex; justify-content: space-between; font-size: 0.875rem; color: var(--color-text-secondary); }
+
+.bankGrid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--space-md);
+  margin-top: var(--space-md);
+}
+
+.bankCard {
+  padding: var(--space-lg); display: flex; flex-direction: column; align-items: center; text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.05); transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.bankCard:hover { border-color: var(--color-primary); transform: translateY(-4px); }
+.bankIneligible { opacity: 0.6; grayscale: 1; filter: grayscale(1); }
+
+.bankLogo { font-size: 1.5rem; margin-bottom: 8px; width: 48px; height: 48px; 
+  background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; 
+  align-items: center; justify-content: center; }
+
+.bankStatus { margin-top: 8px; font-size: 0.85rem; font-weight: 500; }
+
+/* Reasons */
+.reasonsCard { display: flex; flex-direction: column; gap: var(--space-md); }
+.reasonsList { list-style: none; display: flex; flex-direction: column; gap: var(--space-sm); }
+.reasonsList li {
+  font-size: 0.9rem; color: var(--color-text-secondary);
+  padding-left: var(--space-md);
+  position: relative;
+}
+.reasonsList li::before { content: '→'; position: absolute; left: 0; color: var(--color-primary); }
