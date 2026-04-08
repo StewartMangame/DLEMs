@@ -1,53 +1,48 @@
-# Smart Loan System (Separated Architecture)
+# Smart Loan System (NestJS + React)
 
-This project has been reorganized into a **Separated Architecture** with distinct `frontend` and `backend` directories.
+## Overview
+This repository contains the full-stack Smart Loan Eligibility and Loan Monitoring System.
+The frontend is a Next.js (React) application, and the backend is a NestJS project using PostgreSQL and Redis (via Bull for job queuing).
 
-## Project Structure
+## Prerequisites
+- Docker and Docker Compose
+- Node.js (v20+ recommended)
 
-- **`/frontend`**: Contains the Next.js application (React UI, styling, and basic client-side logic).
-- **`/backend`**: Contains the Backend logic (Prisma database models, API services, and core business libraries).
-
-## Getting Started
-
-To run the application, you must now navigate to the `frontend` directory:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-The application is configured to import shared logic from the `backend` folder via TypeScript aliases.
-
-First, run the development server:
+## Quick Start (Dockerized)
+The easiest way to run the entire stack (Frontend, Backend, PostgreSQL, Redis) is via Docker Compose.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+docker-compose up --build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:3001
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Application Architecture
+- **Backend (NestJS)**: TypeORM (Postgres), JWT Authentication, Bull (Redis) for queues.
+- **Frontend (Next.js)**: React 19 Frontend consuming the NestJS API.
+- **Database (PostgreSQL)**: Stores user and financial/loan data.
+- **Cache / Queue (Redis)**: Used for scheduling reminders 3 and 1 days before deduction dates.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Module Descriptions
+1. **Auth**: User registration, login, and JWT-based authentication.
+2. **Profile**: Financial profile (net salary, employer, salary institution).
+3. **Loan**: Loan recording and calculation.
+4. **Institution**: Endpoints for Institutions (Bank, Microfinance) and Super Admin.
+5. **Reminders**: Bull queues to trigger SMS/Email notifications.
 
-## Learn More
+## Local Development (Without Docker)
 
-To learn more about Next.js, take a look at the following resources:
+### Backend Setup
+1. `cd backend`
+2. `npm install`
+3. Make sure Postgres and Redis are running locally. You can use docker for just the DB services: `docker-compose up postgres redis -d`
+4. Update `.env` file in the backend to point to your local DB if needed.
+5. Create `.env` file with `DATABASE_URL`, `JWT_SECRET`, `REDIS_HOST`, `REDIS_PORT`.
+6. Run `npm run start:dev`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Frontend Setup
+1. `cd frontend`
+2. `npm install`
+3. Make sure `.env` file contains `NEXT_PUBLIC_API_URL=http://localhost:3001`
+4. Run `npm run dev`.

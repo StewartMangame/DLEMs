@@ -1,24 +1,25 @@
-import { getSession } from "@/lib/session";
-import { prisma } from "@/lib/prisma";
-import { redirect } from "next/navigation";
-import styles from "./page.module.css";
+"use client";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import styles from "./page.module.css";
 
-export const metadata = { title: "Deduction Reminders | DLEM" };
+export default function RemindersPage() {
+  const router = useRouter();
+  const [reminders, setReminders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default async function RemindersPage() {
-  const session = await getSession();
-  if (!session.userId) redirect("/login");
+  useEffect(() => {
+    fetch("/api/reminders")
+      .then(r => {
+        if (r.status === 401) { router.push("/login"); return null; }
+        return r.json();
+      })
+      .then(d => { if (d) setReminders(d.reminders || []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [router]);
 
-  const reminders = await (prisma as any).reminder.findMany({
-    where: { userId: session.userId },
-    include: {
-      loan: {
-        include: { providerInstitution: true }
-      }
-    },
-    orderBy: { scheduledAt: "asc" },
-  });
+  if (loading) return <div style={{ padding: 40, color: "var(--color-text-muted)" }}>Loading reminders…</div>;
 
   return (
     <div className={styles.page}>
@@ -31,32 +32,35 @@ export default async function RemindersPage() {
 
       <div className={styles.reminderList}>
         {reminders.length === 0 ? (
-          <div className="card" style={{ textAlign: 'center', padding: 'var(--space-xl)' }}>
-            <div style={{ fontSize: '2rem', marginBottom: 'var(--space-md)' }}>🔔</div>
+          <div className="card" style={{ textAlign: "center", padding: "var(--space-xl)" }}>
+            <div style={{ fontSize: "2rem", marginBottom: "var(--space-md)" }}>🔔</div>
             <h3 className="text-h3">No upcoming reminders</h3>
             <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
               Reminders are automatically generated based on your loan start dates.
             </p>
+            <Link href="/dashboard/loans/add" className="btn btn-primary btn-sm" style={{ marginTop: 16 }}>
+              Record a Loan
+            </Link>
           </div>
         ) : (
           reminders.map((rem: any) => (
-            <div key={rem.id} className={`card ${styles.reminderCard} ${rem.status === 'SENT' ? styles.sent : ''}`}>
+            <div key={rem.id} className={`card ${styles.reminderCard} ${rem.status === "SENT" ? styles.sent : ""}`}>
               <div className={styles.dateBox}>
-                <div className={styles.month}>{new Date(rem.scheduledAt).toLocaleDateString(undefined, { month: 'short' })}</div>
+                <div className={styles.month}>{new Date(rem.scheduledAt).toLocaleDateString(undefined, { month: "short" })}</div>
                 <div className={styles.day}>{new Date(rem.scheduledAt).getDate()}</div>
               </div>
               <div className={styles.remInfo}>
-                <h4 style={{ fontWeight: 700 }}>{rem.loan.providerInstitution.name} Deduction</h4>
-                <div className="text-sm">Amount: MK {rem.loan.monthlyDeduction.toLocaleString()}</div>
+                <h4 style={{ fontWeight: 700 }}>{rem.loan?.providerInstitution?.name} Deduction</h4>
+                <div className="text-sm">Amount: MK {rem.loan?.monthlyDeduction?.toLocaleString()}</div>
                 <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-                  Scheduled: {new Date(rem.scheduledAt).toLocaleTimeString()} · Status: {rem.status}
+                  Scheduled: {new Date(rem.scheduledAt).toLocaleString()} · Status: {rem.status}
                 </div>
               </div>
               <div className={styles.remStatusBadge}>
                 {rem.deductionConfirmed ? (
-                    <span className="badge badge-success">✓ Confirmed</span>
+                  <span className="badge badge-success">✓ Confirmed</span>
                 ) : (
-                    <span className="badge badge-warning">Pending Confirmation</span>
+                  <span className="badge badge-warning">Pending Confirmation</span>
                 )}
               </div>
             </div>

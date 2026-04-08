@@ -1,47 +1,33 @@
-import { getSession } from "@/lib/session";
-import { prisma } from "@/lib/prisma";
-import { redirect } from "next/navigation";
+"use client";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 
-export const metadata = {
-  title: "Dashboard | DLEM Malawi",
-};
+export default function DashboardPage() {
+  const router = useRouter();
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-export default async function DashboardPage() {
-  const session = await getSession();
-  if (!session.userId) redirect("/login");
+  useEffect(() => {
+    fetch("/api/dashboard")
+      .then(r => {
+        if (r.status === 401) { router.push("/login"); return null; }
+        return r.json();
+      })
+      .then(d => { if (d) setData(d); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [router]);
 
-  const rawUser: any = await (prisma as any).user.findUnique({
-    where: { id: session.userId },
-    include: {
-      profile: {
-        include: { salaryInstitution: true }
-      },
-      applications: { 
-        orderBy: { createdAt: "desc" }, 
-        take: 5,
-        include: { institution: true }
-      },
-      activeLoans: { 
-        where: { isActive: true }, 
-        take: 3,
-        include: { providerInstitution: true }
-      },
-    },
-  });
+  if (loading) return <div style={{ padding: 40, color: "var(--color-text-muted)" }}>Loading dashboard…</div>;
+  if (!data) return null;
 
-  const user = rawUser;
-
-  if (!user) redirect("/login");
-
-  const profile = user.profile;
-  const totalActiveDebt = user.activeLoans.reduce((acc: number, loan: any) => acc + (loan.remainingBalance || 0), 0);
-  const totalMonthlyDebt = (profile?.existingLoanAmount || 0) + user.activeLoans.reduce((s: number, l: any) => s + l.monthlyDeduction, 0);
+  const { user, profile, activeLoans, applications } = data;
+  const totalActiveDebt = (activeLoans || []).reduce((acc: number, loan: any) => acc + (loan.remainingBalance || 0), 0);
+  const totalMonthlyDebt = (profile?.existingLoanAmount || 0) + (activeLoans || []).reduce((s: number, l: any) => s + l.monthlyDeduction, 0);
   const dtiRatio = profile ? (totalMonthlyDebt / profile.monthlyNetSalary) * 100 : 0;
   const creditUtilization = profile ? ((profile.totalBorrowedAmount || 0) / (profile.monthlyNetSalary * 12 * 4)) * 100 : 0;
 
-  // Smart Insights logic - Following Doc Thresholds
   const insights: { type: "danger" | "warning" | "success"; text: string }[] = [];
   if (dtiRatio > 33) {
     insights.push({ type: "danger", text: "High Risk: DTI exceeds 33%. You may face rejection for new loans." });
@@ -50,27 +36,23 @@ export default async function DashboardPage() {
   } else {
     insights.push({ type: "success", text: "Low Risk: DTI under 20%. You have healthy borrowing capacity." });
   }
-
   if (profile && (profile.monthlyNetSalary * 0.33) > totalMonthlyDebt) {
     insights.push({ type: "success", text: "You have available capacity for additional borrowing." });
   }
 
-
   return (
     <div className={styles.page}>
-      {/* ── Header ── */}
       <div className={styles.header}>
         <div>
           <h1 className="text-h2">
-            Welcome, <span className="text-gradient">{user.fullName.split(" ")[0]}</span>
+            Welcome, <span className="text-gradient">{user?.fullName?.split(" ")[0]}</span>
           </h1>
           <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-            Emp. ID: {user.employeeNumber} · {profile?.salaryInstitution?.name || "No Bank"} · {new Date().toLocaleDateString("en-GB", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+            Emp. ID: {user?.employeeNumber} · {profile?.salaryInstitution?.name || "No Bank"} · {new Date().toLocaleDateString("en-GB", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
           </p>
         </div>
       </div>
 
-      {/* ── Profile Prompt ── */}
       {!profile && (
         <div className={`alert alert-info ${styles.profileAlert}`}>
           <span>ℹ</span>
@@ -81,14 +63,13 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* ── KPI Cards ── */}
       <div className={`grid-4 ${styles.kpiGrid}`}>
         <div className={`card ${styles.kpiCard}`}>
           <div className="stat-label">Monthly Salary</div>
           <div className="stat-value" style={{ color: "var(--color-success)" }}>
             {profile ? `MK ${profile.monthlyNetSalary.toLocaleString()}` : "—"}
           </div>
-          <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>Gross income</div>
+          <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>Net income</div>
         </div>
         <div className={`card ${styles.kpiCard}`}>
           <div className="stat-label">DTI Ratio</div>
@@ -102,7 +83,7 @@ export default async function DashboardPage() {
           <div className="stat-value" style={{ color: "var(--color-warning)" }}>
             MK {totalActiveDebt.toLocaleString()}
           </div>
-          <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>Through DLEM</div>
+          <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>Remaining balance</div>
         </div>
         <div className={`card ${styles.kpiCard}`}>
           <div className="stat-label">Risk Level</div>
@@ -113,7 +94,6 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Health Analysis ── */}
       {profile && (
         <div className={`grid-2 ${styles.healthRow}`}>
           <div className={`card ${styles.healthCard}`}>
@@ -127,7 +107,6 @@ export default async function DashboardPage() {
             <div className={styles.dtiScale}>
               <span>0%</span><span>Low</span><span>20%</span><span>Mod</span><span>33%</span><span>High</span>
             </div>
-
             <h3 className="text-h3" style={{ marginTop: 24 }}>Credit Utilization</h3>
             <div className="progress-bar" style={{ height: 12, marginTop: 16 }}>
               <div
@@ -154,7 +133,6 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* ── Quick Actions ── */}
       <div className={styles.actionsSection}>
         <h2 className="text-h3">Quick Actions</h2>
         <div className={styles.actions}>
@@ -170,8 +148,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Recent Applications ── */}
-      {user.applications.length > 0 && (
+      {(applications || []).length > 0 && (
         <div className={styles.appsSection}>
           <div className={styles.appsHeader}>
             <h2 className="text-h3">Recent Applications</h2>
@@ -181,15 +158,11 @@ export default async function DashboardPage() {
             <table>
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Amount</th>
-                  <th>Duration</th>
-                  <th>Risk Score</th>
-                  <th>Status</th>
+                  <th>Date</th><th>Amount</th><th>Duration</th><th>Risk Score</th><th>Status</th>
                 </tr>
               </thead>
               <tbody>
-                {user.applications.map((app: any) => (
+                {applications.map((app: any) => (
                   <tr key={app.id}>
                     <td>{new Date(app.createdAt).toLocaleDateString()}</td>
                     <td>MK {app.amount.toLocaleString()}</td>
@@ -200,9 +173,7 @@ export default async function DashboardPage() {
                       </span>
                     </td>
                     <td>
-                      <span className={`badge ${STATUS_BADGE[app.status] ?? "badge-neutral"}`}>
-                        {app.status}
-                      </span>
+                      <span className={`badge ${STATUS_BADGE[app.status] ?? "badge-neutral"}`}>{app.status}</span>
                     </td>
                   </tr>
                 ))}
@@ -224,11 +195,8 @@ const ACTIONS = [
 ];
 
 const STATUS_BADGE: Record<string, string> = {
-  PENDING: "badge-warning", APPROVED: "badge-success",
-  REJECTED: "badge-danger", ACTIVE: "badge-info",
+  PENDING: "badge-warning", APPROVED: "badge-success", REJECTED: "badge-danger", ACTIVE: "badge-info",
 };
-
 const RISK_BADGE: Record<string, string> = {
-  EXCELLENT: "badge-success", GOOD: "badge-info",
-  FAIR: "badge-warning", POOR: "badge-danger", UNKNOWN: "badge-neutral",
+  EXCELLENT: "badge-success", GOOD: "badge-info", FAIR: "badge-warning", POOR: "badge-danger", UNKNOWN: "badge-neutral",
 };

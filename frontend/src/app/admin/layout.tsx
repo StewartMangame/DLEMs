@@ -1,6 +1,6 @@
-import { getSession } from "@/lib/session";
-import { Suspense } from "react";
-import { redirect } from "next/navigation";
+"use client";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import styles from "./layout.module.css";
 
@@ -9,9 +9,32 @@ const NAV = [
   { href: "/admin/stats", icon: "♟", label: "Statistics" },
 ];
 
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const session = await getSession();
-  if (!session.userId || session.role !== "admin") redirect("/login");
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then(r => {
+        if (r.status === 401 || r.status === 403) { router.push("/login"); return null; }
+        return r.json();
+      })
+      .then(d => {
+        if (d && d.user) {
+          if (d.user.role !== 'admin' && d.user.role !== 'superadmin') {
+             router.push("/dashboard");
+             return;
+          }
+          setData(d.user);
+        }
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [router]);
+
+  if (loading) return <div style={{ padding: 40, color: "var(--color-text-muted)" }}>Loading portal…</div>;
+  if (!data) return null;
 
   return (
     <div className={styles.layout}>
@@ -35,10 +58,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className={styles.sidebarBottom}>
           <div className={styles.officerBadge}>
             <div className={styles.officerAvatar}>
-              {session.fullName?.charAt(0) ?? "A"}
+              {data.fullName?.charAt(0) ?? "A"}
             </div>
             <div>
-              <div className="text-sm" style={{ fontWeight: 600 }}>{session.fullName}</div>
+              <div className="text-sm" style={{ fontWeight: 600 }}>{data.fullName}</div>
               <span className="badge badge-danger">ADMIN</span>
             </div>
           </div>

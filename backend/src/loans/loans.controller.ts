@@ -1,0 +1,33 @@
+import { Controller, Get, Post, Body, UseGuards, Req, Param } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { LoansService } from './loans.service';
+
+@Controller('loans')
+@UseGuards(AuthGuard('jwt'))
+export class LoansController {
+  constructor(private readonly loansService: LoansService) {}
+
+  @Get()
+  async getLoans(@Req() req: any) {
+    const loans = await this.loansService.getUserLoans(req.user.userId);
+    return { loans };
+  }
+
+  @Post('manual')
+  async recordLoan(@Req() req: any, @Body() body: any) {
+    const loan = await this.loansService.createManualLoan(req.user.userId, body);
+    return { success: true, loan };
+  }
+
+  @Post('apply')
+  async applyLoan(@Req() req: any, @Body() body: any) {
+    const application = await this.loansService.applyLoan(req.user.userId, body);
+    return { success: true, application };
+  }
+
+  @Post('repay/:id')
+  async repayLoan(@Req() req: any, @Param('id') id: string) {
+    const loan = await this.loansService.repayLoan(req.user.userId, parseInt(id, 10));
+    return { success: true, loan };
+  }
+}

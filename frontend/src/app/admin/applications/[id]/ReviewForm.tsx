@@ -17,9 +17,9 @@ export default function ReviewForm({ applicationId, currentStatus }: ReviewFormP
   const act = async (action: "approve" | "reject") => {
     setLoading(action); setError("");
     const res = await fetch(`/api/admin/applications/${applicationId}`, {
-      method: "PATCH",
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, officerNotes: notes }),
+      body: JSON.stringify({ status: action === "approve" ? "APPROVED" : "REJECTED", officerNotes: notes }),
     });
     if (!res.ok) {
       const data = await res.json();

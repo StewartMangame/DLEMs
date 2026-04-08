@@ -38,8 +38,8 @@ export default function LandingPage() {
           </h1>
           <p className={`text-body ${styles.heroSub} animate-fadeInUp animate-delay-2`}>
             Check if you qualify for a personal loan in minutes — without visiting a branch.
-            Apply online, track repayments, and get real-time decisions from FDH Bank,
-            National Bank of Malawi, and Standard Bank.
+            Apply online, track repayments, and get real-time decisions from Mwai Bank,
+            Kokko Bank of Malawi, and KFS Bank.
           </p>
           <div className={`${styles.heroActions} animate-fadeInUp animate-delay-3`}>
             <Link href="/register" className="btn btn-primary btn-lg">
@@ -184,12 +184,12 @@ export default function LandingPage() {
 }
 
 const FEATURES = [
-  { icon: "🎯", title: "Instant Eligibility Check", desc: "Get an automated risk score and eligibility verdict in under 2 minutes based on your financial profile." },
-  { icon: "📱", title: "Apply From Anywhere", desc: "Submit your personal loan application from your phone or computer — no branch visit required." },
-  { icon: "📊", title: "Loan Repayment Simulator", desc: "Calculate your monthly installments, total cost, and full amortization schedule before you commit." },
-  { icon: "🔍", title: "Real-Time Status Tracking", desc: "Track your application status from submission through credit officer review to final decision." },
-  { icon: "🏦", title: "Active Loan Dashboard", desc: "Monitor outstanding balance, paid months, and upcoming payments from your personal dashboard." },
-  { icon: "🔒", title: "Secure & Private", desc: "Your financial data is encrypted and protected. Only you and your bank officer can access your profile." },
+  { icon: "", title: "Instant Eligibility Check", desc: "Get an automated risk score and eligibility verdict in under 2 minutes based on your financial profile." },
+  { icon: "", title: "Apply From Anywhere", desc: "Submit your personal loan application from your phone or computer — no branch visit required." },
+  { icon: "", title: "Loan Repayment Simulator", desc: "Calculate your monthly installments, total cost, and full amortization schedule before you commit." },
+  { icon: "", title: "Real-Time Status Tracking", desc: "Track your application status from submission through credit officer review to final decision." },
+  { icon: "", title: "Active Loan Dashboard", desc: "Monitor outstanding balance, paid months, and upcoming payments from your personal dashboard." },
+  { icon: "", title: "Secure & Private", desc: "Your financial data is encrypted and protected. Only you and your bank officer can access your profile." },
 ];
 
 const STEPS = [
@@ -200,7 +200,7 @@ const STEPS = [
 ];
 
 const BANKS = [
-  { emoji: "🏦", name: "FDH Bank", tagline: "Friends of Development" },
-  { emoji: "🏛️", name: "National Bank of Malawi", tagline: "Your Trusted Partner" },
-  { emoji: "⭐", name: "Standard Bank", tagline: "Africa Is Our Home" },
+  { emoji: "", name: "Mwai Bank", tagline: "Friends of Development" },
+  { emoji: "", name: "Kokko Bank", tagline: "Your Trusted Partner" },
+  { emoji: "", name: "KFS Bank", tagline: "Africa Is Our Home" },
 ];

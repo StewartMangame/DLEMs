@@ -1,33 +1,51 @@
-import { getSession } from "@/lib/session";
-import { prisma } from "@/lib/prisma";
-import { redirect, notFound } from "next/navigation";
+"use client";
+import { useState, useEffect, use } from "react";
 import Link from "next/link";
+import { useRouter, notFound } from "next/navigation";
 import ReviewForm from "./ReviewForm";
 import styles from "./page.module.css";
 
-export default async function ApplicationDetailPage({
+const STATUS_BADGE: Record<string, string> = {
+  PENDING: "badge-warning", APPROVED: "badge-success",
+  REJECTED: "badge-danger", ACTIVE: "badge-info",
+};
+const RISK_BADGE: Record<string, string> = {
+  EXCELLENT: "badge-success", GOOD: "badge-info", FAIR: "badge-warning", POOR: "badge-danger", UNKNOWN: "badge-neutral",
+};
+const SCORE_COLOR = (s: number) => s >= 100 ? "var(--color-success)" : s >= 80 ? "var(--color-info)" : s >= 60 ? "var(--color-warning)" : "var(--color-danger)";
+
+export default function ApplicationDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const session = await getSession();
-  if (!session.userId || session.role !== "admin") redirect("/login");
-
-  const { id } = await params;
+  const router = useRouter();
+  const { id } = use(params);
   const appId = parseInt(id);
-  if (isNaN(appId)) notFound();
 
-  const app = (await (prisma as any).loanApplication.findUnique({
-    where: { id: appId },
-    include: { 
-      user: { include: { profile: { include: { salaryInstitution: true } } } },
-      institution: true 
-    },
-  })) as any;
+  const [app, setApp] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (!app) notFound();
+  useEffect(() => {
+    if (isNaN(appId)) return;
+    
+    fetch(`/api/admin/applications/${appId}`)
+      .then(r => {
+        if (r.status === 401 || r.status === 403) { router.push("/login"); return null; }
+        if (r.status === 404) return null;
+        return r.json();
+      })
+      .then(data => {
+        if (data && data.application) setApp(data.application);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [appId, router]);
 
-  const profile = app.user.profile as any;
+  if (loading) return <div style={{ padding: 40, color: "var(--color-text-muted)" }}>Loading application details…</div>;
+  if (!app) return <div style={{ padding: 40, textAlign: "center" }}>Application not found</div>;
+
+  const profile = app.user?.profile;
 
   return (
     <div className={styles.page}>
@@ -51,12 +69,12 @@ export default async function ApplicationDetailPage({
           <div className={`card ${styles.section}`}>
             <h2 className={styles.sectionTitle}>Applicant</h2>
             <div className={styles.infoGrid}>
-              <Row label="Full Name" value={app.user.fullName} />
-              <Row label="Employee No." value={app.user.employeeNumber} />
-              <Row label="National ID" value={app.user.nationalId} />
-              <Row label="Email" value={app.user.email} />
-              <Row label="Phone" value={app.user.phone} />
-              <Row label="Bank" value={app.user.bank} />
+              <Row label="Full Name" value={app.user?.fullName} />
+              <Row label="Employee No." value={app.user?.employeeNumber} />
+              <Row label="National ID" value={app.user?.nationalId} />
+              <Row label="Email" value={app.user?.email} />
+              <Row label="Phone" value={app.user?.phone} />
+              <Row label="Bank" value={app.user?.bank} />
             </div>
           </div>
 
@@ -66,12 +84,12 @@ export default async function ApplicationDetailPage({
               <h2 className={styles.sectionTitle}>Financial Profile</h2>
               <div className={styles.infoGrid}>
                 <Row label="Employer" value={profile.employerName} />
-                <Row label="Employment Type" value={profile.employmentType.replace(/_/g, " ").toUpperCase()} />
-                <Row label="Monthly Net Salary" value={`MK ${profile.monthlyNetSalary.toLocaleString()}`} highlight="success" />
+                <Row label="Employment Type" value={profile.employmentType?.replace(/_/g, " ").toUpperCase()} />
+                <Row label="Monthly Net Salary" value={`MK ${profile.monthlyNetSalary?.toLocaleString()}`} highlight="success" />
                 <Row label="Employment Years" value={`${profile.employmentYears || 0} years`} />
                 <Row label="Age" value={`${profile.age || 0} years`} />
                 <Row label="Housing" value={profile.housingStatus || "N/A"} />
-                <Row label="Existing Monthly Debt" value={`MK ${profile.existingLoanAmount.toLocaleString()}`} highlight="warning" />
+                <Row label="Existing Monthly Debt" value={`MK ${profile.existingLoanAmount?.toLocaleString()}`} highlight="warning" />
                 <Row label="Banking History" value={`${profile.bankingYears || 0} years`} />
                 <Row label="Salary Bank" value={profile.salaryInstitution?.name || "N/A"} />
               </div>
@@ -82,11 +100,11 @@ export default async function ApplicationDetailPage({
           <div className={`card ${styles.section}`}>
             <h2 className={styles.sectionTitle}>Loan Request</h2>
             <div className={styles.infoGrid}>
-              <Row label="Loan Amount" value={`MK ${app.amount.toLocaleString()}`} highlight="primary" />
+              <Row label="Loan Amount" value={`MK ${app.amount?.toLocaleString()}`} highlight="primary" />
               <Row label="Purpose" value={app.purpose} />
               <Row label="Duration" value={`${app.durationMonths} months`} />
-              <Row label="Monthly Installment" value={`MK ${app.monthlyInstallment.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} />
-              <Row label="Total Repayable" value={`MK ${app.totalRepayable.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} />
+              <Row label="Monthly Installment" value={`MK ${app.monthlyInstallment?.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} />
+              <Row label="Total Repayable" value={`MK ${app.amount?.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} />
             </div>
           </div>
         </div>
@@ -109,7 +127,7 @@ export default async function ApplicationDetailPage({
             <div className={styles.riskRow}>
               <span>DTI Ratio</span>
               <strong style={{ color: app.dtiRatio > 40 ? "var(--color-danger)" : "var(--color-success)" }}>
-                {app.dtiRatio.toFixed(1)}% {app.dtiRatio > 40 ? "⚠ OVER LIMIT" : "✓ OK"}
+                {Number(app.dtiRatio).toFixed(1)}% {app.dtiRatio > 40 ? "⚠ OVER LIMIT" : "✓ OK"}
               </strong>
             </div>
 
@@ -145,12 +163,3 @@ function Row({ label, value, highlight }: { label: string; value: string; highli
     </div>
   );
 }
-
-const STATUS_BADGE: Record<string, string> = {
-  PENDING: "badge-warning", APPROVED: "badge-success",
-  REJECTED: "badge-danger", ACTIVE: "badge-info",
-};
-const RISK_BADGE: Record<string, string> = {
-  EXCELLENT: "badge-success", GOOD: "badge-info", FAIR: "badge-warning", POOR: "badge-danger", UNKNOWN: "badge-neutral",
-};
-const SCORE_COLOR = (s: number) => s >= 100 ? "var(--color-success)" : s >= 80 ? "var(--color-info)" : s >= 60 ? "var(--color-warning)" : "var(--color-danger)";

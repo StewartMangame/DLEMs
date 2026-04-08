@@ -7,8 +7,10 @@
     "backend"
   ],
   "scripts": {
-    "dev": "npm run dev --workspace=frontend",
-    "build": "npm run build --workspace=frontend",
-    "lint": "npm run lint --workspace=frontend"
+    "dev": "start cmd /c \"npm run dev:backend\" && npm run dev:frontend",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:backend": "npm run start:dev --workspace=backend",
+    "build": "npm run build --workspace=frontend && npm run build --workspace=backend",
+    "lint": "npm run lint --workspace=frontend && npm run lint --workspace=backend"
   }
 }
