@@ -54,4 +54,21 @@ export class AuthService {
       user: safeUser
     };
   }
+
+  async seedAdmin() {
+    const email = 'admin@dlem.mw';
+    const existing = await this.userRepository.findOne({ where: { email } });
+    if (existing) return;
+
+    const user = new User();
+    user.email = email;
+    user.passwordHash = await bcrypt.hash('Admin@123', 10);
+    user.fullName = 'System Administrator';
+    user.role = 'admin'; // or 'superadmin' based on the controller checks
+    user.nationalId = 'ADMIN-001';
+    user.employeeNumber = 'ADMIN-001';
+    user.phone = '+265 000000000';
+    await this.userRepository.save(user);
+    console.log('Default admin seeded: admin@dlem.mw / Admin@123');
+  }
 }

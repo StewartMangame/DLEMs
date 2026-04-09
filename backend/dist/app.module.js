@@ -33,13 +33,17 @@ const dashboard_module_1 = require("./dashboard/dashboard.module");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
 const institutions_service_1 = require("./institutions/institutions.service");
+const auth_service_1 = require("./auth/auth.service");
 let AppModule = class AppModule {
     instService;
-    constructor(instService) {
+    authService;
+    constructor(instService, authService) {
         this.instService = instService;
+        this.authService = authService;
     }
     async onModuleInit() {
         await this.instService.seedDefautInstitutions();
+        await this.authService.seedAdmin();
     }
 };
 exports.AppModule = AppModule;
@@ -65,6 +69,7 @@ exports.AppModule = AppModule = __decorate([
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],
     }),
-    __metadata("design:paramtypes", [institutions_service_1.InstitutionsService])
+    __metadata("design:paramtypes", [institutions_service_1.InstitutionsService,
+        auth_service_1.AuthService])
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

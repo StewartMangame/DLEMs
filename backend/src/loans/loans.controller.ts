@@ -9,8 +9,7 @@ export class LoansController {
 
   @Get()
   async getLoans(@Req() req: any) {
-    const loans = await this.loansService.getUserLoans(req.user.userId);
-    return { loans };
+    return this.loansService.getUserLoans(req.user.userId);
   }
 
   @Post('manual')

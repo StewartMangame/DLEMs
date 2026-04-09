@@ -7,8 +7,8 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "DLEM | Digital Loan Eligibility & Management — Malawi",
   description:
-    "Check your loan eligibility, apply for personal loans, and track repayments digitally. Serving FDH Bank, National Bank of Malawi, and Standard Bank customers.",
-  keywords: "loan, eligibility, Malawi, FDH Bank, National Bank, Standard Bank, digital banking",
+    "Check your loan eligibility, apply for personal loans, and track repayments digitally. Serving Mwai Bank, Kokko Bank, and KFS Bank customers.",
+  keywords: "loan, eligibility, Malawi, Mwai Bank, Kokko Bank, KFS Bank, digital banking",
 };
 
 export default function RootLayout({

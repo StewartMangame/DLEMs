@@ -9,7 +9,7 @@ export declare class EligibilityService {
         result: {
             eligible: boolean;
             monthlyInstallment: number;
-            totalRepayable: any;
+            totalRepayable: number;
             dtiRatio: number;
             maxLoanAmount: number;
             riskScore: number;

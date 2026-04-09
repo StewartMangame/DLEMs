@@ -3,6 +3,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import styles from "./page.module.css";
+import { calculateMonthlyInstallment } from "@/lib/eligibilityEngine";
 
 const PURPOSES = [
   "Home Improvement", "Education", "Medical Expenses",
@@ -15,9 +16,9 @@ function ApplyForm() {
   const searchParams = useSearchParams();
   const [profile, setProfile] = useState<any>(null);
   const [institutions, setInstitutions] = useState<any[]>([]);
-  const [form, setForm] = useState({ 
-    amount: Number(searchParams.get("amount")) || 500000, 
-    purpose: "", 
+  const [form, setForm] = useState({
+    amount: Number(searchParams.get("amount")) || 500000,
+    purpose: "",
     durationMonths: Number(searchParams.get("duration")) || 24,
     institutionId: searchParams.get("institutionId") || ""
   });
@@ -32,10 +33,8 @@ function ApplyForm() {
   const preview = (() => {
     if (form.amount && form.durationMonths) {
       const rateVal = 24; // Standard interest rate for simulation
-      const r = rateVal / 100 / 12;
-      const n = form.durationMonths;
-      const pmt = (form.amount * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-      return { installment: pmt, total: pmt * n, rate: rateVal };
+      const pmt = calculateMonthlyInstallment(form.amount, rateVal, form.durationMonths);
+      return { installment: pmt, total: pmt * form.durationMonths, rate: rateVal };
     }
     return null;
   })();
@@ -50,7 +49,7 @@ function ApplyForm() {
     setError("");
     if (!form.purpose) { setError("Please select a loan purpose."); return; }
     if (!form.institutionId) { setError("Please select a financial institution."); return; }
-    
+
     setLoading(true);
     try {
       const res = await fetch("/api/loans/apply", {
@@ -62,10 +61,10 @@ function ApplyForm() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) { 
-        setError(data.error || "Submission failed."); 
-        setLoading(false); 
-        return; 
+      if (!res.ok) {
+        setError(data.error || "Submission failed.");
+        setLoading(false);
+        return;
       }
       router.push("/dashboard/loans");
     } catch (err) {
@@ -106,7 +105,7 @@ function ApplyForm() {
             <label className="form-label" htmlFor="durationMonths">Repayment Period</label>
             <select id="durationMonths" name="durationMonths" className="form-select"
               value={form.durationMonths} onChange={handleChange}>
-              {[6,12,18,24,36,48,60].map(m => (
+              {[6, 12, 18, 24, 36, 48, 60].map(m => (
                 <option key={m} value={m}>{m} months</option>
               ))}
             </select>

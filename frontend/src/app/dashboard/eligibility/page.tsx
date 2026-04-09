@@ -36,7 +36,7 @@ export default function EligibilityPage() {
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    fetch("/api/profile").then(r => r.json()).then(d => { 
+    fetch("/api/profile").then(r => r.json()).then(d => {
       if (d.profile) {
         setProfile(d.profile);
         if (d.profile.salaryInstitutionId) setSelectedInstId(d.profile.salaryInstitutionId.toString());
@@ -75,7 +75,7 @@ export default function EligibilityPage() {
         <div>
           <h1 className="text-h2">Loan Eligibility Checker</h1>
           <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-            {selectedInstId 
+            {selectedInstId
               ? `Automated risk assessment based on ${selectedBankName} criteria`
               : "Select a bank to check your loan eligibility"}
           </p>
@@ -98,13 +98,13 @@ export default function EligibilityPage() {
             <select id="bank" className="form-select" value={selectedInstId} onChange={e => setSelectedInstId(e.target.value)}>
               <option value="">— Choose a bank —</option>
               {institutions.map(b => (
-                <option key={b.id} value={b.id}>{b.name} ({b.type})</option>
+                <option key={b.id} value={b.id}>{b.name}</option>
               ))}
             </select>
             <div className="form-help">Eligibility rules vary by bank</div>
           </div>
           <div className="form-group" />
-          
+
           <div className="form-group">
             <label className="form-label" htmlFor="loanAmount">Requested Loan Amount (MK)</label>
             <input id="loanAmount" type="number" min={50000} step={50000} className="form-input"
@@ -115,7 +115,7 @@ export default function EligibilityPage() {
             <label className="form-label" htmlFor="duration">Repayment Period (months)</label>
             <select id="duration" className="form-select" value={duration} onChange={e => setDuration(Number(e.target.value))}>
               {[6, 12, 18, 24, 36, 48, 60].map(m => (
-                <option key={m} value={m}>{m} months ({(m/12).toFixed(1)} years)</option>
+                <option key={m} value={m}>{m} months ({(m / 12).toFixed(1)} years)</option>
               ))}
             </select>
           </div>
@@ -147,8 +147,8 @@ export default function EligibilityPage() {
               </p>
             </div>
             {result.eligible && (
-              <Link 
-                href={`/dashboard/apply?institutionId=${selectedInstId}&amount=${loanAmount}&duration=${duration}`} 
+              <Link
+                href={`/dashboard/apply?institutionId=${selectedInstId}&amount=${loanAmount}&duration=${duration}`}
                 className="btn btn-primary btn-lg"
                 style={{ marginLeft: "auto" }}
               >
@@ -161,7 +161,7 @@ export default function EligibilityPage() {
             <h3 className="text-h3" style={{ gridColumn: "1/-1" }}>Other Bank Comparisons</h3>
             {bankSimulations.filter(s => s.institutionId.toString() !== selectedInstId).map((sim, i) => (
               <div key={i} className={`card ${styles.bankCard} ${sim.eligible ? "" : styles.bankIneligible}`}>
-                <div className={styles.bankLogo}>🏛</div>
+                <div className={styles.bankLogo}></div>
                 <h4 style={{ fontWeight: 700 }}>{sim.bank}</h4>
                 <div className="badge badge-neutral" style={{ marginTop: 8 }}>{sim.riskLevel} Risk</div>
                 <div className={styles.bankStatus}>
@@ -175,9 +175,9 @@ export default function EligibilityPage() {
                   <>
                     <div className="text-xs" style={{ color: "var(--color-text-muted)", marginTop: 12 }}>Max Limit</div>
                     <div className="text-sm" style={{ fontWeight: 600 }}>MK {sim.maxAmount.toLocaleString()}</div>
-                    <button 
+                    <button
                       onClick={() => { setSelectedInstId(sim.institutionId.toString()); setTimeout(runCheck, 100); }}
-                      className="btn btn-outline btn-sm" 
+                      className="btn btn-outline btn-sm"
                       style={{ marginTop: 16, width: "100%" }}
                     >
                       Check this bank

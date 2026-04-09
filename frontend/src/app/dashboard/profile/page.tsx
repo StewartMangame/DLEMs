@@ -114,9 +114,9 @@ export default function ProfilePage() {
               <select id="bank" name="bank" required className="form-select"
                 value={form.bank || ""} onChange={handleChange}>
                 <option value="">— Select bank —</option>
-                <option value="FDH Bank">FDH Bank</option>
-                <option value="National Bank of Malawi">National Bank of Malawi</option>
-                <option value="Standard Bank Malawi">Standard Bank Malawi</option>
+                <option value="Mwai Bank">Mwai Bank</option>
+                <option value="Kokko Bank">Kokko Bank</option>
+                <option value="KFS Bank">KFS Bank</option>
               </select>
             </div>
             <div className="form-group">

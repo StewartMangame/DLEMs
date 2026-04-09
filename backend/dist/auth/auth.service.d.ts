@@ -54,4 +54,5 @@ export declare class AuthService {
             reminders: import("../entities/reminder.entity").Reminder[];
         };
     }>;
+    seedAdmin(): Promise<void>;
 }

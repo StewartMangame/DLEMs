@@ -24,7 +24,7 @@
     ],
     "paths": {
       "@/lib/*": [
-        "../backend/src/lib/*"
+        "./src/lib/*"
       ],
       "@/prisma/*": [
         "../backend/prisma/*"

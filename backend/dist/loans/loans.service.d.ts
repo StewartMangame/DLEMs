@@ -9,7 +9,10 @@ export declare class LoansService {
     private profileRepo;
     private reminderRepo;
     constructor(loanRepo: Repository<Loan>, appRepo: Repository<LoanApplication>, profileRepo: Repository<FinancialProfile>, reminderRepo: Repository<Reminder>);
-    getUserLoans(userId: number): Promise<Loan[]>;
+    getUserLoans(userId: number): Promise<{
+        loans: Loan[];
+        applications: LoanApplication[];
+    }>;
     createManualLoan(userId: number, data: any): Promise<Loan>;
     applyLoan(userId: number, data: any): Promise<LoanApplication>;
     repayLoan(userId: number, loanId: number): Promise<Loan>;

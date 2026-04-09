@@ -6,7 +6,7 @@ export declare class EligibilityController {
         result: {
             eligible: boolean;
             monthlyInstallment: number;
-            totalRepayable: any;
+            totalRepayable: number;
             dtiRatio: number;
             maxLoanAmount: number;
             riskScore: number;

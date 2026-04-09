@@ -18,6 +18,7 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const financial_profile_entity_1 = require("../entities/financial-profile.entity");
 const institution_entity_1 = require("../entities/institution.entity");
+const eligibilityEngine_1 = require("../lib/eligibilityEngine");
 let EligibilityService = class EligibilityService {
     profileRepo;
     instRepo;
@@ -27,8 +28,9 @@ let EligibilityService = class EligibilityService {
     }
     async checkEligibility(params) {
         const { monthlySalary, loanAmount, durationMonths, institutionId, existingLoanAmount } = params;
-        const monthlyInstallment = loanAmount / durationMonths;
-        const totalRepayable = loanAmount;
+        const annualRate = 15;
+        const monthlyInstallment = (0, eligibilityEngine_1.calculateMonthlyInstallment)(loanAmount, annualRate, durationMonths);
+        const totalRepayable = monthlyInstallment * durationMonths;
         const totalDeductions = (existingLoanAmount || 0) + monthlyInstallment;
         const dtiRatio = (totalDeductions / monthlySalary) * 100;
         const institutions = await this.instRepo.find({ relations: ['criteria'] });

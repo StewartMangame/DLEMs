@@ -60,7 +60,7 @@ export default function CalculatorPage() {
 
           <div className="form-group">
             <label className="form-label">Loan Amount: <strong>MK {amount.toLocaleString()}</strong></label>
-            <input type="range" min={50000} max={5000000} step={50000}
+            <input type="range" min={50000} max={50000000} step={50000}
               value={amount} onChange={e => setAmount(Number(e.target.value))}
               className={styles.slider} />
             <div className={styles.rangeLabels}><span>MK 50K</span><span>MK 5M</span></div>
@@ -75,7 +75,7 @@ export default function CalculatorPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Repayment Period: <strong>{months} months ({(months/12).toFixed(1)} yrs)</strong></label>
+            <label className="form-label">Repayment Period: <strong>{months} months ({(months / 12).toFixed(1)} yrs)</strong></label>
             <input type="range" min={6} max={60} step={6}
               value={months} onChange={e => setMonths(Number(e.target.value))}
               className={styles.slider} />
@@ -112,14 +112,14 @@ export default function CalculatorPage() {
             </div>
           </div>
           <div className={`card ${styles.summaryCard} ${styles.insightsCard}`}>
-             <h4 className="text-xs" style={{ color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Insights</h4>
-             <p className="text-sm" style={{ marginTop: 8 }}>
-               {projectedDti > 50 
-                 ? "Warning: You are over-leveraged for this amount." 
-                 : projectedDti < 20 
-                   ? "Good news! You qualify for higher loan capacity." 
-                   : "Your request is within reasonable limits."}
-             </p>
+            <h4 className="text-xs" style={{ color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Insights</h4>
+            <p className="text-sm" style={{ marginTop: 8 }}>
+              {projectedDti > 50
+                ? "Warning: You are over-leveraged for this amount."
+                : projectedDti < 20
+                  ? "Good news! You qualify for higher loan capacity."
+                  : "Your request is within reasonable limits."}
+            </p>
           </div>
         </div>
       </div>

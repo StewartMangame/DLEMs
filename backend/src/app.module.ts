@@ -23,6 +23,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { InstitutionsService } from './institutions/institutions.service';
+import { AuthService } from './auth/auth.service';
 
 @Module({
   imports: [
@@ -46,9 +47,13 @@ import { InstitutionsService } from './institutions/institutions.service';
   providers: [AppService],
 })
 export class AppModule implements OnModuleInit {
-  constructor(private readonly instService: InstitutionsService) {}
+  constructor(
+    private readonly instService: InstitutionsService,
+    private readonly authService: AuthService,
+  ) {}
 
   async onModuleInit() {
     await this.instService.seedDefautInstitutions();
+    await this.authService.seedAdmin();
   }
 }

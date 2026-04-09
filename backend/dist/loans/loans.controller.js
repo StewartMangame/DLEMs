@@ -22,8 +22,7 @@ let LoansController = class LoansController {
         this.loansService = loansService;
     }
     async getLoans(req) {
-        const loans = await this.loansService.getUserLoans(req.user.userId);
-        return { loans };
+        return this.loansService.getUserLoans(req.user.userId);
     }
     async recordLoan(req, body) {
         const loan = await this.loansService.createManualLoan(req.user.userId, body);

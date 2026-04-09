@@ -32,11 +32,17 @@ let LoansService = class LoansService {
         this.reminderRepo = reminderRepo;
     }
     async getUserLoans(userId) {
-        return this.loanRepo.find({
+        const loans = await this.loanRepo.find({
             where: { userId },
-            relations: ['providerInstitution'],
+            relations: ['providerInstitution', 'application'],
             order: { createdAt: 'DESC' },
         });
+        const applications = await this.appRepo.find({
+            where: { userId },
+            relations: ['institution'],
+            order: { createdAt: 'DESC' },
+        });
+        return { loans, applications };
     }
     async createManualLoan(userId, data) {
         const profile = await this.profileRepo.findOne({ where: { userId } });
@@ -64,16 +70,33 @@ let LoansService = class LoansService {
         const profile = await this.profileRepo.findOne({ where: { userId } });
         if (!profile)
             throw new common_1.BadRequestException('Complete financial profile first');
+        const amount = parseFloat(data.amount);
+        const duration = parseInt(data.durationMonths, 10);
+        const rate = 18;
+        const monthlyInstallment = (amount * (1 + (rate / 100) * (duration / 12))) / duration;
+        const totalNewDebt = profile.existingLoanAmount + monthlyInstallment;
+        const dtiRatio = (totalNewDebt / profile.monthlyNetSalary) * 100;
+        let riskScore = 100 - (dtiRatio * 0.8);
+        if (profile.monthlyNetSalary > 1000000)
+            riskScore += 10;
+        riskScore = Math.min(120, Math.max(20, Math.round(riskScore)));
+        let riskCategory = 'GOOD';
+        if (dtiRatio > 50)
+            riskCategory = 'POOR';
+        else if (dtiRatio > 35)
+            riskCategory = 'FAIR';
+        else if (riskScore > 90)
+            riskCategory = 'EXCELLENT';
         const app = this.appRepo.create({
             userId,
             institutionId: parseInt(data.institutionId, 10),
-            amount: parseFloat(data.amount),
-            durationMonths: parseInt(data.durationMonths, 10),
+            amount,
+            durationMonths: duration,
             purpose: data.purpose,
-            monthlyInstallment: parseFloat(data.monthlyInstallment) || (parseFloat(data.amount) / parseInt(data.durationMonths, 10)),
-            dtiRatio: data.dtiRatio || 0,
-            riskScore: data.riskScore || 0,
-            riskCategory: data.riskCategory || 'UNKNOWN',
+            monthlyInstallment,
+            dtiRatio,
+            riskScore,
+            riskCategory,
             status: 'PENDING',
         });
         return this.appRepo.save(app);

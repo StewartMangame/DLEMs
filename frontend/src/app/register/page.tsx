@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import styles from "../auth.module.css";
 
-const BANKS = ["FDH Bank", "National Bank of Malawi", "Standard Bank"];
+const BANKS = ["Mwai Bank", "Kokko Bank", "KFS Bank"];
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -93,7 +93,7 @@ export default function RegisterPage() {
             <div className="form-group">
               <label className="form-label" htmlFor="email">Email Address</label>
               <input id="email" name="email" type="email" required className="form-input"
-                placeholder="john@example.com" value={form.email} onChange={handleChange} />
+                placeholder="Stewart@example.com" value={form.email} onChange={handleChange} />
             </div>
             <div className="form-group">
               <label className="form-label" htmlFor="bank">Your Bank</label>

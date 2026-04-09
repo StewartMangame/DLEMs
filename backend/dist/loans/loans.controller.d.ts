@@ -4,6 +4,7 @@ export declare class LoansController {
     constructor(loansService: LoansService);
     getLoans(req: any): Promise<{
         loans: import("../entities/loan.entity").Loan[];
+        applications: import("../entities/loan-application.entity").LoanApplication[];
     }>;
     recordLoan(req: any, body: any): Promise<{
         success: boolean;

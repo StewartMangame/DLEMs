@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { FinancialProfile } from '../entities/financial-profile.entity';
 import { Institution } from '../entities/institution.entity';
 
+import { calculateMonthlyInstallment } from '../lib/eligibilityEngine';
+
 @Injectable()
 export class EligibilityService {
   constructor(
@@ -14,9 +16,10 @@ export class EligibilityService {
   async checkEligibility(params: any) {
     const { monthlySalary, loanAmount, durationMonths, institutionId, existingLoanAmount } = params;
     
-    // Monthly installment calculation
-    const monthlyInstallment = loanAmount / durationMonths;
-    const totalRepayable = loanAmount; // Simplified, assuming 0% interest in mock
+    // Monthly installment calculation using shared logic (fixed interest assumed at 15% for eligibility simulation)
+    const annualRate = 15;
+    const monthlyInstallment = calculateMonthlyInstallment(loanAmount, annualRate, durationMonths);
+    const totalRepayable = monthlyInstallment * durationMonths;
     
     // DTI Ratio
     const totalDeductions = (existingLoanAmount || 0) + monthlyInstallment;

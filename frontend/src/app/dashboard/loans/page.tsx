@@ -19,14 +19,23 @@ export default function LoansPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/loans").then(r => { if (r.status === 401) { router.push("/login"); } return r.json(); }),
-    ]).then(([loanData]) => {
-      const all = loanData.loans || [];
-      setLoans(all.filter((l: any) => l.isActive));
-      setApplications([]); // Applications shown via /api/loans endpoint placeholder
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    fetch("/api/loans")
+      .then(r => {
+        if (r.status === 401) {
+          router.push("/login");
+        }
+        return r.json();
+      })
+      .then((data) => {
+        const activeLoans = (data.loans || []).filter((l: any) => l.isActive);
+        setLoans(activeLoans);
+        setApplications(data.applications || []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch loans:", err);
+        setLoading(false);
+      });
   }, [router]);
 
   if (loading) return <div style={{ padding: 40, color: "var(--color-text-muted)" }}>Loading loans…</div>;
