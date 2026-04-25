@@ -6,10 +6,11 @@ import styles from "./layout.module.css";
 import { LanguageProvider, useLanguage } from "@/lib/LanguageContext";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", icon: "◈", key: "nav.dashboard" },
-  { href: "/dashboard/profile", icon: "◎", key: "nav.profile" },
-  { href: "/dashboard/eligibility", icon: "✦", key: "nav.compare" },
-  { href: "/dashboard/loans", icon: "◷", key: "nav.loans" },
+  { href: "/dashboard",              icon: "◈", key: "nav.dashboard" },
+  { href: "/dashboard/profile",      icon: "◎", key: "nav.profile" },
+  { href: "/dashboard/institutions", icon: "🏦", key: "nav.institutions" },
+  { href: "/dashboard/eligibility",  icon: "✦", key: "nav.compare" },
+  { href: "/dashboard/loans",        icon: "◷", key: "nav.loans" },
 ];
 
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
@@ -103,8 +104,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               {theme === "dark" ? t("theme.light") : t("theme.dark")}
             </button>
             
-            <Link href="/dashboard/eligibility" className="btn btn-primary" style={{ padding: "8px 24px" }}>
-              {t("action.apply")}
+            <Link href="/dashboard/institutions" className="btn btn-primary" style={{ padding: "8px 24px" }}>
+              {t("action.checkEligibility")}
             </Link>
           </div>
         </header>

@@ -11,6 +11,7 @@ const translations: Record<Language, DefaultTranslations> = {
   en: {
     "nav.dashboard": "Dashboard",
     "nav.profile": "Financial Profile",
+    "nav.institutions": "Check Eligibility",
     "nav.compare": "Compare Lenders",
     "nav.loans": "Active Loans",
     "nav.calculator": "Calculator",
@@ -18,6 +19,7 @@ const translations: Record<Language, DefaultTranslations> = {
     "theme.light": "☀️ Light Mode",
     "theme.dark": "🌙 Dark Mode",
     "action.apply": "+ Compare Lenders",
+    "action.checkEligibility": "🏦 Check Eligibility",
     "home.welcome": "Welcome",
     "home.noBank": "No Bank",
     "home.completeProfile": "Complete your financial profile",
@@ -31,6 +33,7 @@ const translations: Record<Language, DefaultTranslations> = {
   ny: {
     "nav.dashboard": "Zoyang'anira",
     "nav.profile": "Mbiri Yachuma",
+    "nav.institutions": "Yang'anani Mwayi",
     "nav.compare": "Yerekezerani Mabanki",
     "nav.loans": "Ngongole Zomwe Zilipo",
     "nav.calculator": "Makina Owerengera",
@@ -38,6 +41,7 @@ const translations: Record<Language, DefaultTranslations> = {
     "theme.light": "☀️ Kuwala",
     "theme.dark": "🌙 Mdima",
     "action.apply": "+ Yerekezerani Mabanki",
+    "action.checkEligibility": "🏦 Yang'anani Mwayi",
     "home.welcome": "Takulandirani",
     "home.noBank": "Palibe Banki",
     "home.completeProfile": "Lembani mbiri yanu yachuma",

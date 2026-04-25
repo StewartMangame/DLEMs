@@ -7,11 +7,12 @@ interface Profile {
   employer: string;
   employmentCategory: string;
   monthlySalary: number;
-  employmentYears: number;
+  employmentYears: number;   // stored as months despite the field name (backend column name)
   age: number;
   housingStatus: string;
   existingLoanAmount: number;
   bankingYears: number;
+  dependants: number;
 }
 
 interface Institution {
@@ -24,6 +25,7 @@ export default function ProfilePage() {
   const [form, setForm] = useState<Profile>({
     bank: "", employer: "", employmentCategory: "", monthlySalary: 0,
     employmentYears: 0, age: 0, housingStatus: "", existingLoanAmount: 0, bankingYears: 0,
+    dependants: 0,
   });
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [saving, setSaving] = useState(false);
@@ -116,9 +118,16 @@ export default function ProfilePage() {
               <div className="form-help">Enter your monthly take-home pay in Malawian Kwacha (after all standard tax deductions).</div>
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="employmentYears">Years of Employment</label>
-              <input id="employmentYears" name="employmentYears" type="number" min={0} step={0.5} required className="form-input"
-                placeholder="e.g. 3.5" value={form.employmentYears || ""} onChange={handleChange} />
+              <label className="form-label" htmlFor="employmentYears">
+                Length of Service / Time in Business
+                <span style={{ fontWeight: 400, color: "var(--color-text-muted)", marginLeft: 6 }}>(months)</span>
+              </label>
+              <input id="employmentYears" name="employmentYears" type="number" min={0} step={1} required className="form-input"
+                placeholder="e.g. 36" value={form.employmentYears || ""} onChange={handleChange} />
+              <div className="form-help">
+                Enter the total number of months you have been employed or in business.
+                Used by SACCO and other lenders to verify minimum service requirements.
+              </div>
             </div>
           </div>
         </div>
@@ -157,6 +166,12 @@ export default function ProfilePage() {
               <input id="existingLoanAmount" name="existingLoanAmount" type="number" min={0} className="form-input"
                 placeholder="0 if none" value={form.existingLoanAmount || ""} onChange={handleChange} />
               <div className="form-help">Total monthly repayments on all current loans. Affects your DTI ratio.</div>
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="dependants">Number of Dependants</label>
+              <input id="dependants" name="dependants" type="number" min={0} max={20} className="form-input"
+                placeholder="e.g. 3" value={form.dependants || ""} onChange={handleChange} />
+              <div className="form-help">Total number of people financially dependent on you (children, spouse, parents, etc.).</div>
             </div>
             <div className="form-group">
               <label className="form-label" htmlFor="bankingYears">Years with Current Bank</label>
