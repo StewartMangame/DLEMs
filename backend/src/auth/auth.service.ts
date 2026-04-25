@@ -43,6 +43,7 @@ export class AuthService {
     user.nationalId = registerDto.nationalId;
     user.employeeNumber = registerDto.employeeNumber;
     user.phone = registerDto.phone;
+    user.bank = registerDto.bank || null;
     user.role = 'customer';
     await this.userRepository.save(user);
 
