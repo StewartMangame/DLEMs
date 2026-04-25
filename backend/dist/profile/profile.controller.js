@@ -44,6 +44,9 @@ let ProfileController = class ProfileController {
             employerName: body.employer,
             monthlyNetSalary: body.monthlySalary,
         };
+        if (body.employmentCategory) {
+            mappedBody.employmentCategory = body.employmentCategory;
+        }
         if (body.bank) {
             const inst = await this.instService.findByName(body.bank);
             if (inst) {

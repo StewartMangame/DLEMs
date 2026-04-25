@@ -14,17 +14,38 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EligibilityController = void 0;
 const common_1 = require("@nestjs/common");
+const passport_1 = require("@nestjs/passport");
 const eligibility_service_1 = require("./eligibility.service");
 let EligibilityController = class EligibilityController {
     eligibilityService;
     constructor(eligibilityService) {
         this.eligibilityService = eligibilityService;
     }
+    async getInstitutions() {
+        return this.eligibilityService.getInstitutionsPublic();
+    }
+    async compareInstitutions(body) {
+        return this.eligibilityService.compareInstitutions(body);
+    }
     async checkEligibility(body) {
         return this.eligibilityService.checkEligibility(body);
     }
 };
 exports.EligibilityController = EligibilityController;
+__decorate([
+    (0, common_1.Get)('institutions'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], EligibilityController.prototype, "getInstitutions", null);
+__decorate([
+    (0, common_1.Post)('compare'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], EligibilityController.prototype, "compareInstitutions", null);
 __decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),

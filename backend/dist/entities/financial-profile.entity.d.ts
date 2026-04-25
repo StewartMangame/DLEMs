@@ -5,6 +5,7 @@ export declare class FinancialProfile {
     userId: number;
     user: User;
     employerName: string;
+    employmentCategory: string;
     employmentType: string;
     monthlyNetSalary: number;
     salaryInstitutionId: number;

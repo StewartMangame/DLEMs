@@ -14,6 +14,17 @@ export declare class LoansService {
         applications: LoanApplication[];
     }>;
     createManualLoan(userId: number, data: any): Promise<Loan>;
+    getRepaymentSchedule(userId: number, loanId: number): Promise<{
+        loan: Loan;
+        schedule: {
+            month: number;
+            installment: number;
+            principal: number;
+            interest: number;
+            balance: number;
+            isPaid: boolean;
+        }[];
+    }>;
     applyLoan(userId: number, data: any): Promise<LoanApplication>;
     repayLoan(userId: number, loanId: number): Promise<Loan>;
     private scheduleReminders;

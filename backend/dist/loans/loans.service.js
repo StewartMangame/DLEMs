@@ -20,6 +20,7 @@ const loan_entity_1 = require("../entities/loan.entity");
 const loan_application_entity_1 = require("../entities/loan-application.entity");
 const financial_profile_entity_1 = require("../entities/financial-profile.entity");
 const reminder_entity_1 = require("../entities/reminder.entity");
+const eligibilityEngine_1 = require("../lib/eligibilityEngine");
 let LoansService = class LoansService {
     loanRepo;
     appRepo;
@@ -48,23 +49,72 @@ let LoansService = class LoansService {
         const profile = await this.profileRepo.findOne({ where: { userId } });
         if (!profile)
             throw new common_1.BadRequestException('Complete financial profile first');
+        const loanAmount = parseFloat(data.loanAmount);
+        const interestRate = parseFloat(data.interestRate) || 0;
+        const loanTermMonths = parseInt(data.loanTermMonths, 10);
+        const startDate = new Date(data.startDate);
+        const loanPurpose = data.loanPurpose || data.purpose || null;
+        const providerName = data.providerName || null;
+        const institutionId = data.institutionId ? parseInt(data.institutionId, 10) : null;
+        const monthlyDeduction = data.monthlyDeduction
+            ? parseFloat(data.monthlyDeduction)
+            : (0, eligibilityEngine_1.calculateMonthlyInstallment)(loanAmount, interestRate, loanTermMonths);
+        const now = new Date();
+        const monthsDiff = (now.getFullYear() - startDate.getFullYear()) * 12 + (now.getMonth() - startDate.getMonth());
+        const paidMonths = Math.max(0, Math.min(monthsDiff, loanTermMonths));
+        let remainingBalance = loanAmount;
+        if (interestRate > 0 && paidMonths > 0) {
+            const r = interestRate / 100 / 12;
+            const factor_n = Math.pow(1 + r, loanTermMonths);
+            const factor_k = Math.pow(1 + r, paidMonths);
+            remainingBalance = loanAmount * (factor_n - factor_k) / (factor_n - 1);
+        }
+        else if (paidMonths > 0) {
+            remainingBalance = loanAmount - (monthlyDeduction * paidMonths);
+        }
+        remainingBalance = Math.max(0, remainingBalance);
         const loan = this.loanRepo.create({
             userId,
-            providerInstitutionId: parseInt(data.institutionId, 10),
-            loanAmount: parseFloat(data.loanAmount),
-            monthlyDeduction: parseFloat(data.monthlyDeduction),
-            loanTermMonths: parseInt(data.loanTermMonths, 10),
-            startDate: new Date(data.startDate),
-            remainingBalance: parseFloat(data.loanAmount),
-            isActive: true,
-            paidMonths: 0,
+            providerInstitutionId: institutionId,
+            providerName,
+            loanAmount,
+            interestRate,
+            monthlyDeduction: Math.round(monthlyDeduction),
+            loanTermMonths,
+            startDate,
+            remainingBalance: Math.round(remainingBalance),
+            isActive: paidMonths < loanTermMonths,
+            paidMonths,
+            loanPurpose,
         });
-        profile.totalBorrowedAmount += loan.loanAmount;
-        profile.existingLoanAmount += loan.monthlyDeduction;
+        profile.totalBorrowedAmount += loanAmount;
+        profile.existingLoanAmount += Math.round(monthlyDeduction);
         await this.profileRepo.save(profile);
         const saved = await this.loanRepo.save(loan);
         await this.scheduleReminders(saved);
         return saved;
+    }
+    async getRepaymentSchedule(userId, loanId) {
+        const loan = await this.loanRepo.findOne({ where: { id: loanId, userId } });
+        if (!loan)
+            throw new common_1.NotFoundException('Loan not found');
+        const schedule = [];
+        let balance = loan.loanAmount;
+        const monthlyRate = (loan.interestRate || 0) / 100 / 12;
+        for (let i = 1; i <= loan.loanTermMonths; i++) {
+            const interest = balance * monthlyRate;
+            const principal = loan.monthlyDeduction - interest;
+            balance = Math.max(0, balance - principal);
+            schedule.push({
+                month: i,
+                installment: Math.round(loan.monthlyDeduction),
+                principal: Math.round(principal),
+                interest: Math.round(interest),
+                balance: Math.round(balance),
+                isPaid: i <= loan.paidMonths,
+            });
+        }
+        return { loan, schedule };
     }
     async applyLoan(userId, data) {
         const profile = await this.profileRepo.findOne({ where: { userId } });
@@ -73,7 +123,7 @@ let LoansService = class LoansService {
         const amount = parseFloat(data.amount);
         const duration = parseInt(data.durationMonths, 10);
         const rate = 18;
-        const monthlyInstallment = (amount * (1 + (rate / 100) * (duration / 12))) / duration;
+        const monthlyInstallment = (0, eligibilityEngine_1.calculateMonthlyInstallment)(amount, rate, duration);
         const totalNewDebt = profile.existingLoanAmount + monthlyInstallment;
         const dtiRatio = (totalNewDebt / profile.monthlyNetSalary) * 100;
         let riskScore = 100 - (dtiRatio * 0.8);
@@ -107,7 +157,10 @@ let LoansService = class LoansService {
             throw new common_1.NotFoundException('Active loan not found');
         if (loan.remainingBalance > 0) {
             loan.paidMonths += 1;
-            loan.remainingBalance = Math.max(0, loan.remainingBalance - loan.monthlyDeduction);
+            const monthlyRate = (loan.interestRate || 0) / 100 / 12;
+            const interestPortion = loan.remainingBalance * monthlyRate;
+            const principalPortion = loan.monthlyDeduction - interestPortion;
+            loan.remainingBalance = Math.max(0, loan.remainingBalance - principalPortion);
             if (loan.remainingBalance <= 0 || loan.paidMonths >= loan.loanTermMonths) {
                 loan.isActive = false;
                 loan.remainingBalance = 0;

@@ -1,76 +1,153 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { FinancialProfile } from '../entities/financial-profile.entity';
+import { Repository, In } from 'typeorm';
 import { Institution } from '../entities/institution.entity';
-
-import { calculateMonthlyInstallment } from '../lib/eligibilityEngine';
+import {
+  checkInstitution,
+  rankInstitutions,
+  CheckInstitutionParams,
+  EmploymentCategory,
+  calculateMonthlyInstallment,
+  calculateDtiRatio,
+  CompareResult,
+  InstitutionEligibilityResult,
+} from '../lib/eligibilityEngine';
 
 @Injectable()
 export class EligibilityService {
   constructor(
-    @InjectRepository(FinancialProfile) private profileRepo: Repository<FinancialProfile>,
     @InjectRepository(Institution) private instRepo: Repository<Institution>,
   ) {}
 
-  async checkEligibility(params: any) {
-    const { monthlySalary, loanAmount, durationMonths, institutionId, existingLoanAmount } = params;
-    
-    // Monthly installment calculation using shared logic (fixed interest assumed at 15% for eligibility simulation)
-    const annualRate = 15;
-    const monthlyInstallment = calculateMonthlyInstallment(loanAmount, annualRate, durationMonths);
-    const totalRepayable = monthlyInstallment * durationMonths;
-    
-    // DTI Ratio
-    const totalDeductions = (existingLoanAmount || 0) + monthlyInstallment;
-    const dtiRatio = (totalDeductions / monthlySalary) * 100;
+  // ─── POST /eligibility/compare ─────────────────────────────────────────────
+  async compareInstitutions(params: {
+    monthlyNetSalary: number;
+    existingMonthlyRepayments: number;
+    employmentCategory: EmploymentCategory;
+    requestedAmount: number;
+    requestedTermMonths: number;
+    institutionIds?: number[]; // optional: filter to selected institutions
+  }): Promise<CompareResult> {
+    const {
+      monthlyNetSalary,
+      existingMonthlyRepayments,
+      employmentCategory,
+      requestedAmount,
+      requestedTermMonths,
+      institutionIds,
+    } = params;
 
-    const institutions = await this.instRepo.find({ relations: ['criteria'] });
-    const bankSimulations = institutions.map(inst => {
-      const criteria = inst.criteria;
-      if (!criteria) return { institutionId: inst.id, bank: inst.name, eligible: false, maxAmount: 0, riskLevel: 'HIGH', rate: 10 };
-      
-      const maxAllowedDtiDeduction = (criteria.maxDtiRatio) * monthlySalary;
-      const availableCapacity = maxAllowedDtiDeduction - (existingLoanAmount || 0);
-      const maxAmountByDti = availableCapacity * durationMonths;
-      const maxAmountByMultiplier = monthlySalary * criteria.maxLoanMultiplier;
-      const maxAmount = Math.max(0, Math.min(maxAmountByDti, maxAmountByMultiplier));
-      
-      const eligible = 
-        monthlySalary >= criteria.minNetSalary && 
-        dtiRatio <= (criteria.maxDtiRatio * 100) && 
-        loanAmount <= maxAmountByMultiplier;
-        
-      return {
-        institutionId: inst.id,
-        bank: inst.name,
-        eligible,
-        maxAmount,
-        riskLevel: eligible ? 'LOW' : 'HIGH',
-        rate: 15
-      };
+    // Load institutions with their criteria
+    const whereClause: any = { isActive: true };
+    if (institutionIds && institutionIds.length > 0) {
+      whereClause.id = In(institutionIds);
+    }
+    const institutions = await this.instRepo.find({
+      where: whereClause,
+      relations: ['criteria'],
     });
 
-    const targetBank = bankSimulations.find(b => b.institutionId === institutionId);
+    // Build params for each institution and run the engine
+    const checkParams: CheckInstitutionParams[] = institutions
+      .filter(inst => inst.criteria) // skip institutions with no criteria set
+      .map(inst => ({
+        institutionId: inst.id,
+        institutionName: inst.name,
+        institutionType: inst.type,
+        criteria: {
+          interestRate: inst.criteria.interestRate,
+          maxDtiRatio: inst.criteria.maxDtiRatio,
+          minNetSalary: inst.criteria.minNetSalary,
+          minRepaymentMonths: inst.criteria.minRepaymentMonths,
+          maxRepaymentMonths: inst.criteria.maxRepaymentMonths,
+          processingFeePercent: inst.criteria.processingFeePercent,
+          civilServantMultiplier: inst.criteria.civilServantMultiplier,
+          privateMultiplier: inst.criteria.privateMultiplier,
+          selfEmployedMultiplier: inst.criteria.selfEmployedMultiplier,
+          saccoMemberMultiplier: inst.criteria.saccoMemberMultiplier,
+          eligibleEmploymentTypes: inst.criteria.eligibleEmploymentTypes ?? [],
+          requiresGuarantor: inst.criteria.requiresGuarantor,
+          requiresPayslip: inst.criteria.requiresPayslip,
+          notes: inst.criteria.notes ?? '',
+        },
+        monthlyNetSalary,
+        existingMonthlyRepayments,
+        employmentCategory,
+        requestedAmount,
+        requestedTermMonths,
+      }));
+
+    return rankInstitutions(checkParams);
+  }
+
+  // ─── POST /eligibility (legacy — single institution check) ────────────────
+  async checkEligibility(params: any): Promise<{
+    result: InstitutionEligibilityResult | null;
+    bankSimulations: InstitutionEligibilityResult[];
+  }> {
+    const {
+      monthlySalary,
+      monthlyNetSalary,
+      existingLoanAmount,
+      loanAmount,
+      durationMonths,
+      institutionId,
+      employmentCategory,
+    } = params;
+
+    const salary = monthlyNetSalary || monthlySalary || 0;
+    const existing = existingLoanAmount || 0;
+    const category: EmploymentCategory = employmentCategory || 'private_sector';
+    const amount = parseFloat(loanAmount) || 0;
+    const term = parseInt(durationMonths) || 24;
+
+    const compareResult = await this.compareInstitutions({
+      monthlyNetSalary: salary,
+      existingMonthlyRepayments: existing,
+      employmentCategory: category,
+      requestedAmount: amount,
+      requestedTermMonths: term,
+      institutionIds: undefined, // all institutions
+    });
+
+    const allResults = [...compareResult.ranked, ...compareResult.ineligible];
+    const targetResult = allResults.find(r => r.institutionId === institutionId) ?? null;
 
     return {
-      result: {
-        eligible: targetBank ? targetBank.eligible : false,
-        monthlyInstallment,
-        totalRepayable,
-        dtiRatio,
-        maxLoanAmount: targetBank ? targetBank.maxAmount : 0,
-        riskScore: 85,
-        riskCategory: 'GOOD',
-        breakdown: {
-          employment: 35,
-          employmentYears: 20,
-          age: 15,
-          housing: 10,
-          banking: 5
-        }
-      },
-      bankSimulations
+      result: targetResult,
+      bankSimulations: allResults,
     };
+  }
+
+  // ─── GET /eligibility/institutions — public institution browser ───────────
+  async getInstitutionsPublic() {
+    const institutions = await this.instRepo.find({
+      where: { isActive: true },
+      relations: ['criteria'],
+    });
+
+    return institutions.map(inst => ({
+      id: inst.id,
+      name: inst.name,
+      type: inst.type,
+      criteria: inst.criteria
+        ? {
+            interestRate: inst.criteria.interestRate,
+            minNetSalary: inst.criteria.minNetSalary,
+            maxDtiRatio: inst.criteria.maxDtiRatio,
+            minRepaymentMonths: inst.criteria.minRepaymentMonths,
+            maxRepaymentMonths: inst.criteria.maxRepaymentMonths,
+            processingFeePercent: inst.criteria.processingFeePercent,
+            requiresGuarantor: inst.criteria.requiresGuarantor,
+            requiresPayslip: inst.criteria.requiresPayslip,
+            eligibleEmploymentTypes: inst.criteria.eligibleEmploymentTypes,
+            civilServantMultiplier: inst.criteria.civilServantMultiplier,
+            privateMultiplier: inst.criteria.privateMultiplier,
+            selfEmployedMultiplier: inst.criteria.selfEmployedMultiplier,
+            saccoMemberMultiplier: inst.criteria.saccoMemberMultiplier,
+            notes: inst.criteria.notes,
+          }
+        : null,
+    }));
   }
 }

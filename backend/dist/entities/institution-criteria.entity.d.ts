@@ -5,6 +5,17 @@ export declare class InstitutionCriteria {
     institution: Institution;
     maxDtiRatio: number;
     minNetSalary: number;
-    maxLoanMultiplier: number;
+    interestRate: number;
+    processingFeePercent: number;
+    minRepaymentMonths: number;
+    maxRepaymentMonths: number;
+    civilServantMultiplier: number;
+    privateMultiplier: number;
+    selfEmployedMultiplier: number;
+    saccoMemberMultiplier: number;
+    eligibleEmploymentTypes: string[];
+    requiresGuarantor: boolean;
+    requiresPayslip: boolean;
+    notes: string;
     updatedAt: Date;
 }

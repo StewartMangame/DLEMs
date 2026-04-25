@@ -2,30 +2,37 @@ import { EligibilityService } from './eligibility.service';
 export declare class EligibilityController {
     private readonly eligibilityService;
     constructor(eligibilityService: EligibilityService);
-    checkEligibility(body: any): Promise<{
-        result: {
-            eligible: boolean;
-            monthlyInstallment: number;
-            totalRepayable: number;
-            dtiRatio: number;
-            maxLoanAmount: number;
-            riskScore: number;
-            riskCategory: string;
-            breakdown: {
-                employment: number;
-                employmentYears: number;
-                age: number;
-                housing: number;
-                banking: number;
-            };
+    getInstitutions(): Promise<{
+        id: number;
+        name: string;
+        type: string;
+        criteria: {
+            interestRate: number;
+            minNetSalary: number;
+            maxDtiRatio: number;
+            minRepaymentMonths: number;
+            maxRepaymentMonths: number;
+            processingFeePercent: number;
+            requiresGuarantor: boolean;
+            requiresPayslip: boolean;
+            eligibleEmploymentTypes: string[];
+            civilServantMultiplier: number;
+            privateMultiplier: number;
+            selfEmployedMultiplier: number;
+            saccoMemberMultiplier: number;
+            notes: string;
         };
-        bankSimulations: {
-            institutionId: number;
-            bank: string;
-            eligible: boolean;
-            maxAmount: number;
-            riskLevel: string;
-            rate: number;
-        }[];
+    }[]>;
+    compareInstitutions(body: {
+        monthlyNetSalary: number;
+        existingMonthlyRepayments: number;
+        employmentCategory: string;
+        requestedAmount: number;
+        requestedTermMonths: number;
+        institutionIds?: number[];
+    }): Promise<import("../lib/eligibilityEngine").CompareResult>;
+    checkEligibility(body: any): Promise<{
+        result: import("../lib/eligibilityEngine").InstitutionEligibilityResult | null;
+        bankSimulations: import("../lib/eligibilityEngine").InstitutionEligibilityResult[];
     }>;
 }

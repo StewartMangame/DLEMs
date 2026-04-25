@@ -42,7 +42,7 @@ let AppModule = class AppModule {
         this.authService = authService;
     }
     async onModuleInit() {
-        await this.instService.seedDefautInstitutions();
+        await this.instService.seedDefaultInstitutions();
         await this.authService.seedAdmin();
     }
 };

@@ -1,10 +1,13 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import styles from "../auth.module.css";
 
-const BANKS = ["Mwai Bank", "Kokko Bank", "KFS Bank"];
+interface Institution {
+  id: number;
+  name: string;
+}
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -12,8 +15,18 @@ export default function RegisterPage() {
     fullName: "", nationalId: "", employeeNumber: "", phone: "", email: "",
     bank: "", password: "", confirmPassword: "",
   });
+  const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/eligibility/institutions")
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setInstitutions(data);
+      })
+      .catch(err => console.error("Could not load banks:", err));
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -80,7 +93,7 @@ export default function RegisterPage() {
             </div>
             <div className="grid-2">
               <div className="form-group">
-                <label className="form-label" htmlFor="employeeNumber">Employee Number (Civil Servant)</label>
+                <label className="form-label" htmlFor="employeeNumber">Employee / Member ID Number</label>
                 <input id="employeeNumber" name="employeeNumber" required className="form-input"
                   placeholder="CS-2024-XXXX" value={form.employeeNumber} onChange={handleChange} />
               </div>
@@ -99,7 +112,7 @@ export default function RegisterPage() {
               <label className="form-label" htmlFor="bank">Your Bank</label>
               <select id="bank" name="bank" required className="form-select" value={form.bank} onChange={handleChange}>
                 <option value="">— Select your bank —</option>
-                {BANKS.map(b => <option key={b} value={b}>{b}</option>)}
+                {institutions.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
               </select>
             </div>
             <div className="grid-2">

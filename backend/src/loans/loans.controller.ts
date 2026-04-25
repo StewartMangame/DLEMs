@@ -18,6 +18,11 @@ export class LoansController {
     return { success: true, loan };
   }
 
+  @Get('schedule/:id')
+  async getSchedule(@Req() req: any, @Param('id') id: string) {
+    return this.loansService.getRepaymentSchedule(req.user.userId, parseInt(id, 10));
+  }
+
   @Post('apply')
   async applyLoan(@Req() req: any, @Body() body: any) {
     const application = await this.loansService.applyLoan(req.user.userId, body);

@@ -12,16 +12,22 @@ export default function AddLoanPage() {
 
   const [formData, setFormData] = useState({
     institutionId: "",
+    customProviderName: "",
     loanAmount: "",
-    monthlyDeduction: "",
+    interestRate: "",
     loanTermMonths: "",
     startDate: new Date().toISOString().split("T")[0],
+    loanPurpose: "",
   });
 
   useEffect(() => {
-    fetch("/api/institutions")
+    // Fetch institutions from the new public endpoint
+    fetch("/api/eligibility/institutions")
       .then((r) => r.json())
-      .then((data) => setInstitutions(data.institutions))
+      .then((data) => {
+        if (Array.isArray(data)) setInstitutions(data);
+        else if (data.institutions) setInstitutions(data.institutions);
+      })
       .catch((err) => console.error("Error fetching institutions:", err));
   }, []);
 
@@ -31,17 +37,24 @@ export default function AddLoanPage() {
     setError("");
 
     try {
+      const payload: any = {
+        loanAmount: parseFloat(formData.loanAmount),
+        interestRate: parseFloat(formData.interestRate || "0"),
+        loanTermMonths: parseInt(formData.loanTermMonths),
+        startDate: new Date(formData.startDate).toISOString(),
+        loanPurpose: formData.loanPurpose,
+      };
+
+      if (formData.institutionId === "other" || !formData.institutionId) {
+        payload.providerName = formData.customProviderName || "Unknown Lender";
+      } else {
+        payload.institutionId = parseInt(formData.institutionId);
+      }
+
       const res = await fetch("/api/loans/manual", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          institutionId: parseInt(formData.institutionId),
-          loanAmount: parseFloat(formData.loanAmount),
-          monthlyDeduction: parseFloat(formData.monthlyDeduction),
-          loanTermMonths: parseInt(formData.loanTermMonths),
-          startDate: new Date(formData.startDate).toISOString(),
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -72,43 +85,78 @@ export default function AddLoanPage() {
         <form onSubmit={handleSubmit} className={styles.form}>
           {error && <div className="alert alert-danger">{error}</div>}
 
+          <div className="grid-2">
+            <div className="form-group">
+              <label className="form-label">Lending Institution</label>
+              <select
+                required
+                className="form-select"
+                value={formData.institutionId}
+                onChange={(e) => setFormData({ ...formData, institutionId: e.target.value })}
+              >
+                <option value="">Select institution...</option>
+                {institutions.map((inst) => (
+                  <option key={inst.id} value={inst.id}>{inst.name}</option>
+                ))}
+                <option value="other">Other / Not Listed</option>
+              </select>
+            </div>
+            
+            {formData.institutionId === "other" && (
+              <div className="form-group animate-fadeInUp">
+                <label className="form-label">Lender Name</label>
+                <input
+                  type="text"
+                  required
+                  className="form-input"
+                  placeholder="e.g. Village SACCO"
+                  value={formData.customProviderName}
+                  onChange={(e) => setFormData({ ...formData, customProviderName: e.target.value })}
+                />
+              </div>
+            )}
+            
+            {formData.institutionId !== "other" && <div className="form-group" />}
+          </div>
+
           <div className="form-group">
-            <label className="form-label">Lending Institution</label>
-            <select
+            <label className="form-label">Loan Purpose</label>
+            <input
+              type="text"
               required
-              className="form-control"
-              value={formData.institutionId}
-              onChange={(e) => setFormData({ ...formData, institutionId: e.target.value })}
-            >
-              <option value="">Select institution...</option>
-              {institutions.map((inst) => (
-                <option key={inst.id} value={inst.id}>{inst.name}</option>
-              ))}
-            </select>
+              className="form-input"
+              placeholder="e.g. Home Renovation, School Fees"
+              value={formData.loanPurpose}
+              onChange={(e) => setFormData({ ...formData, loanPurpose: e.target.value })}
+            />
+            <div className="form-help">A short description to identify this loan.</div>
           </div>
 
           <div className="grid-2">
             <div className="form-group">
-              <label className="form-label">Total Loan Amount (MK)</label>
+              <label className="form-label">Principal Loan Amount (MK)</label>
               <input
                 type="number"
                 required
-                className="form-control"
+                className="form-input"
                 placeholder="e.g. 1500000"
                 value={formData.loanAmount}
                 onChange={(e) => setFormData({ ...formData, loanAmount: e.target.value })}
               />
+              <div className="form-help">The original amount borrowed, without interest.</div>
             </div>
             <div className="form-group">
-              <label className="form-label">Monthly Deduction (MK)</label>
+              <label className="form-label">Annual Interest Rate (%)</label>
               <input
                 type="number"
+                step="0.01"
                 required
-                className="form-control"
-                placeholder="e.g. 45000"
-                value={formData.monthlyDeduction}
-                onChange={(e) => setFormData({ ...formData, monthlyDeduction: e.target.value })}
+                className="form-input"
+                placeholder="e.g. 24.5"
+                value={formData.interestRate}
+                onChange={(e) => setFormData({ ...formData, interestRate: e.target.value })}
               />
+              <div className="form-help">Used to calculate your actual amortization.</div>
             </div>
           </div>
 
@@ -118,21 +166,23 @@ export default function AddLoanPage() {
               <input
                 type="number"
                 required
-                className="form-control"
+                className="form-input"
                 placeholder="e.g. 36"
                 value={formData.loanTermMonths}
                 onChange={(e) => setFormData({ ...formData, loanTermMonths: e.target.value })}
               />
+              <div className="form-help">The duration you agreed to pay the loan back in.</div>
             </div>
             <div className="form-group">
               <label className="form-label">Loan Start Date</label>
               <input
                 type="date"
                 required
-                className="form-control"
+                className="form-input"
                 value={formData.startDate}
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
               />
+              <div className="form-help">Helps us calculate what you've paid off so far.</div>
             </div>
           </div>
 

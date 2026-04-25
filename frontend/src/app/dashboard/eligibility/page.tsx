@@ -2,82 +2,63 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import styles from "./page.module.css";
-import type { EligibilityResult } from "@/lib/eligibilityEngine";
-
-interface ProfileData {
-  employmentType: string;
-  monthlyNetSalary: number;
-  employmentYears: number;
-  age: number;
-  housingStatus: string;
-  existingLoanAmount: number;
-  bankingYears: number;
-  salaryInstitutionId: number;
-}
-
-interface BankSimulation {
-  institutionId: number;
-  bank: string;
-  eligible: boolean;
-  maxAmount: number;
-  riskLevel: string;
-  rate: number;
-}
+import type { CompareResult, InstitutionEligibilityResult } from "@/lib/eligibilityEngine";
 
 export default function EligibilityPage() {
-  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [institutions, setInstitutions] = useState<any[]>([]);
   const [loanAmount, setLoanAmount] = useState(500000);
   const [duration, setDuration] = useState(24);
-  const [selectedInstId, setSelectedInstId] = useState("");
-  const [result, setResult] = useState<EligibilityResult | null>(null);
-  const [bankSimulations, setBankSimulations] = useState<BankSimulation[]>([]);
+  const [result, setResult] = useState<CompareResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
     fetch("/api/profile").then(r => r.json()).then(d => {
-      if (d.profile) {
-        setProfile(d.profile);
-        if (d.profile.salaryInstitutionId) setSelectedInstId(d.profile.salaryInstitutionId.toString());
-      }
+      if (d.profile) setProfile(d.profile);
     });
-    fetch("/api/institutions").then(r => r.json()).then(d => { if (d.institutions) setInstitutions(d.institutions); });
+    fetch("/api/eligibility/institutions").then(r => r.json()).then(d => {
+      if (Array.isArray(d)) setInstitutions(d);
+      else if (d.institutions) setInstitutions(d.institutions);
+    });
   }, []);
 
   const runCheck = async () => {
-    if (!profile || !selectedInstId) return;
+    if (!profile) return;
     setLoading(true);
-    const res = await fetch("/api/eligibility", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...profile, monthlySalary: profile.monthlyNetSalary, loanAmount, durationMonths: duration, institutionId: parseInt(selectedInstId) }),
-    });
-    const data = await res.json();
-    setResult(data.result);
-    setBankSimulations(data.bankSimulations || []);
-    setChecked(true);
-    setLoading(false);
-  };
+    
+    // Map profile values to expected compare payload
+    const payload = {
+      monthlyNetSalary: profile.monthlyNetSalary || 0,
+      existingMonthlyRepayments: profile.existingLoanAmount || 0,
+      employmentCategory: profile.employmentCategory || 'private_sector',
+      requestedAmount: loanAmount,
+      requestedTermMonths: duration,
+    };
 
-  const scoreColor = (score: number) => {
-    if (score >= 100) return "var(--color-success)";
-    if (score >= 80) return "var(--color-info)";
-    if (score >= 60) return "var(--color-warning)";
-    return "var(--color-danger)";
+    try {
+      const res = await fetch("/api/eligibility/compare", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      setResult(data);
+      setChecked(true);
+    } catch (err) {
+      console.error("Comparison failed", err);
+    } finally {
+      setLoading(false);
+    }
   };
-
-  const selectedBankName = institutions.find(i => i.id.toString() === selectedInstId)?.name || "";
 
   return (
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className="text-h2">Loan Eligibility Checker</h1>
+          <h1 className="text-h2">Multi-Bank Loan Comparison</h1>
           <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-            {selectedInstId
-              ? `Automated risk assessment based on ${selectedBankName} criteria`
-              : "Select a bank to check your loan eligibility"}
+            Discover where you are eligible to borrow and compare actual terms across Malawian lenders.
           </p>
         </div>
       </div>
@@ -85,209 +66,144 @@ export default function EligibilityPage() {
       {!profile && (
         <div className="alert alert-warning">
           ⚠ You need to complete your{" "}
-          <Link href="/dashboard/profile">financial profile</Link> before running an eligibility check.
+          <Link href="/dashboard/profile">financial profile</Link> before generating a comparison.
         </div>
       )}
 
       {/* Loan Parameters */}
       <div className={`card ${styles.paramsCard}`}>
-        <h2 className="text-h3" style={{ marginBottom: "var(--space-lg)" }}>Loan Parameters</h2>
+        <h2 className="text-h3" style={{ marginBottom: "var(--space-lg)" }}>What do you need?</h2>
         <div className="grid-2">
           <div className="form-group">
-            <label className="form-label" htmlFor="bank">Select Lending Bank</label>
-            <select id="bank" className="form-select" value={selectedInstId} onChange={e => setSelectedInstId(e.target.value)}>
-              <option value="">— Choose a bank —</option>
-              {institutions.map(b => (
-                <option key={b.id} value={b.id}>{b.name}</option>
-              ))}
-            </select>
-            <div className="form-help">Eligibility rules vary by bank</div>
-          </div>
-          <div className="form-group" />
-
-          <div className="form-group">
-            <label className="form-label" htmlFor="loanAmount">Requested Loan Amount (MK)</label>
+            <label className="form-label" htmlFor="loanAmount">Requested Amount (MK)</label>
             <input id="loanAmount" type="number" min={50000} step={50000} className="form-input"
               value={loanAmount} onChange={e => setLoanAmount(Number(e.target.value))} />
             <div className="form-help">MK {loanAmount.toLocaleString()}</div>
           </div>
           <div className="form-group">
-            <label className="form-label" htmlFor="duration">Repayment Period (months)</label>
+            <label className="form-label" htmlFor="duration">Repayment Period</label>
             <select id="duration" className="form-select" value={duration} onChange={e => setDuration(Number(e.target.value))}>
-              {[6, 12, 18, 24, 36, 48, 60].map(m => (
+              {[3, 6, 12, 18, 24, 36, 48, 60].map(m => (
                 <option key={m} value={m}>{m} months ({(m / 12).toFixed(1)} years)</option>
               ))}
             </select>
+            <div className="form-help">Choose your comfortable repayment timeframe</div>
           </div>
         </div>
         <button
           className="btn btn-primary btn-lg"
           onClick={runCheck}
-          disabled={!profile || !selectedInstId || loading}
-          style={{ marginTop: "var(--space-lg)" }}
+          disabled={!profile || loading}
+          style={{ marginTop: "var(--space-lg)", width: "100%" }}
         >
-          {loading ? <><span className="loading-spinner" /> Assessing…</> : "✦ Run Eligibility Check"}
+          {loading ? <><span className="loading-spinner" /> Scanning Lenders…</> : "✦ Compare Eligible Lenders"}
         </button>
       </div>
 
       {/* Results */}
       {checked && result && (
         <div className={`${styles.results} animate-fadeInUp`}>
-          {/* Verdict */}
-          <div className={`card ${styles.verdictCard} ${result.eligible ? styles.verdictPass : styles.verdictFail}`}>
-            <div className={styles.verdictIcon}>{result.eligible ? "✓" : "✗"}</div>
-            <div>
-              <h2 className="text-h2">
-                {selectedBankName} Verdict: {result.eligible ? "Eligible" : "Not Eligible"}
-              </h2>
-              <p style={{ color: "var(--color-text-secondary)" }}>
-                {result.eligible
-                  ? `You meet the lending criteria for ${selectedBankName}.`
-                  : `Your application does not meet the requirements for ${selectedBankName} at this time.`}
-              </p>
-            </div>
-            {result.eligible && (
-              <Link
-                href={`/dashboard/apply?institutionId=${selectedInstId}&amount=${loanAmount}&duration=${duration}`}
-                className="btn btn-primary btn-lg"
-                style={{ marginLeft: "auto" }}
-              >
-                Apply Now →
-              </Link>
-            )}
-          </div>
-
-          <div className={styles.bankGrid}>
-            <h3 className="text-h3" style={{ gridColumn: "1/-1" }}>Other Bank Comparisons</h3>
-            {bankSimulations.filter(s => s.institutionId.toString() !== selectedInstId).map((sim, i) => (
-              <div key={i} className={`card ${styles.bankCard} ${sim.eligible ? "" : styles.bankIneligible}`}>
-                <div className={styles.bankLogo}></div>
-                <h4 style={{ fontWeight: 700 }}>{sim.bank}</h4>
-                <div className="badge badge-neutral" style={{ marginTop: 8 }}>{sim.riskLevel} Risk</div>
-                <div className={styles.bankStatus}>
-                  {sim.eligible ? (
-                    <span style={{ color: "var(--color-success)" }}>● Eligible</span>
-                  ) : (
-                    <span style={{ color: "var(--color-danger)" }}>● Not Eligible</span>
-                  )}
-                </div>
-                {sim.eligible ? (
-                  <>
-                    <div className="text-xs" style={{ color: "var(--color-text-muted)", marginTop: 12 }}>Max Limit</div>
-                    <div className="text-sm" style={{ fontWeight: 600 }}>MK {sim.maxAmount.toLocaleString()}</div>
-                    <button
-                      onClick={() => { setSelectedInstId(sim.institutionId.toString()); setTimeout(runCheck, 100); }}
-                      className="btn btn-outline btn-sm"
-                      style={{ marginTop: 16, width: "100%" }}
-                    >
-                      Check this bank
-                    </button>
-                  </>
-                ) : (
-                  <div style={{ marginTop: 16, fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                    Criteria not met
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          <div className="grid-2">
-            {/* Risk Score */}
-            <div className={`card ${styles.scoreCard}`}>
-              <h3 className="text-h3">Risk Score</h3>
-              <div className={styles.scoreCircle}>
-                <svg viewBox="0 0 120 120" className={styles.scoreSvg}>
-                  <circle cx="60" cy="60" r="52" fill="none" stroke="var(--color-border)" strokeWidth="8" />
-                  <circle
-                    cx="60" cy="60" r="52" fill="none"
-                    stroke={scoreColor(result.riskScore)} strokeWidth="8"
-                    strokeDasharray={`${(result.riskScore / 120) * 326.7} 326.7`}
-                    strokeDashoffset="81.7" strokeLinecap="round"
-                    style={{ transition: "stroke-dasharray 1s ease" }}
-                  />
-                </svg>
-                <div className={styles.scoreLabel}>
-                  <div className={styles.scoreNum} style={{ color: scoreColor(result.riskScore) }}>
-                    {result.riskScore}
-                  </div>
-                  <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>/120</div>
-                </div>
-              </div>
-              <div style={{ textAlign: "center" }}>
-                <span className={`badge ${RISK_BADGE[result.riskCategory]}`}>
-                  {result.riskCategory}
-                </span>
-              </div>
-            </div>
-
-            {/* Financials */}
-            <div className={`card ${styles.financialsCard}`}>
-              <h3 className="text-h3">Loan Financials</h3>
-              <div className={styles.financialRows}>
-                <div className={styles.finRow}>
-                  <span>Monthly Installment</span>
-                  <strong style={{ color: "var(--color-primary)" }}>
-                    MK {result.monthlyInstallment.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                  </strong>
-                </div>
-                <div className={styles.finRow}>
-                  <span>Total Repayable</span>
-                  <strong>MK {result.totalRepayable.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong>
-                </div>
-                <div className={styles.finRow}>
-                  <span>DTI Ratio</span>
-                  <strong style={{ color: result.dtiRatio > 33 ? "var(--color-danger)" : "var(--color-success)" }}>
-                    {(result.dtiRatio).toFixed(1)}%
-                  </strong>
-                </div>
-
-                <div className={styles.finRow}>
-                  <span>Max You Can Borrow</span>
-                  <strong style={{ color: "var(--color-success)" }}>
-                    MK {result.maxLoanAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                  </strong>
-                </div>
-              </div>
+          <div className={styles.profileSummaryRow} style={{ marginBottom: "2rem" }}>
+            <div className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+              Based on your net salary of <strong>MK {result.profileSummary.salary.toLocaleString()}</strong> 
+               and existing deductions of <strong>MK {result.profileSummary.existingRepayments.toLocaleString()}</strong>.
             </div>
           </div>
 
-          {/* Score Breakdown */}
-          <div className={`card ${styles.breakdownCard}`}>
-            <h3 className="text-h3">Score Breakdown</h3>
-            <div className={styles.breakdownGrid}>
-              {SCORE_ROWS(result.breakdown).map(row => (
-                <div key={row.label} className={styles.breakdownRow}>
-                  <div className={styles.breakdownLabel}>
-                    <span>{row.label}</span>
-                    <span style={{ color: "var(--color-primary)" }}>
-                      {row.score ?? 0}<span style={{ color: "var(--color-text-muted)" }}>/{row.max}</span>
-                    </span>
+          <h3 className="text-h2" style={{ marginBottom: "1rem", color: "var(--color-success)" }}>
+            Top Eligible Matches
+          </h3>
+          
+          {result.ranked.length === 0 ? (
+            <div className="card" style={{ padding: "3rem", textAlign: "center", color: "var(--color-text-muted)" }}>
+              No lenders matched your requested amount and profile. Check the ineligible list below to see why.
+            </div>
+          ) : (
+            <div className={styles.bankGrid}>
+              {result.ranked.map(inst => (
+                <div key={inst.institutionId} className={`card ${styles.bankCard} ${inst.rank === 1 ? styles.topRanked : ""}`}>
+                  {inst.rank === 1 && <div className="badge badge-success" style={{ position: 'absolute', top: -10, right: 20 }}>Best Match</div>}
+                  <h3 style={{ fontWeight: 700, fontSize: "1.2rem", marginBottom: "4px" }}>
+                    {inst.rank}. {inst.institutionName}
+                  </h3>
+                  <div className="text-sm text-muted" style={{ marginBottom: "1rem" }}>{inst.institutionType}</div>
+                  
+                  <div className="grid-2" style={{ gap: "1rem", marginBottom: "1.5rem" }}>
+                    <div>
+                      <div className="text-xs text-muted">Interest Rate</div>
+                      <div style={{ fontWeight: 600 }}>{inst.interestRate}% p.a.</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted">Processing Fee</div>
+                      <div style={{ fontWeight: 600 }}>{inst.processingFeePercent}% (MK {inst.processingFee.toLocaleString()})</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted">Est. Monthly Payment</div>
+                      <div style={{ fontWeight: 800, color: "var(--color-primary)" }}>MK {inst.estimatedMonthlyInstallment.toLocaleString()}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted">Max Capacity</div>
+                      <div style={{ fontWeight: 600 }}>MK {inst.maxLoanAmount.toLocaleString()}</div>
+                    </div>
                   </div>
-                  <div className="progress-bar">
-                    <div
-                      className="progress-fill"
-                      style={{ width: `${((row.score ?? 0) / row.max) * 100}%`, background: row.color }}
-                    />
+
+                  <div className="text-sm" style={{ color: "var(--color-text-secondary)", marginBottom: "1.5rem", minHeight: "3rem" }}>
+                    {inst.notes}
+                  </div>
+
+                  <div style={{ padding: "0.8rem", background: "rgba(0, 200, 150, 0.1)", borderRadius: "var(--radius-md)", textAlign: "center", color: "var(--color-success)", fontSize: "0.9rem", fontWeight: 500 }}>
+                    <span style={{ display: "block", marginBottom: "4px" }}>✓ Pre-qualified</span>
+                    Visit any {inst.institutionName} branch to proceed.
                   </div>
                 </div>
               ))}
             </div>
+          )}
+
+          {result.ineligible.length > 0 && (
+            <>
+              <h3 className="text-h3" style={{ marginTop: "3rem", marginBottom: "1rem", color: "var(--color-text-muted)" }}>
+                Other Institutions (Not Eligible)
+              </h3>
+              <div className="grid-2" style={{ gap: "1rem" }}>
+                {result.ineligible.map(inst => (
+                  <div key={inst.institutionId} className="card" style={{ opacity: 0.7, borderLeft: "4px solid var(--color-danger)", padding: "1.5rem" }}>
+                    <h4 style={{ fontWeight: 600 }}>{inst.institutionName}</h4>
+                    <div className="text-sm" style={{ color: "var(--color-danger)", marginTop: "0.5rem" }}>
+                      ✗ {inst.ineligibilityReason}
+                    </div>
+                    {inst.maxLoanAmount > 0 && (
+                      <div className="text-xs" style={{ marginTop: "0.5rem", color: "var(--color-text-secondary)" }}>
+                        (Max capacity: MK {inst.maxLoanAmount.toLocaleString()})
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Pre-computation browse state */}
+      {!checked && !loading && institutions.length > 0 && (
+        <div style={{ marginTop: "3rem" }}>
+          <h3 className="text-h3" style={{ marginBottom: "1rem" }}>Available Lenders on DLEM</h3>
+          <div className="grid-3" style={{ gap: "1rem" }}>
+            {institutions.map(inst => (
+              <div key={inst.id} className="card" style={{ padding: "1.5rem" }}>
+                <h4 style={{ marginBottom: "0.5rem" }}>{inst.name}</h4>
+                <div className="badge badge-neutral text-xs">{inst.type}</div>
+                {inst.criteria && (
+                  <div className="text-xs" style={{ color: "var(--color-text-secondary)", marginTop: "1rem" }}>
+                    Offers {inst.criteria.interestRate}% interest rates up to {inst.criteria.maxRepaymentMonths} months.
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}
     </div>
   );
 }
-
-const RISK_BADGE: Record<string, string> = {
-  EXCELLENT: "badge-success", GOOD: "badge-info", FAIR: "badge-warning", POOR: "badge-danger",
-};
-
-const SCORE_ROWS = (b: EligibilityResult["breakdown"]) => [
-  { label: "Employment Type", score: b.employment, max: 40, color: "var(--color-primary)" },
-  { label: "Employment Duration", score: b.employmentYears, max: 30, color: "var(--color-info)" },
-  { label: "Age Band", score: b.age, max: 20, color: "var(--color-success)" },
-  { label: "Housing Stability", score: b.housing, max: 15, color: "var(--color-warning)" },
-  { label: "Banking History", score: b.banking, max: 15, color: "#a78bfa" },
-];

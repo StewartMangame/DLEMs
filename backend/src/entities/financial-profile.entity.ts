@@ -1,4 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToOne, JoinColumn, ManyToOne } from 'typeorm';
+import {
+  Entity, PrimaryGeneratedColumn, Column,
+  CreateDateColumn, UpdateDateColumn,
+  OneToOne, JoinColumn, ManyToOne,
+} from 'typeorm';
 import { User } from './user.entity';
 import { Institution } from './institution.entity';
 
@@ -17,7 +21,15 @@ export class FinancialProfile {
   @Column()
   employerName: string;
 
-  @Column()
+  /**
+   * Core employment category — drives eligibility rules and loan multipliers.
+   * Allowed: "civil_servant" | "private_sector" | "self_employed" | "sacco_member"
+   */
+  @Column({ default: 'private_sector' })
+  employmentCategory: string;
+
+  /** Legacy sub-type field (contract, permanent, etc.) */
+  @Column({ nullable: true })
   employmentType: string;
 
   @Column('float')
@@ -39,6 +51,7 @@ export class FinancialProfile {
   @Column({ nullable: true })
   housingStatus: string;
 
+  /** Total monthly repayment obligations on all existing loans */
   @Column('float', { default: 0 })
   existingLoanAmount: number;
 

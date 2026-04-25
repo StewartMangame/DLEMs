@@ -51,7 +51,6 @@ export default function LoansPage() {
         </div>
         <div style={{ display: "flex", gap: 12 }}>
           <Link href="/dashboard/loans/add" className="btn btn-outline btn-sm">Record Manual Loan</Link>
-          <Link href="/dashboard/apply" className="btn btn-primary btn-sm">+ New Application</Link>
         </div>
       </div>
 
@@ -102,7 +101,14 @@ export default function LoansPage() {
                       <div className="progress-fill success" style={{ width: `${progress}%` }} />
                     </div>
                   </div>
-                  <RepaymentButton loanId={loan.id} monthlyInstallment={loan.monthlyDeduction} />
+                  <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
+                    <div style={{ flexGrow: 1 }}>
+                      <RepaymentButton loanId={loan.id} monthlyInstallment={loan.monthlyDeduction} />
+                    </div>
+                    <Link href={`/dashboard/loans/${loan.id}`} className="btn btn-outline" style={{ flexGrow: 1, justifyContent: "center" }}>
+                      View Schedule
+                    </Link>
+                  </div>
                 </div>
               );
             })}
@@ -120,8 +126,7 @@ export default function LoansPage() {
               Start by checking your eligibility or directly applying for a loan.
             </p>
             <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-              <Link href="/dashboard/eligibility" className="btn btn-outline btn-sm">Check Eligibility</Link>
-              <Link href="/dashboard/apply" className="btn btn-primary btn-sm">Apply Now</Link>
+              <Link href="/dashboard/eligibility" className="btn btn-primary btn-sm">Compare Lenders</Link>
             </div>
           </div>
         ) : (

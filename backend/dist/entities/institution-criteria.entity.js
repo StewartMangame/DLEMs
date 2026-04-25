@@ -18,7 +18,18 @@ let InstitutionCriteria = class InstitutionCriteria {
     institution;
     maxDtiRatio;
     minNetSalary;
-    maxLoanMultiplier;
+    interestRate;
+    processingFeePercent;
+    minRepaymentMonths;
+    maxRepaymentMonths;
+    civilServantMultiplier;
+    privateMultiplier;
+    selfEmployedMultiplier;
+    saccoMemberMultiplier;
+    eligibleEmploymentTypes;
+    requiresGuarantor;
+    requiresPayslip;
+    notes;
     updatedAt;
 };
 exports.InstitutionCriteria = InstitutionCriteria;
@@ -44,9 +55,53 @@ __decorate([
     __metadata("design:type", Number)
 ], InstitutionCriteria.prototype, "minNetSalary", void 0);
 __decorate([
-    (0, typeorm_1.Column)('float'),
+    (0, typeorm_1.Column)('float', { default: 25 }),
     __metadata("design:type", Number)
-], InstitutionCriteria.prototype, "maxLoanMultiplier", void 0);
+], InstitutionCriteria.prototype, "interestRate", void 0);
+__decorate([
+    (0, typeorm_1.Column)('float', { default: 0 }),
+    __metadata("design:type", Number)
+], InstitutionCriteria.prototype, "processingFeePercent", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: 3 }),
+    __metadata("design:type", Number)
+], InstitutionCriteria.prototype, "minRepaymentMonths", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: 60 }),
+    __metadata("design:type", Number)
+], InstitutionCriteria.prototype, "maxRepaymentMonths", void 0);
+__decorate([
+    (0, typeorm_1.Column)('float', { default: 6 }),
+    __metadata("design:type", Number)
+], InstitutionCriteria.prototype, "civilServantMultiplier", void 0);
+__decorate([
+    (0, typeorm_1.Column)('float', { default: 4 }),
+    __metadata("design:type", Number)
+], InstitutionCriteria.prototype, "privateMultiplier", void 0);
+__decorate([
+    (0, typeorm_1.Column)('float', { default: 2 }),
+    __metadata("design:type", Number)
+], InstitutionCriteria.prototype, "selfEmployedMultiplier", void 0);
+__decorate([
+    (0, typeorm_1.Column)('float', { default: 8 }),
+    __metadata("design:type", Number)
+], InstitutionCriteria.prototype, "saccoMemberMultiplier", void 0);
+__decorate([
+    (0, typeorm_1.Column)('simple-json', { default: '["civil_servant","private_sector","self_employed","sacco_member"]' }),
+    __metadata("design:type", Array)
+], InstitutionCriteria.prototype, "eligibleEmploymentTypes", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], InstitutionCriteria.prototype, "requiresGuarantor", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: true }),
+    __metadata("design:type", Boolean)
+], InstitutionCriteria.prototype, "requiresPayslip", void 0);
+__decorate([
+    (0, typeorm_1.Column)('text', { nullable: true }),
+    __metadata("design:type", String)
+], InstitutionCriteria.prototype, "notes", void 0);
 __decorate([
     (0, typeorm_1.UpdateDateColumn)(),
     __metadata("design:type", Date)

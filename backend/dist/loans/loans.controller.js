@@ -28,6 +28,9 @@ let LoansController = class LoansController {
         const loan = await this.loansService.createManualLoan(req.user.userId, body);
         return { success: true, loan };
     }
+    async getSchedule(req, id) {
+        return this.loansService.getRepaymentSchedule(req.user.userId, parseInt(id, 10));
+    }
     async applyLoan(req, body) {
         const application = await this.loansService.applyLoan(req.user.userId, body);
         return { success: true, application };
@@ -53,6 +56,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], LoansController.prototype, "recordLoan", null);
+__decorate([
+    (0, common_1.Get)('schedule/:id'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], LoansController.prototype, "getSchedule", null);
 __decorate([
     (0, common_1.Post)('apply'),
     __param(0, (0, common_1.Req)()),

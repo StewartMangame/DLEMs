@@ -10,16 +10,14 @@ exports.EligibilityModule = void 0;
 const common_1 = require("@nestjs/common");
 const eligibility_controller_1 = require("./eligibility.controller");
 const eligibility_service_1 = require("./eligibility.service");
-const institutions_module_1 = require("../institutions/institutions.module");
 const typeorm_1 = require("@nestjs/typeorm");
-const financial_profile_entity_1 = require("../entities/financial-profile.entity");
 const institution_entity_1 = require("../entities/institution.entity");
 let EligibilityModule = class EligibilityModule {
 };
 exports.EligibilityModule = EligibilityModule;
 exports.EligibilityModule = EligibilityModule = __decorate([
     (0, common_1.Module)({
-        imports: [institutions_module_1.InstitutionsModule, typeorm_1.TypeOrmModule.forFeature([financial_profile_entity_1.FinancialProfile, institution_entity_1.Institution])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([institution_entity_1.Institution])],
         controllers: [eligibility_controller_1.EligibilityController],
         providers: [eligibility_service_1.EligibilityService],
     })

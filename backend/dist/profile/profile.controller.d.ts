@@ -15,6 +15,7 @@ export declare class ProfileController {
             userId: number;
             user: import("../entities/user.entity").User;
             employerName: string;
+            employmentCategory: string;
             employmentType: string;
             monthlyNetSalary: number;
             salaryInstitutionId: number;

@@ -16,73 +16,109 @@ exports.EligibilityService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
-const financial_profile_entity_1 = require("../entities/financial-profile.entity");
 const institution_entity_1 = require("../entities/institution.entity");
 const eligibilityEngine_1 = require("../lib/eligibilityEngine");
 let EligibilityService = class EligibilityService {
-    profileRepo;
     instRepo;
-    constructor(profileRepo, instRepo) {
-        this.profileRepo = profileRepo;
+    constructor(instRepo) {
         this.instRepo = instRepo;
     }
-    async checkEligibility(params) {
-        const { monthlySalary, loanAmount, durationMonths, institutionId, existingLoanAmount } = params;
-        const annualRate = 15;
-        const monthlyInstallment = (0, eligibilityEngine_1.calculateMonthlyInstallment)(loanAmount, annualRate, durationMonths);
-        const totalRepayable = monthlyInstallment * durationMonths;
-        const totalDeductions = (existingLoanAmount || 0) + monthlyInstallment;
-        const dtiRatio = (totalDeductions / monthlySalary) * 100;
-        const institutions = await this.instRepo.find({ relations: ['criteria'] });
-        const bankSimulations = institutions.map(inst => {
-            const criteria = inst.criteria;
-            if (!criteria)
-                return { institutionId: inst.id, bank: inst.name, eligible: false, maxAmount: 0, riskLevel: 'HIGH', rate: 10 };
-            const maxAllowedDtiDeduction = (criteria.maxDtiRatio) * monthlySalary;
-            const availableCapacity = maxAllowedDtiDeduction - (existingLoanAmount || 0);
-            const maxAmountByDti = availableCapacity * durationMonths;
-            const maxAmountByMultiplier = monthlySalary * criteria.maxLoanMultiplier;
-            const maxAmount = Math.max(0, Math.min(maxAmountByDti, maxAmountByMultiplier));
-            const eligible = monthlySalary >= criteria.minNetSalary &&
-                dtiRatio <= (criteria.maxDtiRatio * 100) &&
-                loanAmount <= maxAmountByMultiplier;
-            return {
-                institutionId: inst.id,
-                bank: inst.name,
-                eligible,
-                maxAmount,
-                riskLevel: eligible ? 'LOW' : 'HIGH',
-                rate: 15
-            };
+    async compareInstitutions(params) {
+        const { monthlyNetSalary, existingMonthlyRepayments, employmentCategory, requestedAmount, requestedTermMonths, institutionIds, } = params;
+        const whereClause = { isActive: true };
+        if (institutionIds && institutionIds.length > 0) {
+            whereClause.id = (0, typeorm_2.In)(institutionIds);
+        }
+        const institutions = await this.instRepo.find({
+            where: whereClause,
+            relations: ['criteria'],
         });
-        const targetBank = bankSimulations.find(b => b.institutionId === institutionId);
-        return {
-            result: {
-                eligible: targetBank ? targetBank.eligible : false,
-                monthlyInstallment,
-                totalRepayable,
-                dtiRatio,
-                maxLoanAmount: targetBank ? targetBank.maxAmount : 0,
-                riskScore: 85,
-                riskCategory: 'GOOD',
-                breakdown: {
-                    employment: 35,
-                    employmentYears: 20,
-                    age: 15,
-                    housing: 10,
-                    banking: 5
-                }
+        const checkParams = institutions
+            .filter(inst => inst.criteria)
+            .map(inst => ({
+            institutionId: inst.id,
+            institutionName: inst.name,
+            institutionType: inst.type,
+            criteria: {
+                interestRate: inst.criteria.interestRate,
+                maxDtiRatio: inst.criteria.maxDtiRatio,
+                minNetSalary: inst.criteria.minNetSalary,
+                minRepaymentMonths: inst.criteria.minRepaymentMonths,
+                maxRepaymentMonths: inst.criteria.maxRepaymentMonths,
+                processingFeePercent: inst.criteria.processingFeePercent,
+                civilServantMultiplier: inst.criteria.civilServantMultiplier,
+                privateMultiplier: inst.criteria.privateMultiplier,
+                selfEmployedMultiplier: inst.criteria.selfEmployedMultiplier,
+                saccoMemberMultiplier: inst.criteria.saccoMemberMultiplier,
+                eligibleEmploymentTypes: inst.criteria.eligibleEmploymentTypes ?? [],
+                requiresGuarantor: inst.criteria.requiresGuarantor,
+                requiresPayslip: inst.criteria.requiresPayslip,
+                notes: inst.criteria.notes ?? '',
             },
-            bankSimulations
+            monthlyNetSalary,
+            existingMonthlyRepayments,
+            employmentCategory,
+            requestedAmount,
+            requestedTermMonths,
+        }));
+        return (0, eligibilityEngine_1.rankInstitutions)(checkParams);
+    }
+    async checkEligibility(params) {
+        const { monthlySalary, monthlyNetSalary, existingLoanAmount, loanAmount, durationMonths, institutionId, employmentCategory, } = params;
+        const salary = monthlyNetSalary || monthlySalary || 0;
+        const existing = existingLoanAmount || 0;
+        const category = employmentCategory || 'private_sector';
+        const amount = parseFloat(loanAmount) || 0;
+        const term = parseInt(durationMonths) || 24;
+        const compareResult = await this.compareInstitutions({
+            monthlyNetSalary: salary,
+            existingMonthlyRepayments: existing,
+            employmentCategory: category,
+            requestedAmount: amount,
+            requestedTermMonths: term,
+            institutionIds: undefined,
+        });
+        const allResults = [...compareResult.ranked, ...compareResult.ineligible];
+        const targetResult = allResults.find(r => r.institutionId === institutionId) ?? null;
+        return {
+            result: targetResult,
+            bankSimulations: allResults,
         };
+    }
+    async getInstitutionsPublic() {
+        const institutions = await this.instRepo.find({
+            where: { isActive: true },
+            relations: ['criteria'],
+        });
+        return institutions.map(inst => ({
+            id: inst.id,
+            name: inst.name,
+            type: inst.type,
+            criteria: inst.criteria
+                ? {
+                    interestRate: inst.criteria.interestRate,
+                    minNetSalary: inst.criteria.minNetSalary,
+                    maxDtiRatio: inst.criteria.maxDtiRatio,
+                    minRepaymentMonths: inst.criteria.minRepaymentMonths,
+                    maxRepaymentMonths: inst.criteria.maxRepaymentMonths,
+                    processingFeePercent: inst.criteria.processingFeePercent,
+                    requiresGuarantor: inst.criteria.requiresGuarantor,
+                    requiresPayslip: inst.criteria.requiresPayslip,
+                    eligibleEmploymentTypes: inst.criteria.eligibleEmploymentTypes,
+                    civilServantMultiplier: inst.criteria.civilServantMultiplier,
+                    privateMultiplier: inst.criteria.privateMultiplier,
+                    selfEmployedMultiplier: inst.criteria.selfEmployedMultiplier,
+                    saccoMemberMultiplier: inst.criteria.saccoMemberMultiplier,
+                    notes: inst.criteria.notes,
+                }
+                : null,
+        }));
     }
 };
 exports.EligibilityService = EligibilityService;
 exports.EligibilityService = EligibilityService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(financial_profile_entity_1.FinancialProfile)),
-    __param(1, (0, typeorm_1.InjectRepository)(institution_entity_1.Institution)),
-    __metadata("design:paramtypes", [typeorm_2.Repository,
-        typeorm_2.Repository])
+    __param(0, (0, typeorm_1.InjectRepository)(institution_entity_1.Institution)),
+    __metadata("design:paramtypes", [typeorm_2.Repository])
 ], EligibilityService);
 //# sourceMappingURL=eligibility.service.js.map

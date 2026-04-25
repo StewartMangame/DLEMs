@@ -88,7 +88,10 @@ let AdminService = class AdminService {
             institutionId: inst.id,
             maxDtiRatio: data.maxDtiRatio ?? 0.4,
             minNetSalary: data.minNetSalary ?? 100000,
-            maxLoanMultiplier: data.maxLoanMultiplier ?? 10,
+            civilServantMultiplier: data.civilServantMultiplier ?? 10,
+            privateMultiplier: data.privateMultiplier ?? 6,
+            selfEmployedMultiplier: data.selfEmployedMultiplier ?? 4,
+            saccoMemberMultiplier: data.saccoMemberMultiplier ?? 8,
         });
         await this.criteriaRepo.save(crit);
         return { success: true, institution: inst };
@@ -111,8 +114,14 @@ let AdminService = class AdminService {
             crit.maxDtiRatio = data.maxDtiRatio;
         if (data.minNetSalary !== undefined)
             crit.minNetSalary = data.minNetSalary;
-        if (data.maxLoanMultiplier !== undefined)
-            crit.maxLoanMultiplier = data.maxLoanMultiplier;
+        if (data.civilServantMultiplier !== undefined)
+            crit.civilServantMultiplier = data.civilServantMultiplier;
+        if (data.privateMultiplier !== undefined)
+            crit.privateMultiplier = data.privateMultiplier;
+        if (data.selfEmployedMultiplier !== undefined)
+            crit.selfEmployedMultiplier = data.selfEmployedMultiplier;
+        if (data.saccoMemberMultiplier !== undefined)
+            crit.saccoMemberMultiplier = data.saccoMemberMultiplier;
         await this.criteriaRepo.save(crit);
         return { success: true, criteria: crit };
     }

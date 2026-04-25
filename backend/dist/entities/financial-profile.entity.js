@@ -18,6 +18,7 @@ let FinancialProfile = class FinancialProfile {
     userId;
     user;
     employerName;
+    employmentCategory;
     employmentType;
     monthlyNetSalary;
     salaryInstitutionId;
@@ -50,7 +51,11 @@ __decorate([
     __metadata("design:type", String)
 ], FinancialProfile.prototype, "employerName", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ default: 'private_sector' }),
+    __metadata("design:type", String)
+], FinancialProfile.prototype, "employmentCategory", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], FinancialProfile.prototype, "employmentType", void 0);
 __decorate([

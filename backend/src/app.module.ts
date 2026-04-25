@@ -53,7 +53,7 @@ export class AppModule implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    await this.instService.seedDefautInstitutions();
+    await this.instService.seedDefaultInstitutions();
     await this.authService.seedAdmin();
   }
 }

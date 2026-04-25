@@ -3,11 +3,13 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
+import { useLanguage } from "@/lib/LanguageContext";
 
 export default function DashboardPage() {
   const router = useRouter();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     fetch("/api/dashboard")
@@ -45,10 +47,10 @@ export default function DashboardPage() {
       <div className={styles.header}>
         <div>
           <h1 className="text-h2">
-            Welcome, <span className="text-gradient">{user?.fullName?.split(" ")[0]}</span>
+            {t("home.welcome")}, <span className="text-gradient">{user?.fullName?.split(" ")[0]}</span>
           </h1>
           <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-            Emp. ID: {user?.employeeNumber} · {profile?.salaryInstitution?.name || "No Bank"} · {new Date().toLocaleDateString("en-GB", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+            Emp. ID: {user?.employeeNumber} · {profile?.salaryInstitution?.name || t("home.noBank")} · {new Date().toLocaleDateString("en-GB", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
           </p>
         </div>
       </div>
@@ -57,36 +59,36 @@ export default function DashboardPage() {
         <div className={`alert alert-info ${styles.profileAlert}`}>
           <span>ℹ</span>
           <div>
-            <strong>Complete your financial profile</strong> to unlock loan eligibility checks and applications.{" "}
-            <Link href="/dashboard/profile">Set up profile →</Link>
+            <strong>{t("home.completeProfile")}</strong> {t("home.unlockMsg")}{" "}
+            <Link href="/dashboard/profile">{t("home.setupLink")}</Link>
           </div>
         </div>
       )}
 
       <div className={`grid-4 ${styles.kpiGrid}`}>
         <div className={`card ${styles.kpiCard}`}>
-          <div className="stat-label">Monthly Salary</div>
+          <div className="stat-label">{t("home.salary")}</div>
           <div className="stat-value" style={{ color: "var(--color-success)" }}>
             {profile ? `MK ${profile.monthlyNetSalary.toLocaleString()}` : "—"}
           </div>
           <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>Net income</div>
         </div>
         <div className={`card ${styles.kpiCard}`}>
-          <div className="stat-label">DTI Ratio</div>
+          <div className="stat-label">{t("home.dti")}</div>
           <div className="stat-value" style={{ color: dtiRatio > 33 ? "var(--color-danger)" : dtiRatio >= 20 ? "var(--color-warning)" : "var(--color-success)" }}>
             {profile ? `${dtiRatio.toFixed(1)}%` : "—"}
           </div>
           <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>Threshold: 33%</div>
         </div>
         <div className={`card ${styles.kpiCard}`}>
-          <div className="stat-label">Active Principal</div>
+          <div className="stat-label">{t("home.activePrincipal")}</div>
           <div className="stat-value" style={{ color: "var(--color-warning)" }}>
             MK {totalActiveDebt.toLocaleString()}
           </div>
           <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>Remaining balance</div>
         </div>
         <div className={`card ${styles.kpiCard}`}>
-          <div className="stat-label">Risk Level</div>
+          <div className="stat-label">{t("home.risk")}</div>
           <div className="stat-value" style={{ color: dtiRatio > 33 ? "var(--color-danger)" : dtiRatio >= 20 ? "var(--color-warning)" : "var(--color-success)" }}>
             {dtiRatio > 33 ? "High" : dtiRatio >= 20 ? "Moderate" : "Low"}
           </div>
@@ -187,11 +189,10 @@ export default function DashboardPage() {
 }
 
 const ACTIONS = [
-  { href: "/dashboard/eligibility", icon: "✦", title: "Check Eligibility", desc: "Run automated risk assessment", color: "rgba(30,111,255,0.15)" },
-  { href: "/dashboard/apply", icon: "✚", title: "Apply for Loan", desc: "Submit a new loan application", color: "rgba(0,200,150,0.15)" },
-  { href: "/dashboard/calculator", icon: "⊞", title: "Loan Calculator", desc: "Simulate repayments & schedule", color: "rgba(255,184,0,0.15)" },
-  { href: "/dashboard/reminders", icon: "🔔", title: "Reminders", desc: "Deduction alerts & logs", color: "rgba(255,184,0,0.15)" },
-  { href: "/dashboard/profile", icon: "◎", title: "My Profile", desc: "Update financial information", color: "rgba(0,180,216,0.15)" },
+  { href: "/dashboard/eligibility", icon: "✦", title: "Compare Lenders", desc: "Find the best loan offers & apply", color: "rgba(30,111,255,0.15)" },
+  { href: "/dashboard/loans/add", icon: "✚", title: "Record Manual Loan", desc: "Track your existing loans", color: "rgba(0,200,150,0.15)" },
+  { href: "/dashboard/loans", icon: "◷", title: "Active Loans", desc: "View amortization schedules", color: "rgba(255,184,0,0.15)" },
+  { href: "/dashboard/profile", icon: "◎", title: "Update Profile", desc: "Edit financial information", color: "rgba(0,180,216,0.15)" },
 ];
 
 const STATUS_BADGE: Record<string, string> = {

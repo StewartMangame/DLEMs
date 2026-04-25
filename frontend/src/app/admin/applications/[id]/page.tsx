@@ -84,7 +84,7 @@ export default function ApplicationDetailPage({
               <h2 className={styles.sectionTitle}>Financial Profile</h2>
               <div className={styles.infoGrid}>
                 <Row label="Employer" value={profile.employerName} />
-                <Row label="Employment Type" value={profile.employmentType?.replace(/_/g, " ").toUpperCase()} />
+                <Row label="Employment Category" value={profile.employmentCategory?.replace(/_/g, " ").toUpperCase()} />
                 <Row label="Monthly Net Salary" value={`MK ${profile.monthlyNetSalary?.toLocaleString()}`} highlight="success" />
                 <Row label="Employment Years" value={`${profile.employmentYears || 0} years`} />
                 <Row label="Age" value={`${profile.age || 0} years`} />

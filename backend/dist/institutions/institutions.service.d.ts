@@ -7,5 +7,5 @@ export declare class InstitutionsService {
     constructor(instRepo: Repository<Institution>, criteriaRepo: Repository<InstitutionCriteria>);
     getAllInstitutions(): Promise<Institution[]>;
     findByName(name: string): Promise<Institution>;
-    seedDefautInstitutions(): Promise<void>;
+    seedDefaultInstitutions(): Promise<void>;
 }

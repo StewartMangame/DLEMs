@@ -1,34 +1,40 @@
 import { Repository } from 'typeorm';
-import { FinancialProfile } from '../entities/financial-profile.entity';
 import { Institution } from '../entities/institution.entity';
+import { EmploymentCategory, CompareResult, InstitutionEligibilityResult } from '../lib/eligibilityEngine';
 export declare class EligibilityService {
-    private profileRepo;
     private instRepo;
-    constructor(profileRepo: Repository<FinancialProfile>, instRepo: Repository<Institution>);
+    constructor(instRepo: Repository<Institution>);
+    compareInstitutions(params: {
+        monthlyNetSalary: number;
+        existingMonthlyRepayments: number;
+        employmentCategory: EmploymentCategory;
+        requestedAmount: number;
+        requestedTermMonths: number;
+        institutionIds?: number[];
+    }): Promise<CompareResult>;
     checkEligibility(params: any): Promise<{
-        result: {
-            eligible: boolean;
-            monthlyInstallment: number;
-            totalRepayable: number;
-            dtiRatio: number;
-            maxLoanAmount: number;
-            riskScore: number;
-            riskCategory: string;
-            breakdown: {
-                employment: number;
-                employmentYears: number;
-                age: number;
-                housing: number;
-                banking: number;
-            };
-        };
-        bankSimulations: {
-            institutionId: number;
-            bank: string;
-            eligible: boolean;
-            maxAmount: number;
-            riskLevel: string;
-            rate: number;
-        }[];
+        result: InstitutionEligibilityResult | null;
+        bankSimulations: InstitutionEligibilityResult[];
     }>;
+    getInstitutionsPublic(): Promise<{
+        id: number;
+        name: string;
+        type: string;
+        criteria: {
+            interestRate: number;
+            minNetSalary: number;
+            maxDtiRatio: number;
+            minRepaymentMonths: number;
+            maxRepaymentMonths: number;
+            processingFeePercent: number;
+            requiresGuarantor: boolean;
+            requiresPayslip: boolean;
+            eligibleEmploymentTypes: string[];
+            civilServantMultiplier: number;
+            privateMultiplier: number;
+            selfEmployedMultiplier: number;
+            saccoMemberMultiplier: number;
+            notes: string;
+        };
+    }[]>;
 }

@@ -5,7 +5,7 @@ import styles from "./page.module.css";
 interface Profile {
   bank: string;
   employer: string;
-  employmentType: string;
+  employmentCategory: string;
   monthlySalary: number;
   employmentYears: number;
   age: number;
@@ -14,25 +14,41 @@ interface Profile {
   bankingYears: number;
 }
 
+interface Institution {
+  id: number;
+  name: string;
+  type: string;
+}
+
 export default function ProfilePage() {
   const [form, setForm] = useState<Profile>({
-    bank: "", employer: "", employmentType: "", monthlySalary: 0,
+    bank: "", employer: "", employmentCategory: "", monthlySalary: 0,
     employmentYears: 0, age: 0, housingStatus: "", existingLoanAmount: 0, bankingYears: 0,
   });
+  const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  const [loadedProfile, setLoadedProfile] = useState(false);
 
   useEffect(() => {
+    // Fetch user profile
     fetch("/api/profile").then(r => r.json()).then(data => {
       if (data.profile) {
         setForm({
           ...data.profile,
-          bank: data.bank || ""
+          bank: data.bank || "",
+          employmentCategory: data.profile.employmentCategory || ""
         });
       }
-      setLoaded(true);
+      setLoadedProfile(true);
     });
+
+    // Fetch institutions for the dropdown
+    fetch("/api/eligibility/institutions").then(r => r.json()).then(data => {
+      if (Array.isArray(data)) {
+        setInstitutions(data);
+      }
+    }).catch(err => console.error("Could not load institutions", err));
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -53,7 +69,7 @@ export default function ProfilePage() {
   };
 
 
-  if (!loaded) return <div style={{ padding: 40, color: "var(--color-text-muted)" }}>Loading…</div>;
+  if (!loadedProfile) return <div style={{ padding: 40, color: "var(--color-text-muted)" }}>Loading…</div>;
 
   return (
     <div className={styles.page}>
@@ -61,7 +77,7 @@ export default function ProfilePage() {
         <div>
           <h1 className="text-h2">Financial Profile</h1>
           <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-            This information is used to calculate your loan eligibility and risk score
+            This information is used to calculate your loan eligibility and risk score across Malawian lenders.
           </p>
         </div>
       </div>
@@ -79,24 +95,25 @@ export default function ProfilePage() {
             <div className="form-group">
               <label className="form-label" htmlFor="employer">Employer / Organization</label>
               <input id="employer" name="employer" required className="form-input"
-                placeholder="e.g. Ministry of Health" value={form.employer || ""} onChange={handleChange} />
+                placeholder="e.g. Ministry of Health, Airtel, etc." value={form.employer || ""} onChange={handleChange} />
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="employmentType">Employment Type</label>
-              <select id="employmentType" name="employmentType" required className="form-select"
-                value={form.employmentType || ""} onChange={handleChange}>
-                <option value="">— Select type —</option>
+              <label className="form-label" htmlFor="employmentCategory">Employment Category</label>
+              <select id="employmentCategory" name="employmentCategory" required className="form-select"
+                value={form.employmentCategory || ""} onChange={handleChange}>
+                <option value="">— Select Category —</option>
                 <option value="civil_servant">Civil Servant (Government)</option>
-                <option value="permanent_private">Permanent Private Sector</option>
-                <option value="contract">Contract Employee</option>
-                <option value="self_employed">Self-Employed</option>
+                <option value="private_sector">Private Sector</option>
+                <option value="self_employed">Self-Employed / Business owner</option>
+                <option value="sacco_member">SACCO Member</option>
               </select>
+              <div className="form-help">This determines which lenders and multipliers you are eligible for.</div>
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="monthlySalary">Gross Monthly Salary (MK)</label>
+              <label className="form-label" htmlFor="monthlySalary">Net Monthly Salary (MK)</label>
               <input id="monthlySalary" name="monthlySalary" type="number" required min={0} className="form-input"
                 placeholder="e.g. 250000" value={form.monthlySalary || ""} onChange={handleChange} />
-              <div className="form-help">Enter your monthly gross salary in Malawian Kwacha</div>
+              <div className="form-help">Enter your monthly take-home pay in Malawian Kwacha (after all standard tax deductions).</div>
             </div>
             <div className="form-group">
               <label className="form-label" htmlFor="employmentYears">Years of Employment</label>
@@ -110,14 +127,15 @@ export default function ProfilePage() {
           <h2 className="text-h3">Personal & Financial Details</h2>
           <div className="grid-2">
             <div className="form-group">
-              <label className="form-label" htmlFor="bank">Primary Bank</label>
-              <select id="bank" name="bank" required className="form-select"
+              <label className="form-label" htmlFor="bank">Primary Salary Bank</label>
+              <select id="bank" name="bank" className="form-select"
                 value={form.bank || ""} onChange={handleChange}>
-                <option value="">— Select bank —</option>
-                <option value="Mwai Bank">Mwai Bank</option>
-                <option value="Kokko Bank">Kokko Bank</option>
-                <option value="KFS Bank">KFS Bank</option>
+                <option value="">— Unbanked / Other —</option>
+                {institutions.map(inst => (
+                  <option key={inst.id} value={inst.name}>{inst.name}</option>
+                ))}
               </select>
+              <div className="form-help">Where your salary is deposited. Leave blank if unbanked.</div>
             </div>
             <div className="form-group">
               <label className="form-label" htmlFor="age">Age</label>
@@ -138,7 +156,7 @@ export default function ProfilePage() {
               <label className="form-label" htmlFor="existingLoanAmount">Monthly Existing Loan Repayments (MK)</label>
               <input id="existingLoanAmount" name="existingLoanAmount" type="number" min={0} className="form-input"
                 placeholder="0 if none" value={form.existingLoanAmount || ""} onChange={handleChange} />
-              <div className="form-help">Total monthly repayments on all current loans</div>
+              <div className="form-help">Total monthly repayments on all current loans. Affects your DTI ratio.</div>
             </div>
             <div className="form-group">
               <label className="form-label" htmlFor="bankingYears">Years with Current Bank</label>

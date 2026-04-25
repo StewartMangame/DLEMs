@@ -72,6 +72,45 @@
   --transition-slow: 400ms ease;
 }
 
+:root[data-theme='light'] {
+  --color-bg-deep:       #f4f7fb;
+  --color-bg-dark:       #e2e8f0;
+  --color-bg-card:       #ffffff;
+  --color-bg-elevated:   #f8fafc;
+  --color-surface:       #ffffff;
+  --color-border:        rgba(0, 0, 0, 0.1);
+  --color-border-active: rgba(30, 111, 255, 0.5);
+
+  --color-primary:       #1e6fff;
+  --color-primary-glow:  rgba(30, 111, 255, 0.15);
+  --color-primary-dark:  #1557d6;
+  --color-primary-light: #4d8fff;
+
+  --color-success:       #00a87a;
+  --color-success-bg:    rgba(0, 200, 150, 0.15);
+  --color-warning:       #d99a00;
+  --color-warning-bg:    rgba(255, 184, 0, 0.15);
+  --color-danger:        #d62846;
+  --color-danger-bg:     rgba(255, 59, 92, 0.15);
+  --color-info:          #009ac2;
+
+  --color-text-primary:  #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted:    #64748b;
+
+  --gradient-card:       #ffffff;
+  --gradient-hero:       linear-gradient(135deg, #f4f7fb 0%, #e2e8f0 100%);
+
+  --glass-bg:            rgba(255, 255, 255, 0.85);
+  --glass-border:        rgba(0, 0, 0, 0.1);
+
+  --shadow-sm:           0 2px 8px rgba(0, 0, 0, 0.05);
+  --shadow-md:           0 8px 32px rgba(0, 0, 0, 0.08);
+  --shadow-lg:           0 16px 64px rgba(0, 0, 0, 0.12);
+  --shadow-primary:      0 8px 24px rgba(30, 111, 255, 0.2);
+  --shadow-glow:         0 0 40px rgba(30, 111, 255, 0.1);
+}
+
 /* ===================== RESET & BASE ===================== */
 *, *::before, *::after {
   box-sizing: border-box;

@@ -10,6 +10,17 @@ export declare class LoansController {
         success: boolean;
         loan: import("../entities/loan.entity").Loan;
     }>;
+    getSchedule(req: any, id: string): Promise<{
+        loan: import("../entities/loan.entity").Loan;
+        schedule: {
+            month: number;
+            installment: number;
+            principal: number;
+            interest: number;
+            balance: number;
+            isPaid: boolean;
+        }[];
+    }>;
     applyLoan(req: any, body: any): Promise<{
         success: boolean;
         application: import("../entities/loan-application.entity").LoanApplication;

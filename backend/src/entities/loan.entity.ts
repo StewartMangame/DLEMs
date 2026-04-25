@@ -1,4 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToOne, OneToMany } from 'typeorm';
+import {
+  Entity, PrimaryGeneratedColumn, Column,
+  CreateDateColumn, UpdateDateColumn,
+  ManyToOne, JoinColumn, OneToOne, OneToMany,
+} from 'typeorm';
 import { User } from './user.entity';
 import { Institution } from './institution.entity';
 import { LoanApplication } from './loan-application.entity';
@@ -16,15 +20,23 @@ export class Loan {
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @Column()
+  @Column({ nullable: true })
   providerInstitutionId: number;
 
   @ManyToOne(() => Institution, i => i.loans)
   @JoinColumn({ name: 'providerInstitutionId' })
   providerInstitution: Institution;
 
+  /** Free-text lender name for institutions not in the system */
+  @Column({ nullable: true })
+  providerName: string;
+
   @Column('float')
   loanAmount: number;
+
+  /** Annual interest rate as a percentage (e.g. 25 for 25%) */
+  @Column('float', { default: 0 })
+  interestRate: number;
 
   @Column('float')
   monthlyDeduction: number;
@@ -43,6 +55,10 @@ export class Loan {
 
   @Column({ default: true })
   isActive: boolean;
+
+  /** Purpose / reason for taking the loan */
+  @Column({ nullable: true })
+  loanPurpose: string;
 
   @Column({ nullable: true })
   applicationId: number;

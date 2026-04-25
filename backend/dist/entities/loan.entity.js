@@ -21,13 +21,16 @@ let Loan = class Loan {
     user;
     providerInstitutionId;
     providerInstitution;
+    providerName;
     loanAmount;
+    interestRate;
     monthlyDeduction;
     loanTermMonths;
     startDate;
     remainingBalance;
     paidMonths;
     isActive;
+    loanPurpose;
     applicationId;
     application;
     reminders;
@@ -49,7 +52,7 @@ __decorate([
     __metadata("design:type", user_entity_1.User)
 ], Loan.prototype, "user", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", Number)
 ], Loan.prototype, "providerInstitutionId", void 0);
 __decorate([
@@ -58,9 +61,17 @@ __decorate([
     __metadata("design:type", institution_entity_1.Institution)
 ], Loan.prototype, "providerInstitution", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Loan.prototype, "providerName", void 0);
+__decorate([
     (0, typeorm_1.Column)('float'),
     __metadata("design:type", Number)
 ], Loan.prototype, "loanAmount", void 0);
+__decorate([
+    (0, typeorm_1.Column)('float', { default: 0 }),
+    __metadata("design:type", Number)
+], Loan.prototype, "interestRate", void 0);
 __decorate([
     (0, typeorm_1.Column)('float'),
     __metadata("design:type", Number)
@@ -85,6 +96,10 @@ __decorate([
     (0, typeorm_1.Column)({ default: true }),
     __metadata("design:type", Boolean)
 ], Loan.prototype, "isActive", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Loan.prototype, "loanPurpose", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", Number)
