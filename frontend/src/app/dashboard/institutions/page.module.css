@@ -183,6 +183,58 @@
   z-index: 1;
 }
 
+/* ── Product Selection ─────────────────────────────────────────────────────── */
+.productSelectionContainer {
+  margin-top: var(--space-lg);
+  padding-top: var(--space-md);
+  border-top: 1px dashed var(--color-border);
+  animation: fadeIn 0.3s ease;
+}
+
+.productGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-sm);
+}
+
+.productCard {
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-bg-alt);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.productCard:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-glow);
+}
+
+.productCard.selectedProduct {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.productCardLabel {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.productCardComingSoon {
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--color-border);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
 /* ── SACCO intake form ─────────────────────────────────────────────────────── */
 .intakeCard {
   border-left: 4px solid var(--color-primary);
@@ -346,6 +398,38 @@
 }
 
 .repaymentNoteIcon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+/* ── Fees Table ─────────────────────────────────────────────────────────────── */
+.feesSection {
+  margin-top: var(--space-lg);
+  padding-top: var(--space-md);
+  border-top: 1px dashed var(--color-border);
+}
+
+.feesTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.feesTable tr {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.feesTable tr:last-child {
+  border-bottom: none;
+}
+
+.feesTable td {
+  padding: 8px 4px;
+}
+
+.feesTable td:last-child {
+  text-align: right;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
 
 /* ── Comparison table ─────────────────────────────────────────────────────── */
 .compareCard { animation: fadeInUp 0.45s ease forwards; }

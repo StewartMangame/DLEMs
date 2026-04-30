@@ -5,11 +5,13 @@ import styles from "./page.module.css";
 import { INSTITUTIONS } from "@/lib/institutions";
 import { runSaccoEligibility, calcLoanBreakdown } from "@/lib/institutions/saccoEligibilityEngine";
 import { runBankEligibility } from "@/lib/institutions/bankEligibilityEngine";
+import { runFincaEligibility } from "@/lib/institutions/fincaEligibilityEngine";
 import { useLanguage } from "@/lib/LanguageContext";
 import type {
   InstitutionConfig,
   SaccoIntakeData,
   BankIntakeData,
+  FincaIntakeData,
   EligibilityResult,
   LoanTypeConfig,
   EmploymentCategory,
@@ -66,6 +68,17 @@ export default function InstitutionsPage() {
     hasCrbFlag: null,
   });
 
+  // ── Finca intake ─────────────────────────────────────────────────────────────
+  const [fincaIntake, setFincaIntake] = useState<FincaIntakeData>({
+    isPartOfGroup: null,
+    groupSize: 0,
+    ownsBusiness: null,
+    hasFincaAccount: null,
+  });
+
+  // ── Selected products (for institutions that require product selection) ──────
+  const [selectedProducts, setSelectedProducts] = useState<Record<string, string>>({});
+
   // ── Results ──────────────────────────────────────────────────────────────────
   const [results, setResults] = useState<EligibilityResult[]>([]);
 
@@ -106,7 +119,11 @@ export default function InstitutionsPage() {
     () => selectedInstitutions.some(i => i.crbCheckRequired),
     [selectedInstitutions]
   );
-  const needsIntakeStep = hasSaccoInstitution || hasBankInstitution;
+  const hasFincaInstitution = useMemo(
+    () => selectedInstitutions.some(i => i.requiresGroupLending),
+    [selectedInstitutions]
+  );
+  const needsIntakeStep = hasSaccoInstitution || hasBankInstitution || hasFincaInstitution;
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Handlers
@@ -119,6 +136,16 @@ export default function InstitutionsPage() {
 
   function handleProceedFromSelect() {
     if (selectedIds.length === 0) return;
+    
+    // Validate that institutions requiring product selection have a product selected
+    const unselectedProductInsts = selectedInstitutions.filter(
+      inst => inst.requiresProductSelection && !selectedProducts[inst.id]
+    );
+    if (unselectedProductInsts.length > 0) {
+      alert(ny ? "Chonde sankhani mtundu wa ngongole woyamba" : "Please select a loan product for all expanded institutions.");
+      return;
+    }
+
     if (needsIntakeStep) {
       setStep("intake");
     } else {
@@ -129,6 +156,16 @@ export default function InstitutionsPage() {
 
   function runEligibility() {
     const newResults: EligibilityResult[] = selectedInstitutions.map(inst => {
+      if (inst.requiresGroupLending) {
+        return runFincaEligibility(inst, {
+          employmentCategory,
+          monthlyNetIncome: monthlyIncome,
+          serviceMonths,
+          existingMonthlyObligations: existingObligations,
+          finca: fincaIntake,
+          bank: bankIntake,
+        });
+      }
       if (inst.type === "Commercial Bank") {
         return runBankEligibility(inst, {
           employmentCategory,
@@ -156,9 +193,15 @@ export default function InstitutionsPage() {
         const defaultTerm = r.institution.defaultRepaymentTermMonths
           ?? r.institution.repaymentTermsMonths[0]
           ?? 12;
+        // If institution requires product selection, only select the chosen product
+        let matchedLoanType = r.institution.loanTypes[0] ?? null;
+        if (r.institution.requiresProductSelection && selectedProducts[r.institution.id]) {
+          matchedLoanType = r.institution.loanTypes.find(lt => lt.key === selectedProducts[r.institution.id]) ?? matchedLoanType;
+        }
+
         init[r.institution.id] = {
-          loanType: r.institution.loanTypes[0] ?? null,
-          rate: 24,
+          loanType: matchedLoanType,
+          rate: r.institution.fixedInterestRate ?? 24,
           term: defaultTerm,
         };
       }
@@ -177,6 +220,8 @@ export default function InstitutionsPage() {
     setResults([]);
     setSaccoIntake({ isSaccoMember: false, saccoMembershipMonths: 0, saccoName: "" });
     setBankIntake({ hasCrbFlag: null });
+    setFincaIntake({ isPartOfGroup: null, groupSize: 0, ownsBusiness: null, hasFincaAccount: null });
+    setSelectedProducts({});
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -257,7 +302,9 @@ export default function InstitutionsPage() {
                 key={inst.id}
                 institution={inst}
                 selected={selectedIds.includes(inst.id)}
+                selectedProductId={selectedProducts[inst.id]}
                 onToggle={() => toggleInstitution(inst.id)}
+                onSelectProduct={(productId) => setSelectedProducts(p => ({ ...p, [inst.id]: productId }))}
                 ny={ny}
               />
             ))}
@@ -294,11 +341,20 @@ export default function InstitutionsPage() {
             />
           )}
 
-          {/* CRB declaration — only if at least one commercial bank is selected */}
+          {/* CRB declaration — only if at least one commercial bank or FINCA is selected */}
           {hasBankInstitution && (
             <BankIntakeForm
               intake={bankIntake}
               onChange={setBankIntake}
+              ny={ny}
+            />
+          )}
+
+          {/* FINCA-specific intake */}
+          {hasFincaInstitution && (
+            <FincaIntakeForm
+              intake={fincaIntake}
+              onChange={setFincaIntake}
               ny={ny}
             />
           )}
@@ -311,7 +367,8 @@ export default function InstitutionsPage() {
               className="btn btn-primary btn-lg"
               disabled={
                 (hasSaccoInstitution && (!saccoIntake.isSaccoMember || saccoIntake.saccoMembershipMonths <= 0 || saccoIntake.saccoName.trim() === "")) ||
-                (hasBankInstitution && bankIntake.hasCrbFlag === null)
+                (hasBankInstitution && bankIntake.hasCrbFlag === null) ||
+                (hasFincaInstitution && (fincaIntake.isPartOfGroup === null || (fincaIntake.isPartOfGroup && (fincaIntake.groupSize < 5 || fincaIntake.groupSize > 25)) || fincaIntake.ownsBusiness === null || fincaIntake.hasFincaAccount === null))
               }
               onClick={handleProceedFromIntake}
             >
@@ -349,7 +406,11 @@ export default function InstitutionsPage() {
               )}
 
               {/* Comparison table */}
-              <ComparisonTable institution={result.institution} ny={ny} />
+              <ComparisonTable
+                institution={result.institution}
+                selectedProductId={selectedProducts[result.institution.id]}
+                ny={ny}
+              />
             </div>
           ))}
 
@@ -368,26 +429,32 @@ export default function InstitutionsPage() {
 // Component: Institution card
 // ═══════════════════════════════════════════════════════════════════════════════
 function InstitutionCard({
-  institution, selected, onToggle, ny,
+  institution, selected, selectedProductId, onToggle, onSelectProduct, ny,
 }: {
   institution: InstitutionConfig;
   selected: boolean;
+  selectedProductId?: string;
   onToggle: () => void;
+  onSelectProduct?: (productId: string) => void;
   ny: boolean;
 }) {
   const typeIcon = institution.type === "SACCO" ? "🤝" : "🏦";
 
   return (
     <div
-      role="button"
-      tabIndex={0}
       className={`card ${styles.institutionCard} ${selected ? styles.selected : ""}`}
-      onClick={onToggle}
-      onKeyDown={e => e.key === "Enter" && onToggle()}
-      aria-pressed={selected}
-      aria-label={`Select ${institution.name}`}
+      style={{ cursor: selected && institution.requiresProductSelection ? "default" : "pointer" }}
     >
-      <div className={styles.cardTop}>
+      <div 
+        role="button"
+        tabIndex={0}
+        onClick={onToggle}
+        onKeyDown={e => e.key === "Enter" && onToggle()}
+        aria-pressed={selected}
+        aria-label={`Select ${institution.name}`}
+        style={{ cursor: "pointer" }}
+      >
+        <div className={styles.cardTop}>
         <div className={styles.cardIcon}>{typeIcon}</div>
         <div className={`${styles.checkmark} ${selected ? styles.selected : ""}`}>✓</div>
       </div>
@@ -410,7 +477,7 @@ function InstitutionCard({
 
       <p className={styles.cardDesc}>{institution.description}</p>
 
-      <div style={{ marginTop: "var(--space-md)", fontSize: "0.8rem", color: "var(--color-text-muted)" }}>
+      <div style={{ marginTop: "var(--space-md)", fontSize: "0.8rem", color: "var(--color-text-muted)", pointerEvents: "none" }}>
         {institution.minimumMembershipMonths > 0 && (
           <div>📅 {ny ? "Unansi wofunikira:" : "Min. membership:"} {institution.minimumMembershipMonths} {ny ? "miyezi" : "months"}</div>
         )}
@@ -421,6 +488,32 @@ function InstitutionCard({
           💰 {ny ? "Ngongole:" : "Loan:"} {mwk(institution.comparisonFields.minimumLoanMWK)} – {mwk(institution.comparisonFields.maximumLoanMWK)}
         </div>
       </div>
+      </div>
+
+      {selected && institution.requiresProductSelection && (
+        <div className={styles.productSelectionContainer}>
+          <h4 className="text-sm" style={{ fontWeight: 600, marginBottom: "var(--space-sm)", color: "var(--color-text-primary)" }}>
+            {ny ? "Sankhani Mtundu wa Ngongole" : "Select Loan Product"}
+          </h4>
+          <div className={styles.productGrid}>
+            {institution.loanTypes.map(lt => (
+              <div 
+                key={lt.key} 
+                className={`${styles.productCard} ${selectedProductId === lt.key ? styles.selectedProduct : ''}`} 
+                onClick={() => onSelectProduct && onSelectProduct(lt.key)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={e => e.key === "Enter" && onSelectProduct && onSelectProduct(lt.key)}
+              >
+                <div className={styles.productCardLabel}>{ny ? lt.labelNy : lt.label}</div>
+              </div>
+            ))}
+            <div className={styles.productCardComingSoon}>
+              {ny ? "Zambiri zikubwera..." : "More products coming soon..."}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -842,11 +935,14 @@ function RepaymentCalculator({
             placeholder="e.g. 24"
             value={state.rate || ""}
             onChange={e => onChange({ rate: parseFloat(e.target.value) || 0 })}
+            disabled={institution.fixedInterestRate !== undefined}
           />
           <div className="form-help">
-            {ny
-              ? "Lowetsani faida imene malo akudziwa. Muza funsira ku malo."
-              : "Enter the annual interest rate quoted by the institution. Ask the institution directly for their current rate."}
+            {institution.fixedInterestRate !== undefined
+              ? (ny ? "Malo ano ali ndi faida yosasintha." : "This institution has a fixed interest rate.")
+              : (ny
+                ? "Lowetsani faida imene malo akudziwa. Muza funsira ku malo."
+                : "Enter the annual interest rate quoted by the institution. Ask the institution directly for their current rate.")}
           </div>
         </div>
 
@@ -893,6 +989,39 @@ function RepaymentCalculator({
             </div>
           </div>
 
+          {/* Fees and Collateral */}
+          {(institution.processingFeePercent || institution.insuranceFeePercent || institution.cashCollateralPercent) && (
+            <div className={styles.feesSection}>
+              <h4 className="text-sm" style={{ fontWeight: 600, marginBottom: "var(--space-sm)", marginTop: "var(--space-md)" }}>
+                {ny ? "Ndalama Zowonjezera" : "Additional Fees & Collateral"}
+              </h4>
+              <div className="table-wrapper">
+                <table className={styles.feesTable}>
+                  <tbody>
+                    {institution.processingFeePercent && (
+                      <tr>
+                        <td>{ny ? "Ndalama yopangira" : "Processing Fee"} ({institution.processingFeePercent}%)</td>
+                        <td>{mwk(maxPrincipal * (institution.processingFeePercent / 100))}</td>
+                      </tr>
+                    )}
+                    {institution.insuranceFeePercent && (
+                      <tr>
+                        <td>{ny ? "Inshuwalansi" : "Insurance"} ({institution.insuranceFeePercent}%)</td>
+                        <td>{mwk(maxPrincipal * (institution.insuranceFeePercent / 100))}</td>
+                      </tr>
+                    )}
+                    {institution.cashCollateralPercent && (
+                      <tr>
+                        <td>{ny ? "Ndalama yosungira yomweyo" : "Upfront Cash Collateral"} ({institution.cashCollateralPercent}%)</td>
+                        <td>{mwk(maxPrincipal * (institution.cashCollateralPercent / 100))}</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {/* Affordability check */}
           {breakdown.monthlyRepayment > profileSummary.availableRepayment && (
             <div className="alert alert-warning" style={{ marginTop: "var(--space-md)" }}>
@@ -920,16 +1049,25 @@ function RepaymentCalculator({
 // Component: Comparison table
 // ═══════════════════════════════════════════════════════════════════════════════
 function ComparisonTable({
-  institution, ny,
+  institution, selectedProductId, ny,
 }: {
   institution: InstitutionConfig;
+  selectedProductId?: string;
   ny: boolean;
 }) {
   const cf = institution.comparisonFields;
 
+  let institutionDisplayName = institution.name;
+  if (institution.requiresProductSelection && selectedProductId) {
+    const selectedLoanType = institution.loanTypes.find(lt => lt.key === selectedProductId);
+    if (selectedLoanType) {
+      institutionDisplayName = `${institution.name} — ${ny ? selectedLoanType.labelNy : selectedLoanType.label}`;
+    }
+  }
+
   // Build the rows — conditionally include bank-specific rows
   const rows: [string, string, string][] = [
-    ["Institution",        institution.name,                                    "Malo"],
+    ["Institution",        institutionDisplayName,                              "Malo"],
     ["Type",               institution.type,                                    "Mtundu"],
     ["Who can apply",      cf.whoCanApply,                                      "Amene angasindikize"],
     ["Minimum loan",       mwk(cf.minimumLoanMWK),                              "Ngongole yochepa"],
@@ -973,8 +1111,8 @@ function ComparisonTable({
         }}
       >
         📊 {ny
-          ? `Tebulo la Kuyerekeza — ${institution.name}`
-          : `Side-by-Side Comparison — ${institution.name}`}
+          ? `Tebulo la Kuyerekeza — ${institutionDisplayName}`
+          : `Side-by-Side Comparison — ${institutionDisplayName}`}
         <span className="text-sm" style={{ color: "var(--color-text-muted)", fontWeight: 400 }}>
           ({ny ? "dinani kuona" : "click to expand"})
         </span>
@@ -1034,5 +1172,154 @@ function ComparisonTable({
         )}
       </div>
     </details>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Component: FINCA intake form
+// ═══════════════════════════════════════════════════════════════════════════════
+function FincaIntakeForm({
+  intake, onChange, ny,
+}: {
+  intake: FincaIntakeData;
+  onChange: (d: FincaIntakeData) => void;
+  ny: boolean;
+}) {
+  return (
+    <div className={`card ${styles.intakeCard}`}>
+      <div className={styles.intakeTitle}>
+        <div className={styles.intakeIcon}>👥</div>
+        <div>
+          <h2 className="text-h3">{ny ? "Zambiri za Ngongole ya Gulu" : "Group Loan Details"}</h2>
+          <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+            {ny
+              ? "Ngongole izi zimafuna gulu. Yankhani mafunso otsatirawa."
+              : "These loans require you to be part of a business group. Answer the questions below."}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid-2" style={{ gap: "var(--space-lg)", marginTop: "var(--space-md)" }}>
+        {/* Part of group */}
+        <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+          <label className="form-label">
+            {ny ? "Kodi muli mgulu la bizinesi?" : "Are you part of a business group?"}
+          </label>
+          <div style={{ display: "flex", gap: "var(--space-md)", marginTop: "var(--space-sm)" }}>
+            {[true, false].map(val => (
+              <label
+                key={String(val)}
+                className={`${styles.radioBtn} ${intake.isPartOfGroup === val ? styles.selected : ""}`}
+                style={{
+                  display: "flex", alignItems: "center", gap: "var(--space-sm)", cursor: "pointer",
+                  padding: "10px 18px", borderRadius: "var(--radius-md)",
+                  border: `1.5px solid ${intake.isPartOfGroup === val ? "var(--color-primary)" : "var(--color-border)"}`,
+                  background: intake.isPartOfGroup === val ? "var(--color-primary-glow)" : "transparent",
+                  fontSize: "0.9rem", fontWeight: 500,
+                }}
+              >
+                <input
+                  type="radio"
+                  name="isPartOfGroup"
+                  checked={intake.isPartOfGroup === val}
+                  onChange={() => onChange({ ...intake, isPartOfGroup: val })}
+                  style={{ display: "none" }}
+                />
+                {val ? (ny ? "Inde" : "Yes") : (ny ? "Ayi" : "No")}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Group size */}
+        {intake.isPartOfGroup && (
+          <div className="form-group">
+            <label className="form-label" htmlFor="groupSize">
+              {ny ? "Anthu angati alipo mgulu lanu?" : "How many members are in your group?"}
+            </label>
+            <input
+              id="groupSize"
+              type="number"
+              min={1}
+              max={100}
+              className="form-input"
+              placeholder={ny ? "mwachitsanzo: 10" : "e.g. 10"}
+              value={intake.groupSize || ""}
+              onChange={e => onChange({ ...intake, groupSize: parseInt(e.target.value) || 0 })}
+            />
+            <div className="form-help">
+              {ny ? "Gulu liyenera kukhala ndi anthu 5 mpaka 25." : "Must be between 5 and 25 members."}
+            </div>
+          </div>
+        )}
+
+        {/* Owns business */}
+        <div className="form-group">
+          <label className="form-label">
+            {ny ? "Kodi mumayendetsa bizinesi?" : "Do you actively own or run a business?"}
+          </label>
+          <div style={{ display: "flex", gap: "var(--space-md)", marginTop: "var(--space-sm)" }}>
+            {[true, false].map(val => (
+              <label
+                key={String(val)}
+                className={`${styles.radioBtn} ${intake.ownsBusiness === val ? styles.selected : ""}`}
+                style={{
+                  display: "flex", alignItems: "center", gap: "var(--space-sm)", cursor: "pointer",
+                  padding: "10px 18px", borderRadius: "var(--radius-md)",
+                  border: `1.5px solid ${intake.ownsBusiness === val ? "var(--color-primary)" : "var(--color-border)"}`,
+                  background: intake.ownsBusiness === val ? "var(--color-primary-glow)" : "transparent",
+                  fontSize: "0.9rem", fontWeight: 500,
+                }}
+              >
+                <input
+                  type="radio"
+                  name="ownsBusiness"
+                  checked={intake.ownsBusiness === val}
+                  onChange={() => onChange({ ...intake, ownsBusiness: val })}
+                  style={{ display: "none" }}
+                />
+                {val ? (ny ? "Inde" : "Yes") : (ny ? "Ayi" : "No")}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* FINCA account */}
+        <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+          <label className="form-label">
+            {ny ? "Kodi muli ndi akaunti ya FINCA?" : "Do you currently have a FINCA account, or are you willing to open one?"}
+          </label>
+          <div style={{ display: "flex", gap: "var(--space-md)", marginTop: "var(--space-sm)", flexWrap: "wrap" }}>
+            {[
+              { val: 'yes', labelEn: 'Yes, I have one', labelNy: 'Inde, ndili nayo' },
+              { val: 'willing', labelEn: 'Willing to open', labelNy: 'Ndingatsegule' },
+              { val: 'no', labelEn: 'No', labelNy: 'Ayi' },
+            ].map(opt => (
+              <label
+                key={opt.val}
+                className={`${styles.radioBtn} ${intake.hasFincaAccount === opt.val ? styles.selected : ""}`}
+                style={{
+                  display: "flex", alignItems: "center", gap: "var(--space-sm)", cursor: "pointer",
+                  padding: "10px 18px", borderRadius: "var(--radius-md)",
+                  border: `1.5px solid ${intake.hasFincaAccount === opt.val ? "var(--color-primary)" : "var(--color-border)"}`,
+                  background: intake.hasFincaAccount === opt.val ? "var(--color-primary-glow)" : "transparent",
+                  fontSize: "0.9rem", fontWeight: 500,
+                }}
+              >
+                <input
+                  type="radio"
+                  name="hasFincaAccount"
+                  checked={intake.hasFincaAccount === opt.val}
+                  onChange={() => onChange({ ...intake, hasFincaAccount: opt.val as 'yes'|'willing'|'no' })}
+                  style={{ display: "none" }}
+                />
+                {ny ? opt.labelNy : opt.labelEn}
+              </label>
+            ))}
+          </div>
+        </div>
+
+      </div>
+    </div>
   );
 }

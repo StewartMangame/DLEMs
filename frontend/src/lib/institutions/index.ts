@@ -6,12 +6,14 @@
 
 import { MALAWI_POLICE_SACCO } from './malawi-police-sacco';
 import { FDH_BANK } from './fdh-bank';
+import { FINCA_MALAWI } from './finca-malawi';
 import type { InstitutionConfig } from './types';
 
 /** All available institutions. Add new entries here. */
 export const INSTITUTIONS: InstitutionConfig[] = [
   MALAWI_POLICE_SACCO,
   FDH_BANK,
+  FINCA_MALAWI,
   // Future: NATIONAL_BANK, NICO_LIFE, etc.
 ];
 

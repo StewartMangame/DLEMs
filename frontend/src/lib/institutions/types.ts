@@ -46,6 +46,17 @@ export interface InstitutionConfig {
   repaymentReminders?: boolean;
   creditFactors?: string[];
 
+  // Finca-specific flags
+  requiresProductSelection?: boolean;
+  requiresGroupLending?: boolean;
+
+  // Rates & Fees
+  fixedInterestRate?: number; // if present, pre-fill and fix in calculator
+  processingFeePercent?: number;
+  insuranceFeePercent?: number;
+  cashCollateralPercent?: number;
+  crbFeeApplicable?: boolean;
+
   // Products
   loanTypes: LoanTypeConfig[];
   repaymentTermsMonths: number[];
@@ -130,3 +141,11 @@ export interface SaccoIntakeData {
 export interface BankIntakeData {
   hasCrbFlag: boolean | null; // null = user has not answered yet
 }
+
+export interface FincaIntakeData {
+  isPartOfGroup: boolean | null;
+  groupSize: number;
+  ownsBusiness: boolean | null;
+  hasFincaAccount: 'yes' | 'willing' | 'no' | null;
+}
+
