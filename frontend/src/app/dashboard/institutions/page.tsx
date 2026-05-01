@@ -107,21 +107,57 @@ export default function InstitutionsPage() {
   const employmentCategory  = (profile?.employmentCategory ?? "private_sector") as EmploymentCategory;
 
   // ── Derived institution sets from selection ───────────────────────────────────
-  const selectedInstitutions = useMemo(
-    () => INSTITUTIONS.filter(i => selectedIds.includes(i.id)),
-    [selectedIds]
+  const displayCards = useMemo(() => {
+    const cards: InstitutionConfig[] = [];
+    const saccoInsts = INSTITUTIONS.filter(i => i.type === "SACCO");
+    
+    if (saccoInsts.length > 0) {
+      cards.push({
+        id: "sacco-group",
+        name: "SACCO",
+        type: "SACCO",
+        description: "Select this if you are a member of a SACCO. You will be asked to choose your specific SACCO from a list.",
+        membershipRequired: true,
+        crbCheckRequired: false,
+        requiresProductSelection: false,
+        requiresGroupLending: false,
+        minimumMembershipMonths: 0,
+        turnaroundDays: "Varies",
+        comparisonFields: {
+          minimumLoanMWK: 0,
+          maximumLoanMWK: 0,
+        }
+      } as any);
+    }
+    cards.push(...INSTITUTIONS.filter(i => i.type !== "SACCO"));
+    return cards;
+  }, []);
+
+  const selectedDisplayCards = useMemo(
+    () => displayCards.filter(i => selectedIds.includes(i.id)),
+    [selectedIds, displayCards]
   );
+
+  const selectedInstitutions = useMemo(() => {
+    const insts = INSTITUTIONS.filter(i => selectedIds.includes(i.id) && i.type !== "SACCO");
+    if (selectedIds.includes("sacco-group") && saccoIntake.saccoName) {
+      const selectedSacco = INSTITUTIONS.find(i => i.id === saccoIntake.saccoName);
+      if (selectedSacco) insts.push(selectedSacco);
+    }
+    return insts;
+  }, [selectedIds, saccoIntake.saccoName]);
+
   const hasSaccoInstitution = useMemo(
-    () => selectedInstitutions.some(i => i.membershipRequired),
-    [selectedInstitutions]
+    () => selectedDisplayCards.some(i => i.type === "SACCO" || i.membershipRequired),
+    [selectedDisplayCards]
   );
   const hasBankInstitution = useMemo(
-    () => selectedInstitutions.some(i => i.crbCheckRequired),
-    [selectedInstitutions]
+    () => selectedDisplayCards.some(i => i.crbCheckRequired),
+    [selectedDisplayCards]
   );
   const hasFincaInstitution = useMemo(
-    () => selectedInstitutions.some(i => i.requiresGroupLending),
-    [selectedInstitutions]
+    () => selectedDisplayCards.some(i => i.requiresGroupLending),
+    [selectedDisplayCards]
   );
   const needsIntakeStep = hasSaccoInstitution || hasBankInstitution || hasFincaInstitution;
 
@@ -138,7 +174,7 @@ export default function InstitutionsPage() {
     if (selectedIds.length === 0) return;
     
     // Validate that institutions requiring product selection have a product selected
-    const unselectedProductInsts = selectedInstitutions.filter(
+    const unselectedProductInsts = selectedDisplayCards.filter(
       inst => inst.requiresProductSelection && !selectedProducts[inst.id]
     );
     if (unselectedProductInsts.length > 0) {
@@ -297,7 +333,7 @@ export default function InstitutionsPage() {
           </p>
 
           <div className={styles.institutionGrid}>
-            {INSTITUTIONS.map(inst => (
+            {displayCards.map(inst => (
               <InstitutionCard
                 key={inst.id}
                 institution={inst}
@@ -442,18 +478,16 @@ function InstitutionCard({
 
   return (
     <div
+      role="button"
+      tabIndex={0}
       className={`card ${styles.institutionCard} ${selected ? styles.selected : ""}`}
       style={{ cursor: selected && institution.requiresProductSelection ? "default" : "pointer" }}
+      onClick={onToggle}
+      onKeyDown={e => e.key === "Enter" && onToggle()}
+      aria-pressed={selected}
+      aria-label={`Select ${institution.name}`}
     >
-      <div 
-        role="button"
-        tabIndex={0}
-        onClick={onToggle}
-        onKeyDown={e => e.key === "Enter" && onToggle()}
-        aria-pressed={selected}
-        aria-label={`Select ${institution.name}`}
-        style={{ cursor: "pointer" }}
-      >
+      <div>
         <div className={styles.cardTop}>
         <div className={styles.cardIcon}>{typeIcon}</div>
         <div className={`${styles.checkmark} ${selected ? styles.selected : ""}`}>✓</div>
@@ -484,14 +518,23 @@ function InstitutionCard({
         <div style={{ marginTop: institution.minimumMembershipMonths > 0 ? 4 : 0 }}>
           ⏱ {ny ? "Nthawi yotsatira:" : "Turnaround:"} {institution.turnaroundDays}
         </div>
-        <div style={{ marginTop: 4 }}>
-          💰 {ny ? "Ngongole:" : "Loan:"} {mwk(institution.comparisonFields.minimumLoanMWK)} – {mwk(institution.comparisonFields.maximumLoanMWK)}
-        </div>
+        {institution.id === "sacco-group" ? (
+          <div style={{ marginTop: 4 }}>
+            💰 {ny ? "Ngongole:" : "Loan:"} {ny ? "Zimatengera SACCO" : "Varies by SACCO"}
+          </div>
+        ) : (
+          <div style={{ marginTop: 4 }}>
+            💰 {ny ? "Ngongole:" : "Loan:"} {mwk(institution.comparisonFields.minimumLoanMWK)} – {mwk(institution.comparisonFields.maximumLoanMWK)}
+          </div>
+        )}
       </div>
       </div>
 
       {selected && institution.requiresProductSelection && (
-        <div className={styles.productSelectionContainer}>
+        <div 
+          className={styles.productSelectionContainer}
+          onClick={e => e.stopPropagation()} // Prevent card toggle when clicking inside
+        >
           <h4 className="text-sm" style={{ fontWeight: 600, marginBottom: "var(--space-sm)", color: "var(--color-text-primary)" }}>
             {ny ? "Sankhani Mtundu wa Ngongole" : "Select Loan Product"}
           </h4>
@@ -593,16 +636,19 @@ function SaccoIntakeForm({
           <label className="form-label" htmlFor="saccoName">
             {ny ? "Dzina la SACCO yanu" : "Which SACCO do you belong to?"}
           </label>
-          <input
+          <select
             id="saccoName"
-            type="text"
-            className="form-input"
-            placeholder={ny ? "mwachitsanzo: Malawi Police SACCO" : "e.g. Malawi Police SACCO"}
+            className="form-select"
             value={intake.saccoName}
             onChange={e => onChange({ ...intake, saccoName: e.target.value })}
-          />
-          <div className="form-help">
-            {ny ? "Lembani dzina lonse la SACCO." : "Enter the full name of your SACCO."}
+          >
+            <option value="">{ny ? "Sankhani SACCO yanu..." : "Select your SACCO..."}</option>
+            {INSTITUTIONS.filter(i => i.type === "SACCO").map(s => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+          <div className="form-help" style={{ marginTop: "8px" }}>
+            {ny ? "Simukuwona SACCO yanu? SACCO zina ziwonjezedwa posachedwa." : "Don't see your SACCO? More SACCOs will be added soon."}
           </div>
         </div>
 

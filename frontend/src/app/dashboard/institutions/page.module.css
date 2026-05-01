@@ -80,12 +80,12 @@
 /* ── Institution grid ─────────────────────────────────────────────────────── */
 .institutionGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 380px));
-  gap: var(--space-lg);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-md);
 }
 
 .institutionCard {
-  padding: var(--space-xl);
+  padding: var(--space-lg);
   cursor: pointer;
   transition: all var(--transition-base);
   border: 2px solid var(--color-border);
@@ -100,6 +100,7 @@
   background: linear-gradient(135deg, var(--color-primary-glow), transparent);
   opacity: 0;
   transition: opacity var(--transition-base);
+  pointer-events: none;
 }
 
 .institutionCard:hover {
@@ -189,6 +190,8 @@
   padding-top: var(--space-md);
   border-top: 1px dashed var(--color-border);
   animation: fadeIn 0.3s ease;
+  position: relative;
+  z-index: 2;
 }
 
 .productGrid {
