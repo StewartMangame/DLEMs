@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Institution } from '../entities/institution.entity';
 import { InstitutionCriteria } from '../entities/institution-criteria.entity';
 
-// ─── Real Malawian lending institution seed data ─────────────────────────────
+//  Real Malawian lending institution seed data 
 const SEED_INSTITUTIONS = [
   {
     name: 'National Bank of Malawi',
@@ -20,11 +20,16 @@ const SEED_INSTITUTIONS = [
       privateMultiplier: 6,
       selfEmployedMultiplier: 4,
       saccoMemberMultiplier: 8,
-      eligibleEmploymentTypes: ['civil_servant', 'private_sector', 'self_employed', 'sacco_member'],
+      eligibleEmploymentTypes: [
+        'civil_servant',
+        'private_sector',
+        'self_employed',
+        'sacco_member',
+      ],
       requiresGuarantor: false,
       requiresPayslip: true,
       notes:
-        'Civil servants benefit from salary deduction at source via IFMIS/GOVPAY, allowing up to 12× net salary. Payslip mandatory for all categories.',
+        'Civil servants benefit from salary deduction at source via IFMIS/GOVPAY.',
     },
   },
   {
@@ -41,11 +46,15 @@ const SEED_INSTITUTIONS = [
       privateMultiplier: 5,
       selfEmployedMultiplier: 3,
       saccoMemberMultiplier: 7,
-      eligibleEmploymentTypes: ['civil_servant', 'private_sector', 'self_employed', 'sacco_member'],
+      eligibleEmploymentTypes: [
+        'civil_servant',
+        'private_sector',
+        'self_employed',
+        'sacco_member',
+      ],
       requiresGuarantor: false,
       requiresPayslip: true,
-      notes:
-        'Open to all employment categories. Lower minimum salary threshold than peers. Self-employed applicants require 12 months of bank statements.',
+      notes: 'Flexible lending across employment categories.',
     },
   },
   {
@@ -62,11 +71,14 @@ const SEED_INSTITUTIONS = [
       privateMultiplier: 8,
       selfEmployedMultiplier: 3,
       saccoMemberMultiplier: 6,
-      eligibleEmploymentTypes: ['civil_servant', 'private_sector', 'self_employed'],
+      eligibleEmploymentTypes: [
+        'civil_servant',
+        'private_sector',
+        'self_employed',
+      ],
       requiresGuarantor: true,
       requiresPayslip: true,
-      notes:
-        'Best interest rate among commercial banks. Higher minimum salary and guarantor required. Self-employed must provide certified business accounts.',
+      notes: 'Best interest rate but stricter requirements.',
     },
   },
   {
@@ -83,11 +95,15 @@ const SEED_INSTITUTIONS = [
       privateMultiplier: 3,
       selfEmployedMultiplier: 3,
       saccoMemberMultiplier: 4,
-      eligibleEmploymentTypes: ['civil_servant', 'private_sector', 'self_employed', 'sacco_member'],
+      eligibleEmploymentTypes: [
+        'civil_servant',
+        'private_sector',
+        'self_employed',
+        'sacco_member',
+      ],
       requiresGuarantor: false,
       requiresPayslip: false,
-      notes:
-        'Accessible microfinance for low-income borrowers. No payslip required — alternative income evidence accepted. Group lending option available.',
+      notes: 'Accessible microfinance for low-income borrowers.',
     },
   },
   {
@@ -104,11 +120,15 @@ const SEED_INSTITUTIONS = [
       privateMultiplier: 2,
       selfEmployedMultiplier: 2,
       saccoMemberMultiplier: 3,
-      eligibleEmploymentTypes: ['civil_servant', 'private_sector', 'self_employed', 'sacco_member'],
+      eligibleEmploymentTypes: [
+        'civil_servant',
+        'private_sector',
+        'self_employed',
+        'sacco_member',
+      ],
       requiresGuarantor: false,
       requiresPayslip: false,
-      notes:
-        'Lowest minimum salary threshold in the market. Flexible repayment with no payslip required. Maximum term of 24 months. Ideal for micro-entrepreneurs.',
+      notes: 'Micro loans for low-income earners and entrepreneurs.',
     },
   },
   {
@@ -128,8 +148,7 @@ const SEED_INSTITUTIONS = [
       eligibleEmploymentTypes: ['sacco_member'],
       requiresGuarantor: false,
       requiresPayslip: false,
-      notes:
-        'Exclusive to registered SACCO members. Best interest rate in the market at 18% p.a. Members can access up to 10× their net salary. Non-members not eligible.',
+      notes: 'Exclusive to SACCO members with best rates.',
     },
   },
 ];
@@ -137,12 +156,17 @@ const SEED_INSTITUTIONS = [
 @Injectable()
 export class InstitutionsService {
   constructor(
-    @InjectRepository(Institution) private instRepo: Repository<Institution>,
-    @InjectRepository(InstitutionCriteria) private criteriaRepo: Repository<InstitutionCriteria>,
+    @InjectRepository(Institution)
+    private instRepo: Repository<Institution>,
+
+    @InjectRepository(InstitutionCriteria)
+    private criteriaRepo: Repository<InstitutionCriteria>,
   ) {}
 
   async getAllInstitutions() {
-    return this.instRepo.find({ relations: ['criteria'] });
+    return this.instRepo.find({
+      relations: ['criteria'],
+    });
   }
 
   async findByName(name: string) {
@@ -150,26 +174,32 @@ export class InstitutionsService {
     return this.instRepo.findOne({ where: { name } });
   }
 
-  /**
-   * Seeds the 6 real Malawian lending institutions on first startup.
-   * If institutions already exist the seed is skipped entirely.
-   */
+  //  UPDATED SEEDING (safe + proper relations + no duplication issues)
   async seedDefaultInstitutions() {
-    const count = await this.instRepo.count();
-    if (count > 0) return;
+    const existing = await this.instRepo.count();
+    if (existing > 0) return;
 
     for (const data of SEED_INSTITUTIONS) {
+      // safer check per institution (prevents partial re-seed issues)
+      const exists = await this.instRepo.findOne({
+        where: { name: data.name },
+      });
+
+      if (exists) continue;
+
       const inst = this.instRepo.create({
         name: data.name,
         type: data.type,
         isActive: true,
       });
+
       await this.instRepo.save(inst);
 
       const crit = this.criteriaRepo.create({
         ...data.criteria,
-        institutionId: inst.id,
+        institution: inst, //  FIXED: proper relation mapping
       });
+
       await this.criteriaRepo.save(crit);
     }
   }
