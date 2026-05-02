@@ -1,7 +1,8 @@
 import { Module, OnModuleInit } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+
 import { User } from './entities/user.entity';
 import { Institution } from './entities/institution.entity';
 import { InstitutionCriteria } from './entities/institution-criteria.entity';
@@ -17,11 +18,13 @@ import { LoansModule } from './loans/loans.module';
 import { InstitutionsModule } from './institutions/institutions.module';
 import { EligibilityModule } from './eligibility/eligibility.module';
 import { ReminderModule } from './reminder/reminder.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { AdminModule } from './admin/admin.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+
 import { InstitutionsService } from './institutions/institutions.service';
 import { AuthService } from './auth/auth.service';
 
@@ -30,19 +33,37 @@ import { AuthService } from './auth/auth.service';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+
     TypeOrmModule.forRoot({
       type: 'sqlite',
       database: 'loan_db.sqlite',
       entities: [
-        User, Institution, InstitutionCriteria, FinancialProfile,
-        Loan, LoanApplication, Reminder, NotificationLog
+        User,
+        Institution,
+        InstitutionCriteria,
+        FinancialProfile,
+        Loan,
+        LoanApplication,
+        Reminder,
+        NotificationLog,
       ],
-      synchronize: true, // For development, automatically sync entity schemas
+      synchronize: true,
+      autoLoadEntities: true,
     }),
+
     ScheduleModule.forRoot(),
-    AuthModule, ProfileModule, LoansModule, InstitutionsModule,
-    EligibilityModule, ReminderModule, AdminModule, DashboardModule,
+
+    AuthModule,
+    ProfileModule,
+    LoansModule,
+    InstitutionsModule,
+    EligibilityModule,
+    ReminderModule,
+    NotificationsModule,
+    AdminModule,
+    DashboardModule,
   ],
+
   controllers: [AppController],
   providers: [AppService],
 })
