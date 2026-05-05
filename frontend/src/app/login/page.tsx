@@ -70,7 +70,9 @@ export default function LoginPage() {
           </form>
 
           <div className={styles.adminNote}>
-            <span className="badge badge-info">Admin Access</span>
+            <Link href="/admin-panel/login" className="badge badge-info" style={{ cursor: "pointer", textDecoration: "none" }}>
+              Admin Access
+            </Link>
             <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>
               Credit officers: use your admin credentials
             </span>
