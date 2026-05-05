@@ -47,16 +47,22 @@ let AdminService = class AdminService {
         });
         const isInstitutionAdmin = currentUser.role === 'admin' && currentUser.institutionId;
         return {
-            applications: applications.map(app => ({
+            applications: applications.map((app) => ({
                 ...app,
                 user: isInstitutionAdmin
-                    ? { fullName: 'Applicant ***', employeeNumber: app.user?.employeeNumber?.slice(0, 4) + '****' }
+                    ? {
+                        fullName: 'Applicant ***',
+                        employeeNumber: app.user?.employeeNumber?.slice(0, 4) + '****',
+                    }
                     : app.user,
             })),
         };
     }
     async getApplication(id) {
-        const app = await this.appRepo.findOne({ where: { id }, relations: ['user', 'institution'] });
+        const app = await this.appRepo.findOne({
+            where: { id },
+            relations: ['user', 'institution'],
+        });
         if (!app)
             throw new common_1.NotFoundException('Application not found');
         return { application: app };
@@ -75,14 +81,26 @@ let AdminService = class AdminService {
             where.institutionId = currentUser.institutionId;
         }
         const total = await this.appRepo.count({ where });
-        const pending = await this.appRepo.count({ where: { ...where, status: 'PENDING' } });
-        const approved = await this.appRepo.count({ where: { ...where, status: 'APPROVED' } });
-        const rejected = await this.appRepo.count({ where: { ...where, status: 'REJECTED' } });
-        const active = await this.appRepo.count({ where: { ...where, status: 'ACTIVE' } });
+        const pending = await this.appRepo.count({
+            where: { ...where, status: 'PENDING' },
+        });
+        const approved = await this.appRepo.count({
+            where: { ...where, status: 'APPROVED' },
+        });
+        const rejected = await this.appRepo.count({
+            where: { ...where, status: 'REJECTED' },
+        });
+        const active = await this.appRepo.count({
+            where: { ...where, status: 'ACTIVE' },
+        });
         return { total, pending, approved, rejected, active };
     }
     async createInstitution(data) {
-        const inst = this.instRepo.create({ name: data.name, type: data.type, isActive: true });
+        const inst = this.instRepo.create({
+            name: data.name,
+            type: data.type,
+            isActive: true,
+        });
         await this.instRepo.save(inst);
         const crit = this.criteriaRepo.create({
             institutionId: inst.id,
@@ -107,7 +125,7 @@ let AdminService = class AdminService {
         return { success: true, user };
     }
     async updateCriteria(institutionId, data) {
-        let crit = await this.criteriaRepo.findOne({ where: { institutionId } });
+        const crit = await this.criteriaRepo.findOne({ where: { institutionId } });
         if (!crit)
             throw new common_1.NotFoundException('Criteria not found');
         if (data.maxDtiRatio !== undefined)

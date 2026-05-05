@@ -7,7 +7,9 @@ import { LoanApplication } from '../entities/loan-application.entity';
 import { FinancialProfile } from '../entities/financial-profile.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Loan, LoanApplication, FinancialProfile])],
+  imports: [
+    TypeOrmModule.forFeature([User, Loan, LoanApplication, FinancialProfile]),
+  ],
   controllers: [DashboardController],
 })
 export class DashboardModule {}

@@ -34,8 +34,8 @@ let EligibilityService = class EligibilityService {
             relations: ['criteria'],
         });
         const checkParams = institutions
-            .filter(inst => inst.criteria)
-            .map(inst => ({
+            .filter((inst) => inst.criteria)
+            .map((inst) => ({
             institutionId: inst.id,
             institutionName: inst.name,
             institutionType: inst.type,
@@ -78,8 +78,9 @@ let EligibilityService = class EligibilityService {
             requestedTermMonths: term,
             institutionIds: undefined,
         });
+        const targetInstitutionId = parseInt(institutionId, 10);
         const allResults = [...compareResult.ranked, ...compareResult.ineligible];
-        const targetResult = allResults.find(r => r.institutionId === institutionId) ?? null;
+        const targetResult = allResults.find((r) => r.institutionId === targetInstitutionId) ?? null;
         return {
             result: targetResult,
             bankSimulations: allResults,
@@ -90,7 +91,7 @@ let EligibilityService = class EligibilityService {
             where: { isActive: true },
             relations: ['criteria'],
         });
-        return institutions.map(inst => ({
+        return institutions.map((inst) => ({
             id: inst.id,
             name: inst.name,
             type: inst.type,

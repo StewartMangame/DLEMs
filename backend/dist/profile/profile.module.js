@@ -21,7 +21,7 @@ exports.ProfileModule = ProfileModule = __decorate([
     (0, common_1.Module)({
         imports: [
             typeorm_1.TypeOrmModule.forFeature([financial_profile_entity_1.FinancialProfile, user_entity_1.User]),
-            institutions_module_1.InstitutionsModule
+            institutions_module_1.InstitutionsModule,
         ],
         controllers: [profile_controller_1.ProfileController],
         providers: [profile_service_1.ProfileService],

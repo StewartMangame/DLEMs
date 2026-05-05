@@ -14,6 +14,9 @@ export declare class AuthController {
             phone: string;
             email: string;
             role: string;
+            accountStatus: string;
+            lastActiveAt: Date;
+            suspendedAt: Date;
             isInstitutionAdmin: boolean;
             institutionId: number;
             institution: import("../entities/institution.entity").Institution;
@@ -38,6 +41,9 @@ export declare class AuthController {
             phone: string;
             email: string;
             role: string;
+            accountStatus: string;
+            lastActiveAt: Date;
+            suspendedAt: Date;
             isInstitutionAdmin: boolean;
             institutionId: number;
             institution: import("../entities/institution.entity").Institution;

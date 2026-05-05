@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
@@ -18,8 +22,13 @@ export class AuthService {
   }
 
   async login(loginDto: any) {
-    const user = await this.userRepository.findOne({ where: { email: loginDto.email } });
-    if (!user || !(await bcrypt.compare(loginDto.password, user.passwordHash))) {
+    const user = await this.userRepository.findOne({
+      where: { email: loginDto.email },
+    });
+    if (
+      !user ||
+      !(await bcrypt.compare(loginDto.password, user.passwordHash))
+    ) {
       throw new UnauthorizedException('Invalid credentials');
     }
     const payload = { sub: user.id, role: user.role };
@@ -27,12 +36,14 @@ export class AuthService {
     return {
       access_token: this.jwtService.sign(payload),
       role: user.role,
-      user: safeUser
+      user: safeUser,
     };
   }
 
   async register(registerDto: any) {
-    const existing = await this.userRepository.findOne({ where: { email: registerDto.email } });
+    const existing = await this.userRepository.findOne({
+      where: { email: registerDto.email },
+    });
     if (existing) {
       throw new BadRequestException('User already exists');
     }
@@ -52,24 +63,7 @@ export class AuthService {
     return {
       access_token: this.jwtService.sign(payload),
       role: user.role,
-      user: safeUser
+      user: safeUser,
     };
-  }
-
-  async seedAdmin() {
-    const email = 'admin@dlem.mw';
-    const existing = await this.userRepository.findOne({ where: { email } });
-    if (existing) return;
-
-    const user = new User();
-    user.email = email;
-    user.passwordHash = await bcrypt.hash('Admin@123', 10);
-    user.fullName = 'System Administrator';
-    user.role = 'admin'; // or 'superadmin' based on the controller checks
-    user.nationalId = 'ADMIN-001';
-    user.employeeNumber = 'ADMIN-001';
-    user.phone = '+265 000000000';
-    await this.userRepository.save(user);
-    console.log('Default admin seeded: admin@dlem.mw / Admin@123');
   }
 }

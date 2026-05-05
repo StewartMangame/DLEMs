@@ -41,7 +41,7 @@ __decorate([
     __metadata("design:type", Number)
 ], LoanApplication.prototype, "userId", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, u => u.applications),
+    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (u) => u.applications),
     (0, typeorm_1.JoinColumn)({ name: 'userId' }),
     __metadata("design:type", user_entity_1.User)
 ], LoanApplication.prototype, "user", void 0);
@@ -50,7 +50,7 @@ __decorate([
     __metadata("design:type", Number)
 ], LoanApplication.prototype, "institutionId", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => institution_entity_1.Institution, i => i.applications),
+    (0, typeorm_1.ManyToOne)(() => institution_entity_1.Institution, (i) => i.applications),
     (0, typeorm_1.JoinColumn)({ name: 'institutionId' }),
     __metadata("design:type", institution_entity_1.Institution)
 ], LoanApplication.prototype, "institution", void 0);
@@ -91,7 +91,7 @@ __decorate([
     __metadata("design:type", Date)
 ], LoanApplication.prototype, "createdAt", void 0);
 __decorate([
-    (0, typeorm_1.OneToOne)(() => loan_entity_1.Loan, l => l.application),
+    (0, typeorm_1.OneToOne)(() => loan_entity_1.Loan, (l) => l.application),
     __metadata("design:type", loan_entity_1.Loan)
 ], LoanApplication.prototype, "loan", void 0);
 exports.LoanApplication = LoanApplication = __decorate([

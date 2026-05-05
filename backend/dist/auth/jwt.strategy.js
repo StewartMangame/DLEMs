@@ -27,7 +27,7 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
                 },
             ]),
             ignoreExpiration: false,
-            secretOrKey: configService.get('JWT_SECRET', 'super_secret_jwt_key'),
+            secretOrKey: configService.getOrThrow('JWT_SECRET'),
         });
     }
     async validate(payload) {

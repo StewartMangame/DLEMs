@@ -47,7 +47,7 @@ __decorate([
     __metadata("design:type", Number)
 ], Loan.prototype, "userId", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, u => u.activeLoans),
+    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (u) => u.activeLoans),
     (0, typeorm_1.JoinColumn)({ name: 'userId' }),
     __metadata("design:type", user_entity_1.User)
 ], Loan.prototype, "user", void 0);
@@ -56,7 +56,7 @@ __decorate([
     __metadata("design:type", Number)
 ], Loan.prototype, "providerInstitutionId", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => institution_entity_1.Institution, i => i.loans),
+    (0, typeorm_1.ManyToOne)(() => institution_entity_1.Institution, (i) => i.loans),
     (0, typeorm_1.JoinColumn)({ name: 'providerInstitutionId' }),
     __metadata("design:type", institution_entity_1.Institution)
 ], Loan.prototype, "providerInstitution", void 0);
@@ -105,12 +105,12 @@ __decorate([
     __metadata("design:type", Number)
 ], Loan.prototype, "applicationId", void 0);
 __decorate([
-    (0, typeorm_1.OneToOne)(() => loan_application_entity_1.LoanApplication, a => a.loan),
+    (0, typeorm_1.OneToOne)(() => loan_application_entity_1.LoanApplication, (a) => a.loan),
     (0, typeorm_1.JoinColumn)({ name: 'applicationId' }),
     __metadata("design:type", loan_application_entity_1.LoanApplication)
 ], Loan.prototype, "application", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => reminder_entity_1.Reminder, r => r.loan),
+    (0, typeorm_1.OneToMany)(() => reminder_entity_1.Reminder, (r) => r.loan),
     __metadata("design:type", Array)
 ], Loan.prototype, "reminders", void 0);
 __decorate([

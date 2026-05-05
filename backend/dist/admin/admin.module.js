@@ -22,7 +22,16 @@ let AdminModule = class AdminModule {
 exports.AdminModule = AdminModule;
 exports.AdminModule = AdminModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([user_entity_1.User, institution_entity_1.Institution, institution_criteria_entity_1.InstitutionCriteria, loan_application_entity_1.LoanApplication, loan_entity_1.Loan, financial_profile_entity_1.FinancialProfile])],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([
+                user_entity_1.User,
+                institution_entity_1.Institution,
+                institution_criteria_entity_1.InstitutionCriteria,
+                loan_application_entity_1.LoanApplication,
+                loan_entity_1.Loan,
+                financial_profile_entity_1.FinancialProfile,
+            ]),
+        ],
         controllers: [admin_controller_1.AdminController],
         providers: [admin_service_1.AdminService],
     })

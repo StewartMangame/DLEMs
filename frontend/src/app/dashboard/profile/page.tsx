@@ -38,7 +38,7 @@ export default function ProfilePage() {
       if (data.profile) {
         setForm({
           ...data.profile,
-          bank: data.bank || "",
+          bank: data.profile.bank || "",
           employmentCategory: data.profile.employmentCategory || ""
         });
       }
@@ -66,12 +66,12 @@ export default function ProfilePage() {
     });
     const data = await res.json();
     if (res.ok) setMsg({ type: "success", text: "Profile saved successfully!" });
-    else setMsg({ type: "error", text: data.error || "Save failed." });
+    else setMsg({ type: "error", text: data.message || data.error || "Save failed." });
     setSaving(false);
   };
 
 
-  if (!loadedProfile) return <div style={{ padding: 40, color: "var(--color-text-muted)" }}>Loading…</div>;
+  if (!loadedProfile) return <div style={{ padding: 40, color: "var(--color-text-muted)" }}>Loading...</div>;
 
   return (
     <div className={styles.page}>
@@ -103,7 +103,7 @@ export default function ProfilePage() {
               <label className="form-label" htmlFor="employmentCategory">Employment Category</label>
               <select id="employmentCategory" name="employmentCategory" required className="form-select"
                 value={form.employmentCategory || ""} onChange={handleChange}>
-                <option value="">— Select Category —</option>
+                <option value="">Select Category</option>
                 <option value="civil_servant">Civil Servant (Government)</option>
                 <option value="private_sector">Private Sector</option>
                 <option value="self_employed">Self-Employed / Business owner</option>
@@ -139,7 +139,7 @@ export default function ProfilePage() {
               <label className="form-label" htmlFor="bank">Primary Salary Bank</label>
               <select id="bank" name="bank" className="form-select"
                 value={form.bank || ""} onChange={handleChange}>
-                <option value="">— Unbanked / Other —</option>
+                <option value="">Unbanked / Other</option>
                 {institutions.map(inst => (
                   <option key={inst.id} value={inst.name}>{inst.name}</option>
                 ))}
@@ -155,7 +155,7 @@ export default function ProfilePage() {
               <label className="form-label" htmlFor="housingStatus">Housing Status</label>
               <select id="housingStatus" name="housingStatus" required className="form-select"
                 value={form.housingStatus || ""} onChange={handleChange}>
-                <option value="">— Select status —</option>
+                <option value="">Select status</option>
                 <option value="owner">Property Owner</option>
                 <option value="tenant">Tenant / Renting</option>
                 <option value="family">Living with Family</option>
@@ -184,7 +184,7 @@ export default function ProfilePage() {
 
         <div className={styles.formActions}>
           <button type="submit" className="btn btn-primary btn-lg" disabled={saving}>
-            {saving ? <><span className="loading-spinner" /> Saving…</> : "Save Profile →"}
+            {saving ? <><span className="loading-spinner" /> Saving...</> : "Save Profile"}
           </button>
         </div>
       </form>

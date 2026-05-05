@@ -29,6 +29,7 @@ let FinancialProfile = class FinancialProfile {
     existingLoanAmount;
     totalBorrowedAmount;
     bankingYears;
+    dependants;
     createdAt;
     updatedAt;
 };
@@ -42,7 +43,7 @@ __decorate([
     __metadata("design:type", Number)
 ], FinancialProfile.prototype, "userId", void 0);
 __decorate([
-    (0, typeorm_1.OneToOne)(() => user_entity_1.User, u => u.profile),
+    (0, typeorm_1.OneToOne)(() => user_entity_1.User, (u) => u.profile),
     (0, typeorm_1.JoinColumn)({ name: 'userId' }),
     __metadata("design:type", user_entity_1.User)
 ], FinancialProfile.prototype, "user", void 0);
@@ -67,7 +68,7 @@ __decorate([
     __metadata("design:type", Number)
 ], FinancialProfile.prototype, "salaryInstitutionId", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => institution_entity_1.Institution, i => i.profiles),
+    (0, typeorm_1.ManyToOne)(() => institution_entity_1.Institution, (i) => i.profiles),
     (0, typeorm_1.JoinColumn)({ name: 'salaryInstitutionId' }),
     __metadata("design:type", institution_entity_1.Institution)
 ], FinancialProfile.prototype, "salaryInstitution", void 0);
@@ -95,6 +96,10 @@ __decorate([
     (0, typeorm_1.Column)('float', { default: 0 }),
     __metadata("design:type", Number)
 ], FinancialProfile.prototype, "bankingYears", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: 0 }),
+    __metadata("design:type", Number)
+], FinancialProfile.prototype, "dependants", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)

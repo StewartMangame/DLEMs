@@ -31,7 +31,7 @@ __decorate([
     __metadata("design:type", Number)
 ], NotificationLog.prototype, "reminderId", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => reminder_entity_1.Reminder, r => r.logs),
+    (0, typeorm_1.ManyToOne)(() => reminder_entity_1.Reminder, (r) => r.logs),
     (0, typeorm_1.JoinColumn)({ name: 'reminderId' }),
     __metadata("design:type", reminder_entity_1.Reminder)
 ], NotificationLog.prototype, "reminder", void 0);

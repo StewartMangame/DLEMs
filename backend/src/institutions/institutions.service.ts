@@ -11,7 +11,7 @@ const SEED_INSTITUTIONS = [
     type: 'BANK',
     criteria: {
       interestRate: 25,
-      maxDtiRatio: 0.40,
+      maxDtiRatio: 0.4,
       minNetSalary: 80_000,
       minRepaymentMonths: 3,
       maxRepaymentMonths: 60,
@@ -20,7 +20,12 @@ const SEED_INSTITUTIONS = [
       privateMultiplier: 6,
       selfEmployedMultiplier: 4,
       saccoMemberMultiplier: 8,
-      eligibleEmploymentTypes: ['civil_servant', 'private_sector', 'self_employed', 'sacco_member'],
+      eligibleEmploymentTypes: [
+        'civil_servant',
+        'private_sector',
+        'self_employed',
+        'sacco_member',
+      ],
       requiresGuarantor: false,
       requiresPayslip: true,
       notes:
@@ -32,7 +37,7 @@ const SEED_INSTITUTIONS = [
     type: 'BANK',
     criteria: {
       interestRate: 28,
-      maxDtiRatio: 0.40,
+      maxDtiRatio: 0.4,
       minNetSalary: 60_000,
       minRepaymentMonths: 3,
       maxRepaymentMonths: 60,
@@ -41,7 +46,12 @@ const SEED_INSTITUTIONS = [
       privateMultiplier: 5,
       selfEmployedMultiplier: 3,
       saccoMemberMultiplier: 7,
-      eligibleEmploymentTypes: ['civil_servant', 'private_sector', 'self_employed', 'sacco_member'],
+      eligibleEmploymentTypes: [
+        'civil_servant',
+        'private_sector',
+        'self_employed',
+        'sacco_member',
+      ],
       requiresGuarantor: false,
       requiresPayslip: true,
       notes:
@@ -62,7 +72,11 @@ const SEED_INSTITUTIONS = [
       privateMultiplier: 8,
       selfEmployedMultiplier: 3,
       saccoMemberMultiplier: 6,
-      eligibleEmploymentTypes: ['civil_servant', 'private_sector', 'self_employed'],
+      eligibleEmploymentTypes: [
+        'civil_servant',
+        'private_sector',
+        'self_employed',
+      ],
       requiresGuarantor: true,
       requiresPayslip: true,
       notes:
@@ -74,7 +88,7 @@ const SEED_INSTITUTIONS = [
     type: 'MICROFINANCE',
     criteria: {
       interestRate: 36,
-      maxDtiRatio: 0.50,
+      maxDtiRatio: 0.5,
       minNetSalary: 30_000,
       minRepaymentMonths: 1,
       maxRepaymentMonths: 36,
@@ -83,7 +97,12 @@ const SEED_INSTITUTIONS = [
       privateMultiplier: 3,
       selfEmployedMultiplier: 3,
       saccoMemberMultiplier: 4,
-      eligibleEmploymentTypes: ['civil_servant', 'private_sector', 'self_employed', 'sacco_member'],
+      eligibleEmploymentTypes: [
+        'civil_servant',
+        'private_sector',
+        'self_employed',
+        'sacco_member',
+      ],
       requiresGuarantor: false,
       requiresPayslip: false,
       notes:
@@ -95,7 +114,7 @@ const SEED_INSTITUTIONS = [
     type: 'MICROFINANCE',
     criteria: {
       interestRate: 40,
-      maxDtiRatio: 0.50,
+      maxDtiRatio: 0.5,
       minNetSalary: 20_000,
       minRepaymentMonths: 1,
       maxRepaymentMonths: 24,
@@ -104,7 +123,12 @@ const SEED_INSTITUTIONS = [
       privateMultiplier: 2,
       selfEmployedMultiplier: 2,
       saccoMemberMultiplier: 3,
-      eligibleEmploymentTypes: ['civil_servant', 'private_sector', 'self_employed', 'sacco_member'],
+      eligibleEmploymentTypes: [
+        'civil_servant',
+        'private_sector',
+        'self_employed',
+        'sacco_member',
+      ],
       requiresGuarantor: false,
       requiresPayslip: false,
       notes:
@@ -138,7 +162,8 @@ const SEED_INSTITUTIONS = [
 export class InstitutionsService {
   constructor(
     @InjectRepository(Institution) private instRepo: Repository<Institution>,
-    @InjectRepository(InstitutionCriteria) private criteriaRepo: Repository<InstitutionCriteria>,
+    @InjectRepository(InstitutionCriteria)
+    private criteriaRepo: Repository<InstitutionCriteria>,
   ) {}
 
   async getAllInstitutions() {

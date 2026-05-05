@@ -37,7 +37,7 @@ __decorate([
     __metadata("design:type", Number)
 ], Reminder.prototype, "loanId", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => loan_entity_1.Loan, l => l.reminders),
+    (0, typeorm_1.ManyToOne)(() => loan_entity_1.Loan, (l) => l.reminders),
     (0, typeorm_1.JoinColumn)({ name: 'loanId' }),
     __metadata("design:type", loan_entity_1.Loan)
 ], Reminder.prototype, "loan", void 0);
@@ -46,7 +46,7 @@ __decorate([
     __metadata("design:type", Number)
 ], Reminder.prototype, "userId", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, u => u.reminders),
+    (0, typeorm_1.ManyToOne)(() => user_entity_1.User, (u) => u.reminders),
     (0, typeorm_1.JoinColumn)({ name: 'userId' }),
     __metadata("design:type", user_entity_1.User)
 ], Reminder.prototype, "user", void 0);
@@ -71,7 +71,7 @@ __decorate([
     __metadata("design:type", Boolean)
 ], Reminder.prototype, "deductionConfirmed", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => notification_log_entity_1.NotificationLog, n => n.reminder),
+    (0, typeorm_1.OneToMany)(() => notification_log_entity_1.NotificationLog, (n) => n.reminder),
     __metadata("design:type", Array)
 ], Reminder.prototype, "logs", void 0);
 exports.Reminder = Reminder = __decorate([

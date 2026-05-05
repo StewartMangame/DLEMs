@@ -12,6 +12,9 @@ export declare class User {
     email: string;
     passwordHash: string;
     role: string;
+    accountStatus: string;
+    lastActiveAt: Date;
+    suspendedAt: Date;
     isInstitutionAdmin: boolean;
     institutionId: number;
     institution: Institution;

@@ -21,7 +21,7 @@ exports.InstitutionsModule = InstitutionsModule = __decorate([
         imports: [typeorm_1.TypeOrmModule.forFeature([institution_entity_1.Institution, institution_criteria_entity_1.InstitutionCriteria])],
         controllers: [institutions_controller_1.InstitutionsController],
         providers: [institutions_service_1.InstitutionsService],
-        exports: [institutions_service_1.InstitutionsService]
+        exports: [institutions_service_1.InstitutionsService],
     })
 ], InstitutionsModule);
 //# sourceMappingURL=institutions.module.js.map

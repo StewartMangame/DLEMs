@@ -21,7 +21,15 @@ let LoansModule = class LoansModule {
 exports.LoansModule = LoansModule;
 exports.LoansModule = LoansModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([loan_entity_1.Loan, loan_application_entity_1.LoanApplication, institution_entity_1.Institution, financial_profile_entity_1.FinancialProfile, reminder_entity_1.Reminder])],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([
+                loan_entity_1.Loan,
+                loan_application_entity_1.LoanApplication,
+                institution_entity_1.Institution,
+                financial_profile_entity_1.FinancialProfile,
+                reminder_entity_1.Reminder,
+            ]),
+        ],
         controllers: [loans_controller_1.LoansController],
         providers: [loans_service_1.LoansService],
     })

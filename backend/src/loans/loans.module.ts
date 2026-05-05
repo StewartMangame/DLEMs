@@ -9,7 +9,15 @@ import { LoansController } from './loans.controller';
 import { LoansService } from './loans.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Loan, LoanApplication, Institution, FinancialProfile, Reminder])],
+  imports: [
+    TypeOrmModule.forFeature([
+      Loan,
+      LoanApplication,
+      Institution,
+      FinancialProfile,
+      Reminder,
+    ]),
+  ],
   controllers: [LoansController],
   providers: [LoansService],
 })

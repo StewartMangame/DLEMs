@@ -33,9 +33,9 @@ let ReminderService = ReminderService_1 = class ReminderService {
         const reminders = await this.reminderRepo.find({
             where: {
                 status: 'PENDING',
-                scheduledAt: (0, typeorm_2.LessThanOrEqual)(new Date())
+                scheduledAt: (0, typeorm_2.LessThanOrEqual)(new Date()),
             },
-            relations: ['user', 'loan', 'loan.providerInstitution']
+            relations: ['user', 'loan', 'loan.providerInstitution'],
         });
         for (const reminder of reminders) {
             this.logger.log(`Processing reminder for user ${reminder.user?.email || reminder.userId}`);
@@ -45,7 +45,10 @@ let ReminderService = ReminderService_1 = class ReminderService {
         this.logger.log(`Processed ${reminders.length} reminders.`);
     }
     async markAsSent(reminderId) {
-        await this.reminderRepo.update(reminderId, { status: 'SENT', sentAt: new Date() });
+        await this.reminderRepo.update(reminderId, {
+            status: 'SENT',
+            sentAt: new Date(),
+        });
     }
     async logNotification(reminderId, success, channel, error) {
         const log = this.logRepo.create({

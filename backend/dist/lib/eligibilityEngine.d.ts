@@ -47,10 +47,6 @@ export interface CompareResult {
         employmentCategory: string;
     };
 }
-export declare function calculateMonthlyInstallment(amount: number, annualRate: number, months: number): number;
-export declare function calculateMaxPrincipal(maxMonthlyPayment: number, annualRate: number, months: number): number;
-export declare function getMultiplier(category: EmploymentCategory, criteria: InstitutionCriteriaData): number;
-export declare function calculateDtiRatio(monthlySalary: number, existingRepayments: number, newInstallment: number): number;
 export interface CheckInstitutionParams {
     institutionId: number;
     institutionName: string;
@@ -62,5 +58,9 @@ export interface CheckInstitutionParams {
     requestedAmount: number;
     requestedTermMonths: number;
 }
+export declare function calculateMonthlyInstallment(amount: number, annualRate: number, months: number): number;
+export declare function calculateMaxPrincipal(maxMonthlyPayment: number, annualRate: number, months: number): number;
+export declare function getMultiplier(category: EmploymentCategory, criteria: InstitutionCriteriaData): number;
+export declare function calculateDtiRatio(monthlySalary: number, existingRepayments: number, newInstallment: number): number;
 export declare function checkInstitution(p: CheckInstitutionParams): InstitutionEligibilityResult;
 export declare function rankInstitutions(institutions: CheckInstitutionParams[]): CompareResult;

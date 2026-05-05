@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Reminder } from './reminder.entity';
 
 @Entity()
@@ -9,7 +16,7 @@ export class NotificationLog {
   @Column()
   reminderId: number;
 
-  @ManyToOne(() => Reminder, r => r.logs)
+  @ManyToOne(() => Reminder, (r) => r.logs)
   @JoinColumn({ name: 'reminderId' })
   reminder: Reminder;
 

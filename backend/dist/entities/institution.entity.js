@@ -20,8 +20,20 @@ let Institution = class Institution {
     id;
     name;
     type;
+    status;
     isActive;
+    description;
+    isInterestRateFixed;
+    requiresCrbCheck;
+    collateralAccepted;
+    turnaroundTime;
+    reminderAvailable;
+    digitalApplicationAvailable;
+    requiredDocuments;
+    reviewDueDate;
+    lastVerifiedAt;
     createdAt;
+    updatedAt;
     criteria;
     admins;
     loans;
@@ -42,31 +54,79 @@ __decorate([
     __metadata("design:type", String)
 ], Institution.prototype, "type", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'text', default: 'active' }),
+    __metadata("design:type", String)
+], Institution.prototype, "status", void 0);
+__decorate([
     (0, typeorm_1.Column)({ default: true }),
     __metadata("design:type", Boolean)
 ], Institution.prototype, "isActive", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], Institution.prototype, "description", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: true }),
+    __metadata("design:type", Boolean)
+], Institution.prototype, "isInterestRateFixed", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], Institution.prototype, "requiresCrbCheck", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], Institution.prototype, "collateralAccepted", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Institution.prototype, "turnaroundTime", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], Institution.prototype, "reminderAvailable", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], Institution.prototype, "digitalApplicationAvailable", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'simple-json', nullable: true }),
+    __metadata("design:type", Array)
+], Institution.prototype, "requiredDocuments", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", Date)
+], Institution.prototype, "reviewDueDate", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", Date)
+], Institution.prototype, "lastVerifiedAt", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)
 ], Institution.prototype, "createdAt", void 0);
 __decorate([
-    (0, typeorm_1.OneToOne)(() => institution_criteria_entity_1.InstitutionCriteria, c => c.institution),
+    (0, typeorm_1.UpdateDateColumn)(),
+    __metadata("design:type", Date)
+], Institution.prototype, "updatedAt", void 0);
+__decorate([
+    (0, typeorm_1.OneToOne)(() => institution_criteria_entity_1.InstitutionCriteria, (c) => c.institution),
     __metadata("design:type", institution_criteria_entity_1.InstitutionCriteria)
 ], Institution.prototype, "criteria", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => user_entity_1.User, u => u.institution),
+    (0, typeorm_1.OneToMany)(() => user_entity_1.User, (u) => u.institution),
     __metadata("design:type", Array)
 ], Institution.prototype, "admins", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => loan_entity_1.Loan, l => l.providerInstitution),
+    (0, typeorm_1.OneToMany)(() => loan_entity_1.Loan, (l) => l.providerInstitution),
     __metadata("design:type", Array)
 ], Institution.prototype, "loans", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => financial_profile_entity_1.FinancialProfile, f => f.salaryInstitution),
+    (0, typeorm_1.OneToMany)(() => financial_profile_entity_1.FinancialProfile, (f) => f.salaryInstitution),
     __metadata("design:type", Array)
 ], Institution.prototype, "profiles", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => loan_application_entity_1.LoanApplication, l => l.institution),
+    (0, typeorm_1.OneToMany)(() => loan_application_entity_1.LoanApplication, (l) => l.institution),
     __metadata("design:type", Array)
 ], Institution.prototype, "applications", void 0);
 exports.Institution = Institution = __decorate([

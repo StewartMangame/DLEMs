@@ -19,7 +19,9 @@ let DashboardModule = class DashboardModule {
 exports.DashboardModule = DashboardModule;
 exports.DashboardModule = DashboardModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([user_entity_1.User, loan_entity_1.Loan, loan_application_entity_1.LoanApplication, financial_profile_entity_1.FinancialProfile])],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([user_entity_1.User, loan_entity_1.Loan, loan_application_entity_1.LoanApplication, financial_profile_entity_1.FinancialProfile]),
+        ],
         controllers: [dashboard_controller_1.DashboardController],
     })
 ], DashboardModule);

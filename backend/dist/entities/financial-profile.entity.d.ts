@@ -16,6 +16,7 @@ export declare class FinancialProfile {
     existingLoanAmount: number;
     totalBorrowedAmount: number;
     bankingYears: number;
+    dependants: number;
     createdAt: Date;
     updatedAt: Date;
 }

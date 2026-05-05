@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, UpdateDateColumn, OneToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  UpdateDateColumn,
+  OneToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Institution } from './institution.entity';
 
 @Entity()
@@ -9,7 +16,7 @@ export class InstitutionCriteria {
   @Column()
   institutionId: number;
 
-  @OneToOne(() => Institution, i => i.criteria)
+  @OneToOne(() => Institution, (i) => i.criteria)
   @JoinColumn({ name: 'institutionId' })
   institution: Institution;
 
@@ -58,7 +65,10 @@ export class InstitutionCriteria {
    * JSON array of eligible employment categories.
    * Possible values: "civil_servant", "private_sector", "self_employed", "sacco_member"
    */
-  @Column('simple-json', { default: '["civil_servant","private_sector","self_employed","sacco_member"]' })
+  @Column('simple-json', {
+    default:
+      '["civil_servant","private_sector","self_employed","sacco_member"]',
+  })
   eligibleEmploymentTypes: string[];
 
   // ── Additional conditions ────────────────────────────────────────

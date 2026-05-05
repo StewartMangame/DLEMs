@@ -8,7 +8,7 @@ import { InstitutionsService } from '../institutions/institutions.service';
 export class ProfileController {
   constructor(
     private readonly profileService: ProfileService,
-    private readonly instService: InstitutionsService
+    private readonly instService: InstitutionsService,
   ) {}
 
   @Get()
@@ -21,7 +21,7 @@ export class ProfileController {
           employer: res.profile.employerName,
           monthlySalary: res.profile.monthlyNetSalary,
           bank: res.profile.salaryInstitution?.name,
-        }
+        },
       };
     }
     return res;
@@ -46,6 +46,8 @@ export class ProfileController {
       if (inst) {
         mappedBody.salaryInstitutionId = inst.id;
       }
+    } else {
+      mappedBody.salaryInstitutionId = null;
     }
 
     return this.profileService.updateProfile(req.user.userId, mappedBody);

@@ -19,9 +19,7 @@ let ReminderModule = class ReminderModule {
 exports.ReminderModule = ReminderModule;
 exports.ReminderModule = ReminderModule = __decorate([
     (0, common_1.Module)({
-        imports: [
-            typeorm_1.TypeOrmModule.forFeature([reminder_entity_1.Reminder, notification_log_entity_1.NotificationLog, user_entity_1.User]),
-        ],
+        imports: [typeorm_1.TypeOrmModule.forFeature([reminder_entity_1.Reminder, notification_log_entity_1.NotificationLog, user_entity_1.User])],
         controllers: [reminders_controller_1.RemindersController],
         providers: [reminder_service_1.ReminderService],
     })

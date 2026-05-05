@@ -33,7 +33,7 @@ let ProfileController = class ProfileController {
                     employer: res.profile.employerName,
                     monthlySalary: res.profile.monthlyNetSalary,
                     bank: res.profile.salaryInstitution?.name,
-                }
+                },
             };
         }
         return res;
@@ -52,6 +52,9 @@ let ProfileController = class ProfileController {
             if (inst) {
                 mappedBody.salaryInstitutionId = inst.id;
             }
+        }
+        else {
+            mappedBody.salaryInstitutionId = null;
         }
         return this.profileService.updateProfile(req.user.userId, mappedBody);
     }

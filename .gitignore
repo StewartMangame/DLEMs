@@ -1,1 +1,14 @@
-node_modules
+node_modules/
+.next/
+dist/
+coverage/
+.devlogs/
+*.log
+
+# Local runtime data
+backend/loan_db.sqlite
+backend/*.sqlite
+
+# Local environment files
+.env.local
+frontend/.env.local

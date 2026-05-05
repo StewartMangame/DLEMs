@@ -27,7 +27,7 @@ let AuthController = class AuthController {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
-            maxAge: 3600 * 1000 * 24
+            maxAge: 3600 * 1000 * 24,
         });
         return result;
     }
@@ -37,7 +37,7 @@ let AuthController = class AuthController {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
-            maxAge: 3600 * 1000 * 24
+            maxAge: 3600 * 1000 * 24,
         });
         return result;
     }

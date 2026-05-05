@@ -1,4 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToOne, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToOne,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
 import { FinancialProfile } from './financial-profile.entity';
 import { LoanApplication } from './loan-application.entity';
 import { Loan } from './loan.entity';
@@ -31,13 +41,22 @@ export class User {
   @Column({ default: 'customer' })
   role: string;
 
+  @Column({ default: 'active' })
+  accountStatus: string; // 'active' | 'suspended'
+
+  @Column({ nullable: true })
+  lastActiveAt: Date;
+
+  @Column({ nullable: true })
+  suspendedAt: Date;
+
   @Column({ default: false })
   isInstitutionAdmin: boolean;
 
   @Column({ nullable: true })
   institutionId: number;
 
-  @ManyToOne(() => Institution, i => i.admins)
+  @ManyToOne(() => Institution, (i) => i.admins)
   @JoinColumn({ name: 'institutionId' })
   institution: Institution;
 
@@ -53,15 +72,15 @@ export class User {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @OneToOne(() => FinancialProfile, f => f.user)
+  @OneToOne(() => FinancialProfile, (f) => f.user)
   profile: FinancialProfile;
 
-  @OneToMany(() => LoanApplication, l => l.user)
+  @OneToMany(() => LoanApplication, (l) => l.user)
   applications: LoanApplication[];
 
-  @OneToMany(() => Loan, l => l.user)
+  @OneToMany(() => Loan, (l) => l.user)
   activeLoans: Loan[];
 
-  @OneToMany(() => Reminder, r => r.user)
+  @OneToMany(() => Reminder, (r) => r.user)
   reminders: Reminder[];
 }

@@ -17,6 +17,9 @@ export declare class AuthService {
             phone: string;
             email: string;
             role: string;
+            accountStatus: string;
+            lastActiveAt: Date;
+            suspendedAt: Date;
             isInstitutionAdmin: boolean;
             institutionId: number;
             institution: import("../entities/institution.entity").Institution;
@@ -41,6 +44,9 @@ export declare class AuthService {
             phone: string;
             email: string;
             role: string;
+            accountStatus: string;
+            lastActiveAt: Date;
+            suspendedAt: Date;
             isInstitutionAdmin: boolean;
             institutionId: number;
             institution: import("../entities/institution.entity").Institution;
@@ -54,5 +60,4 @@ export declare class AuthService {
             reminders: import("../entities/reminder.entity").Reminder[];
         };
     }>;
-    seedAdmin(): Promise<void>;
 }

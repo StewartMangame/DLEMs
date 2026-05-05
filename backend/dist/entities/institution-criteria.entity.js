@@ -42,7 +42,7 @@ __decorate([
     __metadata("design:type", Number)
 ], InstitutionCriteria.prototype, "institutionId", void 0);
 __decorate([
-    (0, typeorm_1.OneToOne)(() => institution_entity_1.Institution, i => i.criteria),
+    (0, typeorm_1.OneToOne)(() => institution_entity_1.Institution, (i) => i.criteria),
     (0, typeorm_1.JoinColumn)({ name: 'institutionId' }),
     __metadata("design:type", institution_entity_1.Institution)
 ], InstitutionCriteria.prototype, "institution", void 0);
@@ -87,7 +87,9 @@ __decorate([
     __metadata("design:type", Number)
 ], InstitutionCriteria.prototype, "saccoMemberMultiplier", void 0);
 __decorate([
-    (0, typeorm_1.Column)('simple-json', { default: '["civil_servant","private_sector","self_employed","sacco_member"]' }),
+    (0, typeorm_1.Column)('simple-json', {
+        default: '["civil_servant","private_sector","self_employed","sacco_member"]',
+    }),
     __metadata("design:type", Array)
 ], InstitutionCriteria.prototype, "eligibleEmploymentTypes", void 0);
 __decorate([

@@ -23,11 +23,16 @@ let ProfileService = class ProfileService {
         this.profileRepo = profileRepo;
     }
     async getProfile(userId) {
-        const profile = await this.profileRepo.findOne({ where: { userId }, relations: ['salaryInstitution'] });
+        const profile = await this.profileRepo.findOne({
+            where: { userId },
+            relations: ['salaryInstitution'],
+        });
         return { profile };
     }
     async updateProfile(userId, data) {
-        let profile = await this.profileRepo.findOne({ where: { userId } });
+        let profile = await this.profileRepo.findOne({
+            where: { userId },
+        });
         if (!profile) {
             const newProfile = new financial_profile_entity_1.FinancialProfile();
             newProfile.userId = userId;

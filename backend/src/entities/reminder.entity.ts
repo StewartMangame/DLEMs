@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+} from 'typeorm';
 import { User } from './user.entity';
 import { Loan } from './loan.entity';
 import { NotificationLog } from './notification-log.entity';
@@ -11,14 +18,14 @@ export class Reminder {
   @Column()
   loanId: number;
 
-  @ManyToOne(() => Loan, l => l.reminders)
+  @ManyToOne(() => Loan, (l) => l.reminders)
   @JoinColumn({ name: 'loanId' })
   loan: Loan;
 
   @Column()
   userId: number;
 
-  @ManyToOne(() => User, u => u.reminders)
+  @ManyToOne(() => User, (u) => u.reminders)
   @JoinColumn({ name: 'userId' })
   user: User;
 
@@ -37,6 +44,6 @@ export class Reminder {
   @Column({ default: false })
   deductionConfirmed: boolean;
 
-  @OneToMany(() => NotificationLog, n => n.reminder)
+  @OneToMany(() => NotificationLog, (n) => n.reminder)
   logs: NotificationLog[];
 }

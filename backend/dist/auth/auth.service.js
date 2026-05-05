@@ -30,8 +30,11 @@ let AuthService = class AuthService {
         return this.userRepository.findOne({ where: { id } });
     }
     async login(loginDto) {
-        const user = await this.userRepository.findOne({ where: { email: loginDto.email } });
-        if (!user || !(await bcrypt.compare(loginDto.password, user.passwordHash))) {
+        const user = await this.userRepository.findOne({
+            where: { email: loginDto.email },
+        });
+        if (!user ||
+            !(await bcrypt.compare(loginDto.password, user.passwordHash))) {
             throw new common_1.UnauthorizedException('Invalid credentials');
         }
         const payload = { sub: user.id, role: user.role };
@@ -39,11 +42,13 @@ let AuthService = class AuthService {
         return {
             access_token: this.jwtService.sign(payload),
             role: user.role,
-            user: safeUser
+            user: safeUser,
         };
     }
     async register(registerDto) {
-        const existing = await this.userRepository.findOne({ where: { email: registerDto.email } });
+        const existing = await this.userRepository.findOne({
+            where: { email: registerDto.email },
+        });
         if (existing) {
             throw new common_1.BadRequestException('User already exists');
         }
@@ -62,24 +67,8 @@ let AuthService = class AuthService {
         return {
             access_token: this.jwtService.sign(payload),
             role: user.role,
-            user: safeUser
+            user: safeUser,
         };
-    }
-    async seedAdmin() {
-        const email = 'admin@dlem.mw';
-        const existing = await this.userRepository.findOne({ where: { email } });
-        if (existing)
-            return;
-        const user = new user_entity_1.User();
-        user.email = email;
-        user.passwordHash = await bcrypt.hash('Admin@123', 10);
-        user.fullName = 'System Administrator';
-        user.role = 'admin';
-        user.nationalId = 'ADMIN-001';
-        user.employeeNumber = 'ADMIN-001';
-        user.phone = '+265 000000000';
-        await this.userRepository.save(user);
-        console.log('Default admin seeded: admin@dlem.mw / Admin@123');
     }
 };
 exports.AuthService = AuthService;

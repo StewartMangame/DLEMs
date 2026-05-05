@@ -25,6 +25,9 @@ let User = class User {
     email;
     passwordHash;
     role;
+    accountStatus;
+    lastActiveAt;
+    suspendedAt;
     isInstitutionAdmin;
     institutionId;
     institution;
@@ -71,6 +74,18 @@ __decorate([
     __metadata("design:type", String)
 ], User.prototype, "role", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ default: 'active' }),
+    __metadata("design:type", String)
+], User.prototype, "accountStatus", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", Date)
+], User.prototype, "lastActiveAt", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", Date)
+], User.prototype, "suspendedAt", void 0);
+__decorate([
     (0, typeorm_1.Column)({ default: false }),
     __metadata("design:type", Boolean)
 ], User.prototype, "isInstitutionAdmin", void 0);
@@ -79,7 +94,7 @@ __decorate([
     __metadata("design:type", Number)
 ], User.prototype, "institutionId", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => institution_entity_1.Institution, i => i.admins),
+    (0, typeorm_1.ManyToOne)(() => institution_entity_1.Institution, (i) => i.admins),
     (0, typeorm_1.JoinColumn)({ name: 'institutionId' }),
     __metadata("design:type", institution_entity_1.Institution)
 ], User.prototype, "institution", void 0);
@@ -100,19 +115,19 @@ __decorate([
     __metadata("design:type", Date)
 ], User.prototype, "updatedAt", void 0);
 __decorate([
-    (0, typeorm_1.OneToOne)(() => financial_profile_entity_1.FinancialProfile, f => f.user),
+    (0, typeorm_1.OneToOne)(() => financial_profile_entity_1.FinancialProfile, (f) => f.user),
     __metadata("design:type", financial_profile_entity_1.FinancialProfile)
 ], User.prototype, "profile", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => loan_application_entity_1.LoanApplication, l => l.user),
+    (0, typeorm_1.OneToMany)(() => loan_application_entity_1.LoanApplication, (l) => l.user),
     __metadata("design:type", Array)
 ], User.prototype, "applications", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => loan_entity_1.Loan, l => l.user),
+    (0, typeorm_1.OneToMany)(() => loan_entity_1.Loan, (l) => l.user),
     __metadata("design:type", Array)
 ], User.prototype, "activeLoans", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => reminder_entity_1.Reminder, r => r.user),
+    (0, typeorm_1.OneToMany)(() => reminder_entity_1.Reminder, (r) => r.user),
     __metadata("design:type", Array)
 ], User.prototype, "reminders", void 0);
 exports.User = User = __decorate([

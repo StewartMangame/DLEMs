@@ -13,8 +13,10 @@ export class DashboardController {
   constructor(
     @InjectRepository(User) private userRepo: Repository<User>,
     @InjectRepository(Loan) private loanRepo: Repository<Loan>,
-    @InjectRepository(LoanApplication) private appRepo: Repository<LoanApplication>,
-    @InjectRepository(FinancialProfile) private profileRepo: Repository<FinancialProfile>,
+    @InjectRepository(LoanApplication)
+    private appRepo: Repository<LoanApplication>,
+    @InjectRepository(FinancialProfile)
+    private profileRepo: Repository<FinancialProfile>,
   ) {}
 
   @Get()

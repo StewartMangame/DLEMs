@@ -26,6 +26,7 @@ export declare class ProfileController {
             existingLoanAmount: number;
             totalBorrowedAmount: number;
             bankingYears: number;
+            dependants: number;
             createdAt: Date;
             updatedAt: Date;
         };
