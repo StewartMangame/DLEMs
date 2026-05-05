@@ -55,12 +55,21 @@ export class AdminPanelAuthService {
       return;
     }
 
+    const passwordHash = await bcrypt.hash(password, 10);
     const existing = await this.adminRepo.findOne({ where: { email } });
-    if (existing) return;
+
+    if (existing) {
+      // Update password to match .env if it already exists
+      existing.passwordHash = passwordHash;
+      await this.adminRepo.save(existing);
+      this.logger.log(`Super admin credentials synced for ${email}.`);
+      return;
+    }
+
     const admin = this.adminRepo.create({
       fullName: 'DLEM Super Administrator',
       email,
-      passwordHash: await bcrypt.hash(password, 10),
+      passwordHash,
       role: 'super_admin',
       isActive: true,
     });
