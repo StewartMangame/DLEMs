@@ -1,9 +1,11 @@
 import { AuthService } from './auth.service';
 import type { Response } from 'express';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
 export declare class AuthController {
     private readonly authService;
     constructor(authService: AuthService);
-    login(body: any, res: Response): Promise<{
+    login(body: LoginDto, res: Response): Promise<{
         access_token: string;
         role: string;
         user: {
@@ -30,7 +32,7 @@ export declare class AuthController {
             reminders: import("../entities/reminder.entity").Reminder[];
         };
     }>;
-    register(body: any, res: Response): Promise<{
+    register(body: RegisterDto, res: Response): Promise<{
         access_token: string;
         role: string;
         user: {
