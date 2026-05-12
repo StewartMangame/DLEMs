@@ -18,18 +18,23 @@ import { Reminder } from './entities/reminder.entity';
 import { Sacco } from './entities/sacco.entity';
 import { User } from './entities/user.entity';
 
+// ── Admin modules ────────────────────────────────────────────────────────────
 import { AdminPanelModule } from './admin/admin-panel.module';
 import { AdminModule } from './admin/admin.module';
+
+// ── User modules ─────────────────────────────────────────────────────────────
+import { AuthModule } from './user/auth/auth.module';
+import { DashboardModule } from './user/dashboard/dashboard.module';
+import { EligibilityModule } from './user/eligibility/eligibility.module';
+import { InstitutionsModule } from './user/institutions/institutions.module';
+import { InstitutionsService } from './user/institutions/institutions.service';
+import { LoansModule } from './user/loans/loans.module';
+import { ProfileModule } from './user/profile/profile.module';
+import { ReminderModule } from './user/reminder/reminder.module';
+
+// ── Root ─────────────────────────────────────────────────────────────────────
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AuthModule } from './auth/auth.module';
-import { DashboardModule } from './dashboard/dashboard.module';
-import { EligibilityModule } from './eligibility/eligibility.module';
-import { InstitutionsModule } from './institutions/institutions.module';
-import { InstitutionsService } from './institutions/institutions.service';
-import { LoansModule } from './loans/loans.module';
-import { ProfileModule } from './profile/profile.module';
-import { ReminderModule } from './reminder/reminder.module';
 
 @Module({
   imports: [
