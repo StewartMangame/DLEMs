@@ -31,16 +31,16 @@ const sacco_entity_1 = require("./entities/sacco.entity");
 const user_entity_1 = require("./entities/user.entity");
 const admin_panel_module_1 = require("./admin/admin-panel.module");
 const admin_module_1 = require("./admin/admin.module");
+const auth_module_1 = require("./user/auth/auth.module");
+const dashboard_module_1 = require("./user/dashboard/dashboard.module");
+const eligibility_module_1 = require("./user/eligibility/eligibility.module");
+const institutions_module_1 = require("./user/institutions/institutions.module");
+const institutions_service_1 = require("./user/institutions/institutions.service");
+const loans_module_1 = require("./user/loans/loans.module");
+const profile_module_1 = require("./user/profile/profile.module");
+const reminder_module_1 = require("./user/reminder/reminder.module");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
-const auth_module_1 = require("./auth/auth.module");
-const dashboard_module_1 = require("./dashboard/dashboard.module");
-const eligibility_module_1 = require("./eligibility/eligibility.module");
-const institutions_module_1 = require("./institutions/institutions.module");
-const institutions_service_1 = require("./institutions/institutions.service");
-const loans_module_1 = require("./loans/loans.module");
-const profile_module_1 = require("./profile/profile.module");
-const reminder_module_1 = require("./reminder/reminder.module");
 let AppModule = class AppModule {
     instService;
     constructor(instService) {
