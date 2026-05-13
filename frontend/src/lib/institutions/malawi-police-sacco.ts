@@ -33,24 +33,13 @@ export const MALAWI_POLICE_SACCO: InstitutionConfig = {
       minAmountMWK: 50_000,
       maxAmountMWK: 15_000_000,
     },
-    {
-      key: 'business',
-      label: 'Business / SME Loan',
-      labelNy: 'Ngongole Ya Bizinesi',
-      minAmountMWK: 100_000,
-      maxAmountMWK: 80_000_000,
-    },
-    {
-      key: 'sacco',
-      label: 'SACCO / Member Loan',
-      labelNy: 'Ngongole Ya Membala',
-      minAmountMWK: 50_000,
-      maxAmountMWK: 15_000_000,
-    },
   ],
 
   // ── Repayment terms ─────────────────────────────────────────────────────────
   repaymentTermsMonths: [6, 12, 24, 36, 48],
+
+  // ── Rates ───────────────────────────────────────────────────────────────────
+  fixedInterestRate: 24, // 24% fixed annual rate
 
   // ── Repayment method ────────────────────────────────────────────────────────
   repaymentMethod: 'Salary deduction / stop order only',
@@ -76,8 +65,8 @@ export const MALAWI_POLICE_SACCO: InstitutionConfig = {
   // ── Comparison table fields ─────────────────────────────────────────────────
   comparisonFields: {
     minimumLoanMWK: 50_000,
-    maximumLoanMWK: 80_000_000,
-    interestRateLabel: 'User-entered',
+    maximumLoanMWK: 15_000_000,
+    interestRateLabel: '24% Fixed (Annual)',
     debtToIncomeCapLabel: '40% of net monthly income',
     whoCanApply: 'SACCO members only',
     membershipRequired: 'Minimum 3 months',
