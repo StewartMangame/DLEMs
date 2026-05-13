@@ -74,13 +74,16 @@ export function runSaccoEligibility(
     serviceMonths,
   };
 
-  // ── Rule 1: Employment category must be SACCO member ─────────────────────
-  if (!institution.eligibleEmploymentCategories.includes(employmentCategory)) {
+  // ── Rule 1: Must be a registered SACCO member ────────────────────────────
+  // Employment category is irrelevant — SACCO is open to any member regardless
+  // of whether they are a civil servant, private sector, or self-employed.
+  // The only gate is: are you a registered member of this SACCO?
+  if (!sacco.isSaccoMember) {
     return {
       status: 'not_eligible',
       institution,
-      failedRule: `${institution.name} is open to SACCO members only. Your current employment category does not qualify.`,
-      failedRuleNy: `${institution.name} imatsegulira okha omwe ali membala wa SACCO. Gulu lanu la ntchito silikuvomerezeka.`,
+      failedRule: `Malawi Police SACCO is open to SACCO members only. You must be a registered member to apply for a loan.`,
+      failedRuleNy: `SACCO ya Apolisi a Malawi imatsegulira okha omwe ali membala wa SACCO. Muyenera kukhala membala woyenera kuti musindikize ngongole.`,
       profileSummary,
     };
   }
