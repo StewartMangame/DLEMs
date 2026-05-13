@@ -75,11 +75,14 @@ export const FDH_BANK: InstitutionConfig = {
   rejectionCommunication: 'Always communicated',
   digitalTools: 'None',
 
+  // ── Rates & Fees ───────────────────────────────────────────────────────────
+  fixedInterestRate: 24, // 24% fixed annual rate
+
   // ── Comparison table fields ─────────────────────────────────────────────────
   comparisonFields: {
     minimumLoanMWK: 200_000,
     maximumLoanMWK: 10_000_000,
-    interestRateLabel: 'Fixed — user-entered',
+    interestRateLabel: '24% Fixed (Annual)',
     debtToIncomeCapLabel: '30% of net monthly income',
     whoCanApply: 'Civil servants and private sector employees',
     membershipRequired: 'Not required',

@@ -41,8 +41,10 @@ export default function EligibilityPage() {
     fetch("/api/eligibility/institutions")
       .then(res => res.json())
       .then(data => {
-        if (Array.isArray(data)) setInstitutions(data);
-        else if (Array.isArray(data.institutions)) setInstitutions(data.institutions);
+        let list = Array.isArray(data) ? data : (data.institutions || []);
+        // Only allow the 3 active institutions
+        const allowed = ["FDH Bank", "Malawi Police SACCO", "FINCA Malawi"];
+        setInstitutions(list.filter((i: Institution) => allowed.includes(i.name)));
       });
   }, []);
 
@@ -56,6 +58,7 @@ export default function EligibilityPage() {
       employmentCategory: profile.employmentCategory || "private_sector",
       requestedAmount: loanAmount,
       requestedTermMonths: duration,
+      institutionIds: institutions.map(i => i.id),
     };
 
     try {
