@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { FinancialProfile } from '../entities/financial-profile.entity';
+import { FinancialProfile } from '../../entities/financial-profile.entity';
 
 @Injectable()
 export class ProfileService {

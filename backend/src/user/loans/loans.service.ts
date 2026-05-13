@@ -1,11 +1,11 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Loan } from '../entities/loan.entity';
-import { Institution } from '../entities/institution.entity';
-import { LoanApplication } from '../entities/loan-application.entity';
-import { FinancialProfile } from '../entities/financial-profile.entity';
-import { Reminder } from '../entities/reminder.entity';
+import { Loan } from '../../entities/loan.entity';
+import { Institution } from '../../entities/institution.entity';
+import { LoanApplication } from '../../entities/loan-application.entity';
+import { FinancialProfile } from '../../entities/financial-profile.entity';
+import { Reminder } from '../../entities/reminder.entity';
 import { calculateMonthlyInstallment } from '../lib/eligibilityEngine';
 
 @Injectable()

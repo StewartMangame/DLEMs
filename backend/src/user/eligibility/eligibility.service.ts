@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { Institution } from '../entities/institution.entity';
+import { Institution } from '../../entities/institution.entity';
 import {
   checkInstitution,
   rankInstitutions,

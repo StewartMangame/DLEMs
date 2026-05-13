@@ -2,7 +2,7 @@ import { Controller, Get, UseGuards, Req } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Reminder } from '../entities/reminder.entity';
+import { Reminder } from '../../entities/reminder.entity';
 
 @Controller('reminders')
 @UseGuards(AuthGuard('jwt'))

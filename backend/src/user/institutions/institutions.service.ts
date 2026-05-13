@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Institution } from '../entities/institution.entity';
-import { InstitutionCriteria } from '../entities/institution-criteria.entity';
+import { Institution } from '../../entities/institution.entity';
+import { InstitutionCriteria } from '../../entities/institution-criteria.entity';
 
 //  Real Malawian lending institution seed data 
 const SEED_INSTITUTIONS = [

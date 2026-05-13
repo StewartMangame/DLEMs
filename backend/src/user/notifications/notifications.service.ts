@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NotificationLog } from './notification-log.entity';
-import { Reminder } from '../entities/reminder.entity';
+import { Reminder } from '../../entities/reminder.entity';
 
 @Injectable()
 export class NotificationsService {

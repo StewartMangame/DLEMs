@@ -12,21 +12,21 @@ import { LoanApplication } from './entities/loan-application.entity';
 import { Reminder } from './entities/reminder.entity';
 import { NotificationLog } from './entities/notification-log.entity';
 
-import { AuthModule } from './auth/auth.module';
-import { ProfileModule } from './profile/profile.module';
-import { LoansModule } from './loans/loans.module';
-import { InstitutionsModule } from './institutions/institutions.module';
-import { EligibilityModule } from './eligibility/eligibility.module';
-import { ReminderModule } from './reminder/reminder.module';
-import { NotificationsModule } from './notifications/notifications.module';
+import { AuthModule } from './user/auth/auth.module';
+import { ProfileModule } from './user/profile/profile.module';
+import { LoansModule } from './user/loans/loans.module';
+import { InstitutionsModule } from './user/institutions/institutions.module';
+import { EligibilityModule } from './user/eligibility/eligibility.module';
+import { ReminderModule } from './user/reminder/reminder.module';
+import { NotificationsModule } from './user/notifications/notifications.module';
 import { AdminModule } from './admin/admin.module';
-import { DashboardModule } from './dashboard/dashboard.module';
+import { DashboardModule } from './user/dashboard/dashboard.module';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
-import { InstitutionsService } from './institutions/institutions.service';
-import { AuthService } from './auth/auth.service';
+import { InstitutionsService } from './user/institutions/institutions.service';
+import { AuthService } from './user/auth/auth.service';
 
 @Module({
   imports: [

@@ -2,10 +2,10 @@ import { Controller, Get, UseGuards, Req } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../entities/user.entity';
-import { Loan } from '../entities/loan.entity';
-import { LoanApplication } from '../entities/loan-application.entity';
-import { FinancialProfile } from '../entities/financial-profile.entity';
+import { User } from '../../entities/user.entity';
+import { Loan } from '../../entities/loan.entity';
+import { LoanApplication } from '../../entities/loan-application.entity';
+import { FinancialProfile } from '../../entities/financial-profile.entity';
 
 @Controller('dashboard')
 @UseGuards(AuthGuard('jwt'))

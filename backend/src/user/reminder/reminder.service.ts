@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThanOrEqual, Repository } from 'typeorm';
-import { Reminder } from '../entities/reminder.entity';
-import { NotificationLog } from '../entities/notification-log.entity';
+import { Reminder } from '../../entities/reminder.entity';
+import { NotificationLog } from '../../entities/notification-log.entity';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
