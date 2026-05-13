@@ -11,7 +11,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { AdminPanelAuthService } from './admin-panel-auth.service';
 import type { Response } from 'express';
 
-@Controller('admin/auth')
+@Controller('admin-panel/auth')
 export class AdminPanelAuthController {
   constructor(private readonly authService: AdminPanelAuthService) {}
 

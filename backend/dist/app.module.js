@@ -8,6 +8,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
@@ -96,6 +97,6 @@ exports.AppModule = AppModule = __decorate([
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],
     }),
-    __metadata("design:paramtypes", [institutions_service_1.InstitutionsService])
+    __metadata("design:paramtypes", [typeof (_a = typeof institutions_service_1.InstitutionsService !== "undefined" && institutions_service_1.InstitutionsService) === "function" ? _a : Object])
 ], AppModule);
 //# sourceMappingURL=app.module.js.map
