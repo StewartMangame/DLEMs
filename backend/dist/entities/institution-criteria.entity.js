@@ -30,6 +30,7 @@ let InstitutionCriteria = class InstitutionCriteria {
     requiresGuarantor;
     requiresPayslip;
     notes;
+    customCriteria;
     updatedAt;
 };
 exports.InstitutionCriteria = InstitutionCriteria;
@@ -104,6 +105,10 @@ __decorate([
     (0, typeorm_1.Column)('text', { nullable: true }),
     __metadata("design:type", String)
 ], InstitutionCriteria.prototype, "notes", void 0);
+__decorate([
+    (0, typeorm_1.Column)('simple-json', { nullable: true, default: '[]' }),
+    __metadata("design:type", Object)
+], InstitutionCriteria.prototype, "customCriteria", void 0);
 __decorate([
     (0, typeorm_1.UpdateDateColumn)(),
     __metadata("design:type", Date)

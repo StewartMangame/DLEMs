@@ -17,5 +17,6 @@ export declare class InstitutionCriteria {
     requiresGuarantor: boolean;
     requiresPayslip: boolean;
     notes: string;
+    customCriteria: any;
     updatedAt: Date;
 }

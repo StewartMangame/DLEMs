@@ -258,6 +258,7 @@ export class AdminPanelService {
         'requiresGuarantor',
         'requiresPayslip',
         'notes',
+        'customCriteria',
       ];
       for (const f of critFields) {
         if (
