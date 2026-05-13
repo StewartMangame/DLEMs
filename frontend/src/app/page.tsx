@@ -38,8 +38,8 @@ export default function LandingPage() {
           </h1>
           <p className={`text-body ${styles.heroSub} animate-fadeInUp animate-delay-2`}>
             Check if you qualify for a personal loan in minutes — without visiting a branch.
-            Apply online, track repayments, and get real-time decisions from Mwai Bank,
-            Kokko Bank of Malawi, and KFS Bank.
+            Apply online, track repayments, and get real-time decisions from FDH Bank,
+            Malawi Police SACCO, and FINCA Malawi.
           </p>
           <div className={`${styles.heroActions} animate-fadeInUp animate-delay-3`}>
             <Link href="/user/register" className="btn btn-primary btn-lg">
@@ -66,7 +66,7 @@ export default function LandingPage() {
 
           <div className={`${styles.heroStats} animate-fadeInUp animate-delay-5`}>
             <div className={styles.heroStat}>
-              <span className={styles.heroStatValue}>3 Banks</span>
+              <span className={styles.heroStatValue}>3 Institutions</span>
               <span className={styles.heroStatLabel}>Supported</span>
             </div>
             <div className={styles.heroStatDivider} />
@@ -130,7 +130,10 @@ export default function LandingPage() {
       <section id="banks" className={styles.section}>
         <div className="container">
           <div className={styles.sectionHeader}>
-            <h2 className="text-h2">Our Banking Partners</h2>
+            <h2 className="text-h2">Our Institution Partners</h2>
+            <p className="text-body" style={{ color: "var(--color-text-secondary)" }}>
+              Trusted Malawian lenders — one eligibility check covers all of them.
+            </p>
           </div>
           <div className={styles.banks}>
             {BANKS.map((b, i) => (
@@ -200,7 +203,7 @@ const STEPS = [
 ];
 
 const BANKS = [
-  { emoji: "", name: "Mwai Bank", tagline: "Friends of Development" },
-  { emoji: "", name: "Kokko Bank", tagline: "Your Trusted Partner" },
-  { emoji: "", name: "KFS Bank", tagline: "Africa Is Our Home" },
+  { emoji: "🏦", name: "FDH Bank", tagline: "Personal & salary loans · civil servants & private sector" },
+  { emoji: "🤝", name: "SACCO", tagline: "Member loans · competitive rates · Malawi Police SACCO" },
+  { emoji: "🌱", name: "FINCA", tagline: "Group / Village Bank loans · business owners" },
 ];
