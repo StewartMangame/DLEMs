@@ -36,7 +36,9 @@ const SEED_INSTITUTIONS = [
     name: 'FDH Bank',
     type: 'BANK',
     criteria: {
-      interestRate: 28,
+      interestRate: 24,
+      fixedInterestRate: 24,
+      interestRateLabel: '24% Fixed (Annual)',
       maxDtiRatio: 0.40,
       minNetSalary: 60_000,
       minRepaymentMonths: 3,
@@ -132,10 +134,12 @@ const SEED_INSTITUTIONS = [
     },
   },
   {
-    name: 'Malawi Savings SACCO',
+    name: 'Malawi Police SACCO',
     type: 'SACCO',
     criteria: {
       interestRate: 18,
+      fixedInterestRate: 18,
+      interestRateLabel: '18% Fixed (Annual)',
       maxDtiRatio: 0.45,
       minNetSalary: 40_000,
       minRepaymentMonths: 3,

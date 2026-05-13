@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Loan } from '../entities/loan.entity';
+import { Institution } from '../entities/institution.entity';
 import { LoanApplication } from '../entities/loan-application.entity';
 import { FinancialProfile } from '../entities/financial-profile.entity';
 import { Reminder } from '../entities/reminder.entity';
@@ -44,12 +45,22 @@ export class LoansService {
     if (!profile) throw new BadRequestException('Complete financial profile first');
 
     const loanAmount = parseFloat(data.loanAmount);
-    const interestRate = parseFloat(data.interestRate) || 0;
+    let interestRate = parseFloat(data.interestRate) || 0;
     const loanTermMonths = parseInt(data.loanTermMonths, 10);
     const startDate = new Date(data.startDate);
     const loanPurpose = data.loanPurpose || data.purpose || null;
     const providerName = data.providerName || null;
     const institutionId = data.institutionId ? parseInt(data.institutionId, 10) : null;
+
+    if (institutionId) {
+      const inst = await this.loanRepo.manager.findOne(Institution, {
+        where: { id: institutionId },
+        relations: ['criteria'],
+      });
+      if (inst && inst.criteria && inst.criteria.fixedInterestRate) {
+        interestRate = inst.criteria.fixedInterestRate;
+      }
+    }
 
     // Auto-calculate EMI from principal, rate, and term
     const monthlyDeduction = data.monthlyDeduction
@@ -141,8 +152,15 @@ export class LoansService {
 
     const amount = parseFloat(data.amount);
     const duration = parseInt(data.durationMonths, 10);
-    // Assume 18% interest rate for application simulation if not provided
-    const rate = 18;
+    const institutionId = parseInt(data.institutionId, 10);
+    
+    // Fetch institution to enforce fixed rates
+    const inst = await this.appRepo.manager.findOne(Institution, {
+      where: { id: institutionId },
+      relations: ['criteria'],
+    });
+    
+    const rate = (inst && inst.criteria && inst.criteria.fixedInterestRate) ? inst.criteria.fixedInterestRate : ((inst && inst.criteria && inst.criteria.interestRate) ? inst.criteria.interestRate : 18);
     const monthlyInstallment = calculateMonthlyInstallment(amount, rate, duration);
 
     const totalNewDebt = profile.existingLoanAmount + monthlyInstallment;
