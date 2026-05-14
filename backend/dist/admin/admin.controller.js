@@ -105,7 +105,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getStats", null);
 exports.AdminController = AdminController = __decorate([
-    (0, common_1.Controller)('admin'),
+    (0, common_1.Controller)('admin-legacy'),
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt')),
     __metadata("design:paramtypes", [admin_service_1.AdminService])
 ], AdminController);
