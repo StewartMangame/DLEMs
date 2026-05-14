@@ -35,6 +35,7 @@ const SEED_INSTITUTIONS = [
   {
     name: 'FDH Bank',
     type: 'BANK',
+    logoUrl: '/logos/fdh.png',
     criteria: {
       interestRate: 28,
       maxDtiRatio: 0.4,
@@ -86,6 +87,7 @@ const SEED_INSTITUTIONS = [
   {
     name: 'FINCA Malawi',
     type: 'MICROFINANCE',
+    logoUrl: '/logos/finca.png',
     criteria: {
       interestRate: 36,
       maxDtiRatio: 0.5,
@@ -136,8 +138,9 @@ const SEED_INSTITUTIONS = [
     },
   },
   {
-    name: 'Malawi Savings SACCO',
+    name: 'Malawi Police SACCO',
     type: 'SACCO',
+    logoUrl: '/logos/sacco.png',
     criteria: {
       interestRate: 18,
       maxDtiRatio: 0.45,
@@ -187,6 +190,7 @@ export class InstitutionsService {
       const inst = this.instRepo.create({
         name: data.name,
         type: data.type,
+        logoUrl: (data as any).logoUrl,
         isActive: true,
       });
       await this.instRepo.save(inst);

@@ -35,6 +35,9 @@ export class Institution {
   @Column({ type: 'text', nullable: true })
   description: string;
 
+  @Column({ nullable: true })
+  logoUrl: string;
+
   /** Whether the interest rate is published/fixed (true) or user-entered (false) */
   @Column({ default: true })
   isInterestRateFixed: boolean;

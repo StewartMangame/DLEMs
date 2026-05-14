@@ -489,7 +489,13 @@ function InstitutionCard({
     >
       <div>
         <div className={styles.cardTop}>
-        <div className={styles.cardIcon}>{typeIcon}</div>
+        <div className={styles.cardIcon}>
+          {institution.logoUrl ? (
+            <img src={institution.logoUrl} alt={institution.name} className={styles.partnerLogo} />
+          ) : (
+            typeIcon
+          )}
+        </div>
         <div className={`${styles.checkmark} ${selected ? styles.selected : ""}`}>✓</div>
       </div>
 
@@ -828,7 +834,13 @@ function EligibilityResultCard({
     <div className={`card ${styles.resultCard} ${statusMeta.cls}`} style={{ marginBottom: "var(--space-lg)" }}>
       {/* Header */}
       <div className={styles.resultHeader}>
-        <div className={`${styles.resultIcon} ${statusMeta.cls}`}>{statusMeta.icon}</div>
+        <div className={`${styles.resultIcon} ${statusMeta.cls}`}>
+          {institution.logoUrl ? (
+            <img src={institution.logoUrl} alt={institution.name} className={styles.partnerLogoSmall} />
+          ) : (
+            statusMeta.icon
+          )}
+        </div>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)", flexWrap: "wrap" }}>
             <span className={`${styles.resultTitle} ${statusMeta.cls}`}>{statusMeta.title}</span>

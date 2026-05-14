@@ -38,8 +38,8 @@ export default function LandingPage() {
           </h1>
           <p className={`text-body ${styles.heroSub} animate-fadeInUp animate-delay-2`}>
             Check if you qualify for a personal loan in minutes — without visiting a branch.
-            Apply online, track repayments, and get real-time decisions from Mwai Bank,
-            Kokko Bank of Malawi, and KFS Bank.
+            Apply online, track repayments, and get real-time decisions from FDH Bank,
+            Malawi Police SACCO, and FINCA Malawi.
           </p>
           <div className={`${styles.heroActions} animate-fadeInUp animate-delay-3`}>
             <Link href="/user/register" className="btn btn-primary btn-lg">
@@ -135,7 +135,13 @@ export default function LandingPage() {
           <div className={styles.banks}>
             {BANKS.map((b, i) => (
               <div key={i} className={`card ${styles.bankCard}`}>
-                <div className={styles.bankEmoji}>{b.emoji}</div>
+                <div className={styles.bankLogoWrapper}>
+                  {b.logo ? (
+                    <img src={b.logo} alt={b.name} className={styles.bankLogo} />
+                  ) : (
+                    <div className={styles.bankEmoji}>{b.emoji}</div>
+                  )}
+                </div>
                 <div>
                   <div className="text-h3">{b.name}</div>
                   <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>{b.tagline}</div>
@@ -200,7 +206,7 @@ const STEPS = [
 ];
 
 const BANKS = [
-  { emoji: "", name: "Mwai Bank", tagline: "Friends of Development" },
-  { emoji: "", name: "Kokko Bank", tagline: "Your Trusted Partner" },
-  { emoji: "", name: "KFS Bank", tagline: "Africa Is Our Home" },
+  { logo: "/logos/fdh.png", emoji: "🏦", name: "FDH Bank", tagline: "Our Bank, Our Future" },
+  { logo: "/logos/sacco.png", emoji: "🤝", name: "Malawi Police SACCO", tagline: "Secure Your Future" },
+  { logo: "/logos/finca.png", emoji: "🏦", name: "FINCA Malawi", tagline: "Building Tomorrow" },
 ];
