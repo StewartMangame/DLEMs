@@ -23,7 +23,6 @@ let Institution = class Institution {
     status;
     isActive;
     description;
-    logoUrl;
     isInterestRateFixed;
     requiresCrbCheck;
     collateralAccepted;
@@ -66,10 +65,6 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'text', nullable: true }),
     __metadata("design:type", String)
 ], Institution.prototype, "description", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", String)
-], Institution.prototype, "logoUrl", void 0);
 __decorate([
     (0, typeorm_1.Column)({ default: true }),
     __metadata("design:type", Boolean)

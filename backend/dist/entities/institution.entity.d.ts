@@ -11,7 +11,6 @@ export declare class Institution {
     status: InstitutionStatus;
     isActive: boolean;
     description: string;
-    logoUrl: string;
     isInterestRateFixed: boolean;
     requiresCrbCheck: boolean;
     collateralAccepted: boolean;
