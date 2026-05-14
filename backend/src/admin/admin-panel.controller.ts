@@ -16,7 +16,7 @@ import { AdminPanelService } from './admin-panel.service';
 
 const Guard = () => UseGuards(AuthGuard('admin-jwt'));
 
-@Controller('admin')
+@Controller('admin-panel')
 @UseGuards(AuthGuard('admin-jwt'))
 export class AdminPanelController {
   constructor(private readonly svc: AdminPanelService) {}
