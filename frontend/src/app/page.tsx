@@ -66,7 +66,7 @@ export default function LandingPage() {
 
           <div className={`${styles.heroStats} animate-fadeInUp animate-delay-5`}>
             <div className={styles.heroStat}>
-              <span className={styles.heroStatValue}>3 Banks</span>
+              <span className={styles.heroStatValue}>3 Institutions</span>
               <span className={styles.heroStatLabel}>Supported</span>
             </div>
             <div className={styles.heroStatDivider} />
@@ -126,11 +126,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Bank Partners ── */}
+      {/* ── Institution Partners ── */}
       <section id="banks" className={styles.section}>
         <div className="container">
           <div className={styles.sectionHeader}>
-            <h2 className="text-h2">Our Banking Partners</h2>
+            <h2 className="text-h2">Our Institution Partners</h2>
+            <p className="text-body" style={{ color: "var(--color-text-secondary)" }}>
+              Trusted Malawian lenders — one eligibility check covers all of them.
+            </p>
           </div>
           <div className={styles.banks}>
             {BANKS.map((b, i) => (
@@ -206,7 +209,7 @@ const STEPS = [
 ];
 
 const BANKS = [
-  { logo: "/logos/fdh.png", emoji: "🏦", name: "FDH Bank", tagline: "Our Bank, Our Future" },
-  { logo: "/logos/sacco.png", emoji: "🤝", name: "Malawi Police SACCO", tagline: "Secure Your Future" },
-  { logo: "/logos/finca.png", emoji: "🏦", name: "FINCA Malawi", tagline: "Building Tomorrow" },
+  { logo: "/logos/fdh.png", emoji: "🏦", name: "FDH Bank", tagline: "Personal & salary loans · civil servants & private sector" },
+  { logo: "/logos/sacco.png", emoji: "🤝", name: "Malawi Police SACCO", tagline: "Member loans · competitive rates · Malawi Police SACCO" },
+  { logo: "/logos/finca.png", emoji: "🏦", name: "FINCA Malawi", tagline: "Group / Village Bank loans · business owners" },
 ];

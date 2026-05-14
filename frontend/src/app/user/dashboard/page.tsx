@@ -189,11 +189,11 @@ export default function DashboardPage() {
 }
 
 const ACTIONS = [
-  { href: "/dashboard/institutions", icon: "🏦", title: "Check Eligibility", desc: "See which institutions you qualify for", color: "rgba(0,200,150,0.15)" },
-  { href: "/dashboard/eligibility",  icon: "✦",  title: "Compare Lenders",  desc: "Side-by-side bank comparison",          color: "rgba(30,111,255,0.15)" },
-  { href: "/dashboard/loans/add",    icon: "✚",  title: "Record Manual Loan", desc: "Track your existing loans",           color: "rgba(255,184,0,0.15)" },
-  { href: "/dashboard/loans",        icon: "◷",  title: "Active Loans",       desc: "View amortization schedules",         color: "rgba(255,59,92,0.1)" },
-  { href: "/dashboard/profile",      icon: "◎",  title: "Update Profile",     desc: "Edit financial information",          color: "rgba(0,180,216,0.15)" },
+  { href: "/user/dashboard/institutions", icon: "🏦", title: "Check Eligibility", desc: "See which institutions you qualify for", color: "rgba(0,200,150,0.15)" },
+  { href: "/user/dashboard/eligibility",  icon: "✦",  title: "Compare Lenders",  desc: "Side-by-side bank comparison",          color: "rgba(30,111,255,0.15)" },
+  { href: "/user/dashboard/loans/add",    icon: "✚",  title: "Record Manual Loan", desc: "Track your existing loans",           color: "rgba(255,184,0,0.15)" },
+  { href: "/user/dashboard/loans",        icon: "◷",  title: "Active Loans",       desc: "View amortization schedules",         color: "rgba(255,59,92,0.1)" },
+  { href: "/user/dashboard/profile",      icon: "◎",  title: "Update Profile",     desc: "Edit financial information",          color: "rgba(0,180,216,0.15)" },
 ];
 
 const STATUS_BADGE: Record<string, string> = {

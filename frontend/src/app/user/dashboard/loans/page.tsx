@@ -105,9 +105,27 @@ export default function LoansPage() {
                     <div style={{ flexGrow: 1 }}>
                       <RepaymentButton loanId={loan.id} monthlyInstallment={loan.monthlyDeduction} />
                     </div>
-                    <Link href={`/dashboard/loans/${loan.id}`} className="btn btn-outline" style={{ flexGrow: 1, justifyContent: "center" }}>
+                    <Link href={`/user/dashboard/loans/${loan.id}`} className="btn btn-outline" style={{ flexGrow: 1, justifyContent: "center" }}>
                       View Schedule
                     </Link>
+                    <button 
+                      onClick={() => {
+                        if (confirm("Are you sure you want to remove this loan? This will also update your monthly debt capacity.")) {
+                          fetch(`/api/loans/${loan.id}`, { method: "DELETE" })
+                            .then(r => r.json())
+                            .then(data => {
+                              if (data.success) {
+                                setLoans(prev => prev.filter(l => l.id !== loan.id));
+                              }
+                            });
+                        }
+                      }}
+                      className="btn btn-ghost" 
+                      style={{ color: "var(--color-danger)", padding: "0 8px" }}
+                      title="Remove loan"
+                    >
+                      🗑
+                    </button>
                   </div>
                 </div>
               );

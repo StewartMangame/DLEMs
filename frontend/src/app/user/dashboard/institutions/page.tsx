@@ -707,6 +707,23 @@ function BankIntakeForm({
         </div>
       </div>
 
+      <div style={{ 
+        background: "rgba(30, 111, 255, 0.05)", 
+        borderLeft: "4px solid var(--color-primary)", 
+        padding: "1rem", 
+        borderRadius: "var(--radius-sm)",
+        marginTop: "var(--space-md)"
+      }}>
+        <h4 className="text-xs" style={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px", color: "var(--color-primary)" }}>
+          {ny ? "Kodi CRB check ndi chiyani?" : "What is a CRB check?"}
+        </h4>
+        <p className="text-sm" style={{ lineHeight: "1.5", color: "var(--color-text-secondary)" }}>
+          {ny 
+            ? "Ku Malawi, mabanki onse ndi obwereketsa amagawana mbiri yakubwereka ndi bungwe lalikulu lotchedwa Credit Reference Bureau (CRB). Musanapereke ngongole yanu, mabanki amalonda amafufuza mbiriyi kuti awone ngati muli ndi ngongole zomwe simunalipire kapena mwaphonya malipiro m'mbuyomu. Izi zitha kukhudza mwayi wanu wovomerezeka. Chonde yankhani mwachowona kuti zotsatira zanu zikhale zolondola momwe zingathere."
+            : "In Malawi, all banks and lenders share borrowing records with a central body called the Credit Reference Bureau (CRB). Before approving your loan, commercial banks check this record to see if you owe any unpaid loans or have missed payments in the past. This can affect your chances of approval. Please answer honestly so your result is as accurate as possible."}
+        </p>
+      </div>
+
       <div className="form-group" style={{ marginTop: "var(--space-md)" }}>
         <label className="form-label">
           {ny

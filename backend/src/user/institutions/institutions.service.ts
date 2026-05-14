@@ -7,81 +7,45 @@ import { InstitutionCriteria } from '../../entities/institution-criteria.entity'
 // ─── Real Malawian lending institution seed data ─────────────────────────────
 const SEED_INSTITUTIONS = [
   {
-    name: 'National Bank of Malawi',
-    type: 'BANK',
-    criteria: {
-      interestRate: 25,
-      maxDtiRatio: 0.4,
-      minNetSalary: 80_000,
-      minRepaymentMonths: 3,
-      maxRepaymentMonths: 60,
-      processingFeePercent: 1.5,
-      civilServantMultiplier: 12,
-      privateMultiplier: 6,
-      selfEmployedMultiplier: 4,
-      saccoMemberMultiplier: 8,
-      eligibleEmploymentTypes: [
-        'civil_servant',
-        'private_sector',
-        'self_employed',
-        'sacco_member',
-      ],
-      requiresGuarantor: false,
-      requiresPayslip: true,
-      notes:
-        'Civil servants benefit from salary deduction at source via IFMIS/GOVPAY, allowing up to 12× net salary. Payslip mandatory for all categories.',
-    },
-  },
-  {
     name: 'FDH Bank',
     type: 'BANK',
     logoUrl: '/logos/fdh.png',
     criteria: {
-      interestRate: 28,
-      maxDtiRatio: 0.4,
-      minNetSalary: 60_000,
-      minRepaymentMonths: 3,
-      maxRepaymentMonths: 60,
-      processingFeePercent: 2.0,
+      interestRate: 24, // Matches 24% Fixed in frontend
+      maxDtiRatio: 0.3, // Matches 30% DTI
+      minNetSalary: 0,
+      minRepaymentMonths: 12,
+      maxRepaymentMonths: 48,
+      processingFeePercent: 0,
       civilServantMultiplier: 10,
       privateMultiplier: 5,
-      selfEmployedMultiplier: 3,
-      saccoMemberMultiplier: 7,
-      eligibleEmploymentTypes: [
-        'civil_servant',
-        'private_sector',
-        'self_employed',
-        'sacco_member',
-      ],
+      selfEmployedMultiplier: 0, // Not eligible on frontend
+      saccoMemberMultiplier: 0,
+      eligibleEmploymentTypes: ['civil_servant', 'private_sector'],
       requiresGuarantor: false,
       requiresPayslip: true,
-      notes:
-        'Open to all employment categories. Lower minimum salary threshold than peers. Self-employed applicants require 12 months of bank statements.',
+      notes: 'Available for civil servants and private sector. 24% fixed interest rate.',
     },
   },
   {
-    name: 'Standard Bank Malawi',
-    type: 'BANK',
+    name: 'Malawi Police SACCO',
+    type: 'SACCO',
+    logoUrl: '/logos/sacco.png',
     criteria: {
-      interestRate: 24,
-      maxDtiRatio: 0.35,
-      minNetSalary: 100_000,
+      interestRate: 24, // Matches 24% Fixed in frontend
+      maxDtiRatio: 0.4, // Matches 40% DTI
+      minNetSalary: 120_000,
       minRepaymentMonths: 6,
-      maxRepaymentMonths: 60,
-      processingFeePercent: 1.0,
-      civilServantMultiplier: 12,
-      privateMultiplier: 8,
-      selfEmployedMultiplier: 3,
-      saccoMemberMultiplier: 6,
-      eligibleEmploymentTypes: [
-        'civil_servant',
-        'private_sector',
-        'self_employed',
-      ],
-      requiresGuarantor: true,
+      maxRepaymentMonths: 48,
+      processingFeePercent: 0,
+      civilServantMultiplier: 10,
+      privateMultiplier: 10,
+      selfEmployedMultiplier: 10,
+      saccoMemberMultiplier: 10,
+      eligibleEmploymentTypes: ['civil_servant', 'private_sector', 'self_employed', 'sacco_member'], // Eligible regardless of employment type, provided they are members
+      requiresGuarantor: false,
       requiresPayslip: true,
-      notes:
-        'Best interest rate among commercial banks. Higher minimum salary and guarantor required. Self-employed must provide certified business accounts.',
+      notes: 'Malawi Police SACCO is open to SACCO members only. 24% fixed interest rate.',
     },
   },
   {
@@ -89,26 +53,20 @@ const SEED_INSTITUTIONS = [
     type: 'MICROFINANCE',
     logoUrl: '/logos/finca.png',
     criteria: {
-      interestRate: 36,
-      maxDtiRatio: 0.5,
-      minNetSalary: 30_000,
-      minRepaymentMonths: 1,
+      interestRate: 28, // Using a dummy rate as FINCA doesn't have a fixed rate, but needs a value
+      maxDtiRatio: 0.5, // Finca DTI from frontend is 50%
+      minNetSalary: 0,
+      minRepaymentMonths: 6,
       maxRepaymentMonths: 36,
-      processingFeePercent: 3.0,
+      processingFeePercent: 2.5, // 2.5% processing fee from frontend
       civilServantMultiplier: 4,
-      privateMultiplier: 3,
-      selfEmployedMultiplier: 3,
+      privateMultiplier: 4,
+      selfEmployedMultiplier: 4,
       saccoMemberMultiplier: 4,
-      eligibleEmploymentTypes: [
-        'civil_servant',
-        'private_sector',
-        'self_employed',
-        'sacco_member',
-      ],
+      eligibleEmploymentTypes: ['civil_servant', 'private_sector', 'self_employed', 'sacco_member'], // All accepted
       requiresGuarantor: false,
       requiresPayslip: false,
-      notes:
-        'Accessible microfinance for low-income borrowers. No payslip required — alternative income evidence accepted. Group lending option available.',
+      notes: 'Group lending required. 2.5% processing fee and 5% cash collateral required.',
     },
   },
   {
@@ -135,28 +93,6 @@ const SEED_INSTITUTIONS = [
       requiresPayslip: false,
       notes:
         'Lowest minimum salary threshold in the market. Flexible repayment with no payslip required. Maximum term of 24 months. Ideal for micro-entrepreneurs.',
-    },
-  },
-  {
-    name: 'Malawi Police SACCO',
-    type: 'SACCO',
-    logoUrl: '/logos/sacco.png',
-    criteria: {
-      interestRate: 18,
-      maxDtiRatio: 0.45,
-      minNetSalary: 40_000,
-      minRepaymentMonths: 3,
-      maxRepaymentMonths: 60,
-      processingFeePercent: 0.5,
-      civilServantMultiplier: 3,
-      privateMultiplier: 3,
-      selfEmployedMultiplier: 2,
-      saccoMemberMultiplier: 10,
-      eligibleEmploymentTypes: ['sacco_member'],
-      requiresGuarantor: false,
-      requiresPayslip: false,
-      notes:
-        'Exclusive to registered SACCO members. Best interest rate in the market at 18% p.a. Members can access up to 10× their net salary. Non-members not eligible.',
     },
   },
 ];

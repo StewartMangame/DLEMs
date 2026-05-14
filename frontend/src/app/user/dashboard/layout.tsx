@@ -88,49 +88,42 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
       <div className={styles.main}>
         <header className={styles.topbar}>
-          <button
-            className={styles.menuBtn}
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            aria-label="Toggle menu"
-          >
-            Menu
-          </button>
-          <div
-            className={styles.topbarActions}
-            style={{
-              display: "flex",
-              gap: "1rem",
-              alignItems: "center",
-              flexWrap: "wrap",
-              justifyContent: "flex-end",
-            }}
-          >
-            <div
+          {/* Left side: hamburger + Check Eligibility CTA */}
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+            <button
+              className={styles.menuBtn}
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              aria-label="Toggle menu"
+            >
+              Menu
+            </button>
+            <Link
+              href="/user/dashboard/institutions"
+              className="btn btn-primary"
+              style={{ padding: "8px 24px" }}
+            >
+              {t("action.checkEligibility")}
+            </Link>
+          </div>
+
+          {/* Right side: Language + Theme */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <select
+              value={language}
+              onChange={event => setLanguage(event.target.value as "en" | "ny")}
+              className="form-select"
+              aria-label="Language"
               style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                borderRight: "1px solid var(--color-border)",
-                paddingRight: "1rem",
+                padding: "6px 28px 6px 12px",
+                minWidth: "125px",
+                fontSize: "0.9rem",
+                backgroundPosition: "right 8px center",
+                border: "1px solid var(--color-border)",
               }}
             >
-              <select
-                value={language}
-                onChange={event => setLanguage(event.target.value as "en" | "ny")}
-                className="form-select"
-                aria-label="Language"
-                style={{
-                  padding: "6px 28px 6px 12px",
-                  minWidth: "125px",
-                  fontSize: "0.9rem",
-                  backgroundPosition: "right 8px center",
-                  border: "1px solid var(--color-border)",
-                }}
-              >
-                <option value="en">English</option>
-                <option value="ny">Chichewa</option>
-              </select>
-            </div>
+              <option value="en">English</option>
+              <option value="ny">Chichewa</option>
+            </select>
 
             <button
               onClick={toggleTheme}
@@ -140,14 +133,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             >
               {theme === "dark" ? t("theme.light") : t("theme.dark")}
             </button>
-
-            <Link
-              href="/user/dashboard/institutions"
-              className="btn btn-primary"
-              style={{ padding: "8px 24px" }}
-            >
-              {t("action.checkEligibility")}
-            </Link>
           </div>
         </header>
 

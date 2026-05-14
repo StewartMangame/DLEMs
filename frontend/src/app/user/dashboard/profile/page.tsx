@@ -106,8 +106,7 @@ export default function ProfilePage() {
                 <option value="">Select Category</option>
                 <option value="civil_servant">Civil Servant (Government)</option>
                 <option value="private_sector">Private Sector</option>
-                <option value="self_employed">Self-Employed / Business owner</option>
-                <option value="sacco_member">SACCO Member</option>
+                <option value="self_employed">Self-Employed / Business Owner</option>
               </select>
               <div className="form-help">This determines which lenders and multipliers you are eligible for.</div>
             </div>
