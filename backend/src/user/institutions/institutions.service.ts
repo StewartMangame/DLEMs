@@ -9,6 +9,7 @@ const SEED_INSTITUTIONS = [
   {
     name: 'FDH Bank',
     type: 'BANK',
+    logoUrl: '/logos/fdh.png',
     criteria: {
       interestRate: 24, // Matches 24% Fixed in frontend
       maxDtiRatio: 0.3, // Matches 30% DTI
@@ -29,6 +30,7 @@ const SEED_INSTITUTIONS = [
   {
     name: 'Malawi Police SACCO',
     type: 'SACCO',
+    logoUrl: '/logos/sacco.png',
     criteria: {
       interestRate: 24, // Matches 24% Fixed in frontend
       maxDtiRatio: 0.4, // Matches 40% DTI
@@ -49,6 +51,7 @@ const SEED_INSTITUTIONS = [
   {
     name: 'FINCA Malawi',
     type: 'MICROFINANCE',
+    logoUrl: '/logos/finca.png',
     criteria: {
       interestRate: 28, // Using a dummy rate as FINCA doesn't have a fixed rate, but needs a value
       maxDtiRatio: 0.5, // Finca DTI from frontend is 50%
@@ -97,6 +100,7 @@ export class InstitutionsService {
       const inst = this.instRepo.create({
         name: data.name,
         type: data.type,
+        logoUrl: (data as any).logoUrl,
         isActive: true,
       });
       await this.instRepo.save(inst);

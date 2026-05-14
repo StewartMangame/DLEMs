@@ -6,6 +6,7 @@ import {
   UseGuards,
   Req,
   Param,
+  Delete,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { LoansService } from './loans.service';
@@ -53,5 +54,11 @@ export class LoansController {
       parseInt(id, 10),
     );
     return { success: true, loan };
+  }
+
+  @Delete(':id')
+  async removeLoan(@Req() req: any, @Param('id') id: string) {
+    await this.loansService.removeLoan(req.user.userId, parseInt(id, 10));
+    return { success: true };
   }
 }

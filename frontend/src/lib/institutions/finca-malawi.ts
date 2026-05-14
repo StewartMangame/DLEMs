@@ -8,6 +8,7 @@ export const FINCA_MALAWI: InstitutionConfig = {
   id: 'finca-malawi',
   name: 'FINCA Malawi',
   type: 'Microfinance Institution',
+  logoUrl: '/logos/finca.png',
   description:
     'Offers group-based loans to business owners. Currently providing Village Bank Loans, with more products coming soon.',
 

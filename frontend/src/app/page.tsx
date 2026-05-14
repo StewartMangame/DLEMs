@@ -138,7 +138,9 @@ export default function LandingPage() {
           <div className={styles.banks}>
             {BANKS.map((b, i) => (
               <div key={i} className={`card ${styles.bankCard}`}>
-                <div className={styles.bankEmoji}>{b.emoji}</div>
+                <div className={styles.bankLogoWrapper}>
+                  <img src={b.logo} alt={b.name} className={styles.bankLogo} />
+                </div>
                 <div>
                   <div className="text-h3">{b.name}</div>
                   <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>{b.tagline}</div>
@@ -203,7 +205,7 @@ const STEPS = [
 ];
 
 const BANKS = [
-  { emoji: "🏦", name: "FDH Bank", tagline: "Personal & salary loans · civil servants & private sector" },
-  { emoji: "🤝", name: "SACCO", tagline: "Member loans · competitive rates · Malawi Police SACCO" },
-  { emoji: "🌱", name: "FINCA", tagline: "Group / Village Bank loans · business owners" },
+  { logo: "/logos/fdh.png", name: "FDH Bank", tagline: "Personal & salary loans · civil servants & private sector" },
+  { logo: "/logos/sacco.png", name: "SACCO", tagline: "Member loans · competitive rates · Malawi Police SACCO" },
+  { logo: "/logos/finca.png", name: "FINCA", tagline: "Group / Village Bank loans · business owners" },
 ];

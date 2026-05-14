@@ -15,6 +15,7 @@ interface Institution {
   id: number;
   name: string;
   type: string;
+  logoUrl?: string;
   criteria?: {
     interestRate: number;
     maxRepaymentMonths: number;
@@ -213,15 +214,24 @@ export default function EligibilityPage() {
                       {t("eligibility.bestMatch")}
                     </div>
                   )}
-                  <h3
-                    style={{
-                      fontWeight: 700,
-                      fontSize: "1.2rem",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    {inst.rank}. {inst.institutionName}
-                  </h3>
+                  <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "0.5rem" }}>
+                    {institutions.find(i => i.name === inst.institutionName)?.logoUrl && (
+                      <img 
+                        src={institutions.find(i => i.name === inst.institutionName)?.logoUrl} 
+                        alt="" 
+                        style={{ width: "32px", height: "32px", objectFit: "contain" }} 
+                      />
+                    )}
+                    <h3
+                      style={{
+                        fontWeight: 700,
+                        fontSize: "1.2rem",
+                        margin: 0,
+                      }}
+                    >
+                      {inst.rank}. {inst.institutionName}
+                    </h3>
+                  </div>
                   <div
                     className="text-sm text-muted"
                     style={{ marginBottom: "1rem" }}
@@ -368,8 +378,17 @@ export default function EligibilityPage() {
           <div className="grid-3" style={{ gap: "1rem" }}>
             {institutions.map(inst => (
               <div key={inst.id} className="card" style={{ padding: "1.5rem" }}>
-                <h4 style={{ marginBottom: "0.5rem" }}>{inst.name}</h4>
-                <div className="badge badge-neutral text-xs">{inst.type}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>
+                  {inst.logoUrl ? (
+                    <img src={inst.logoUrl} alt="" style={{ width: "40px", height: "40px", objectFit: "contain" }} />
+                  ) : (
+                    <div style={{ width: "40px", height: "40px", background: "var(--color-bg-alt)", borderRadius: "var(--radius-sm)", display: "flex", alignItems: "center", justifyContent: "center" }}>🏦</div>
+                  )}
+                  <div>
+                    <h4 style={{ margin: 0 }}>{inst.name}</h4>
+                    <div className="badge badge-neutral text-xs">{inst.type}</div>
+                  </div>
+                </div>
                 {inst.criteria && (
                   <div
                     className="text-xs"

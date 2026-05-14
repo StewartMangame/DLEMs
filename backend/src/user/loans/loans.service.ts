@@ -218,6 +218,30 @@ export class LoansService {
     return loan;
   }
 
+  async removeLoan(userId: number, loanId: number) {
+    const loan = await this.loanRepo.findOne({
+      where: { id: loanId, userId },
+    });
+    if (!loan) throw new NotFoundException('Loan not found');
+
+    const profile = await this.profileRepo.findOne({ where: { userId } });
+    if (profile && loan.isActive) {
+      // If the loan was active, reduce the existing monthly debt in profile
+      profile.existingLoanAmount = Math.max(
+        0,
+        profile.existingLoanAmount - loan.monthlyDeduction,
+      );
+      await this.profileRepo.save(profile);
+    }
+
+    // Hard delete for manual records or soft delete? 
+    // User said "remove", usually meaning it shouldn't show up. 
+    // We'll set isActive to false so it's preserved in history but hidden from Active list.
+    loan.isActive = false;
+    loan.remainingBalance = 0;
+    return this.loanRepo.save(loan);
+  }
+
   private async scheduleReminders(loan: Loan) {
     // Generate simple reminders for the loan duration
     const reminders: Reminder[] = [];

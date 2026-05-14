@@ -62,7 +62,7 @@ export default function AddLoanPage() {
         throw new Error(data.error || "Failed to record loan");
       }
 
-      router.push("/dashboard/loans");
+      router.push("/user/dashboard/loans");
       router.refresh();
     } catch (err: any) {
       setError(err.message);

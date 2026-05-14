@@ -135,6 +135,14 @@
   justify-content: center;
   font-size: 1.4rem;
   flex-shrink: 0;
+  overflow: hidden;
+  padding: 4px;
+}
+
+.partnerLogo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .checkmark {
@@ -288,6 +296,14 @@
   justify-content: center;
   font-size: 1.6rem;
   flex-shrink: 0;
+  overflow: hidden;
+  padding: 4px;
+}
+
+.partnerLogoSmall {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .resultIcon.eligible    { background: rgba(0, 200, 150, 0.15); }

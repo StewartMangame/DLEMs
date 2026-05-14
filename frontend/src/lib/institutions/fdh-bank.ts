@@ -9,6 +9,7 @@ import type { InstitutionConfig } from './types';
 export const FDH_BANK: InstitutionConfig = {
   id: 'fdh-bank',
   name: 'FDH Bank',
+  logoUrl: '/logos/fdh.png',
   type: 'Commercial Bank',
   description:
     'A leading commercial bank in Malawi offering personal and salary loans to civil servants and private sector employees. Loans are processed at physical branches with fixed interest rates and salary deduction repayment.',
