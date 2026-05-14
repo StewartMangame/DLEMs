@@ -8,7 +8,6 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
@@ -32,14 +31,14 @@ const sacco_entity_1 = require("./entities/sacco.entity");
 const user_entity_1 = require("./entities/user.entity");
 const admin_panel_module_1 = require("./admin/admin-panel.module");
 const admin_module_1 = require("./admin/admin.module");
-const auth_module_1 = require("./user/auth/auth.module");
-const dashboard_module_1 = require("./user/dashboard/dashboard.module");
-const eligibility_module_1 = require("./user/eligibility/eligibility.module");
-const institutions_module_1 = require("./user/institutions/institutions.module");
-const institutions_service_1 = require("./user/institutions/institutions.service");
-const loans_module_1 = require("./user/loans/loans.module");
-const profile_module_1 = require("./user/profile/profile.module");
-const reminder_module_1 = require("./user/reminder/reminder.module");
+const auth_module_1 = require("./auth/auth.module");
+const dashboard_module_1 = require("./dashboard/dashboard.module");
+const eligibility_module_1 = require("./eligibility/eligibility.module");
+const institutions_module_1 = require("./institutions/institutions.module");
+const institutions_service_1 = require("./institutions/institutions.service");
+const loans_module_1 = require("./loans/loans.module");
+const profile_module_1 = require("./profile/profile.module");
+const reminder_module_1 = require("./reminder/reminder.module");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
 let AppModule = class AppModule {
@@ -97,6 +96,6 @@ exports.AppModule = AppModule = __decorate([
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],
     }),
-    __metadata("design:paramtypes", [typeof (_a = typeof institutions_service_1.InstitutionsService !== "undefined" && institutions_service_1.InstitutionsService) === "function" ? _a : Object])
+    __metadata("design:paramtypes", [institutions_service_1.InstitutionsService])
 ], AppModule);
 //# sourceMappingURL=app.module.js.map
