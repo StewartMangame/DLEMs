@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
@@ -10,6 +11,13 @@ async function bootstrap() {
     credentials: true,
   });
   app.use(cookieParser());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,            // Strip fields not in the DTO
+      forbidNonWhitelisted: true, // Return 400 if unknown fields are sent
+      transform: true,            // Auto-convert types (e.g. string -> number)
+    }),
+  );
   await app.listen(process.env.PORT ?? 3001);
 }
 bootstrap();
