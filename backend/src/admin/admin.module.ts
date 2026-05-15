@@ -10,7 +10,16 @@ import { Loan } from '../entities/loan.entity';
 import { FinancialProfile } from '../entities/financial-profile.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Institution, InstitutionCriteria, LoanApplication, Loan, FinancialProfile])],
+  imports: [
+    TypeOrmModule.forFeature([
+      User,
+      Institution,
+      InstitutionCriteria,
+      LoanApplication,
+      Loan,
+      FinancialProfile,
+    ]),
+  ],
   controllers: [AdminController],
   providers: [AdminService],
 })

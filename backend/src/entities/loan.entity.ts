@@ -1,7 +1,13 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column,
-  CreateDateColumn, UpdateDateColumn,
-  ManyToOne, JoinColumn, OneToOne, OneToMany,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  OneToOne,
+  OneToMany,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Institution } from './institution.entity';
@@ -16,14 +22,14 @@ export class Loan {
   @Column()
   userId: number;
 
-  @ManyToOne(() => User, u => u.activeLoans)
+  @ManyToOne(() => User, (u) => u.activeLoans)
   @JoinColumn({ name: 'userId' })
   user: User;
 
   @Column({ nullable: true })
   providerInstitutionId: number;
 
-  @ManyToOne(() => Institution, i => i.loans)
+  @ManyToOne(() => Institution, (i) => i.loans)
   @JoinColumn({ name: 'providerInstitutionId' })
   providerInstitution: Institution;
 
@@ -63,11 +69,11 @@ export class Loan {
   @Column({ nullable: true })
   applicationId: number;
 
-  @OneToOne(() => LoanApplication, a => a.loan)
+  @OneToOne(() => LoanApplication, (a) => a.loan)
   @JoinColumn({ name: 'applicationId' })
   application: LoanApplication;
 
-  @OneToMany(() => Reminder, r => r.loan)
+  @OneToMany(() => Reminder, (r) => r.loan)
   reminders: Reminder[];
 
   @CreateDateColumn()

@@ -26,14 +26,17 @@ export class EligibilityController {
    */
   @Post('compare')
   @UseGuards(AuthGuard('jwt'))
-  async compareInstitutions(@Body() body: {
-    monthlyNetSalary: number;
-    existingMonthlyRepayments: number;
-    employmentCategory: string;
-    requestedAmount: number;
-    requestedTermMonths: number;
-    institutionIds?: number[];
-  }) {
+  async compareInstitutions(
+    @Body()
+    body: {
+      monthlyNetSalary: number;
+      existingMonthlyRepayments: number;
+      employmentCategory: string;
+      requestedAmount: number;
+      requestedTermMonths: number;
+      institutionIds?: number[];
+    },
+  ) {
     return this.eligibilityService.compareInstitutions(body as any);
   }
 

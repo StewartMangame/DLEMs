@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  OneToOne,
+} from 'typeorm';
 import { User } from './user.entity';
 import { Institution } from './institution.entity';
 import { Loan } from './loan.entity';
@@ -11,14 +19,14 @@ export class LoanApplication {
   @Column()
   userId: number;
 
-  @ManyToOne(() => User, u => u.applications)
+  @ManyToOne(() => User, (u) => u.applications)
   @JoinColumn({ name: 'userId' })
   user: User;
 
   @Column()
   institutionId: number;
 
-  @ManyToOne(() => Institution, i => i.applications)
+  @ManyToOne(() => Institution, (i) => i.applications)
   @JoinColumn({ name: 'institutionId' })
   institution: Institution;
 
@@ -49,6 +57,6 @@ export class LoanApplication {
   @CreateDateColumn()
   createdAt: Date;
 
-  @OneToOne(() => Loan, l => l.application)
+  @OneToOne(() => Loan, (l) => l.application)
   loan: Loan;
 }

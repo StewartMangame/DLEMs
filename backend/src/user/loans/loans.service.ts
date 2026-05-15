@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Loan } from '../../entities/loan.entity';
@@ -12,8 +16,10 @@ import { calculateMonthlyInstallment } from '../lib/eligibilityEngine';
 export class LoansService {
   constructor(
     @InjectRepository(Loan) private loanRepo: Repository<Loan>,
-    @InjectRepository(LoanApplication) private appRepo: Repository<LoanApplication>,
-    @InjectRepository(FinancialProfile) private profileRepo: Repository<FinancialProfile>,
+    @InjectRepository(LoanApplication)
+    private appRepo: Repository<LoanApplication>,
+    @InjectRepository(FinancialProfile)
+    private profileRepo: Repository<FinancialProfile>,
     @InjectRepository(Reminder) private reminderRepo: Repository<Reminder>,
   ) {}
 
@@ -33,16 +39,10 @@ export class LoansService {
     return { loans, applications };
   }
 
-  /**
-   * Record a loan the user already holds (manual entry).
-   * Accepts: loanAmount, interestRate, loanTermMonths, startDate,
-   *          institutionId (optional), providerName (free text fallback),
-   *          loanPurpose (optional).
-   * Auto-calculates monthlyDeduction via EMI formula.
-   */
   async createManualLoan(userId: number, data: any) {
     const profile = await this.profileRepo.findOne({ where: { userId } });
-    if (!profile) throw new BadRequestException('Complete financial profile first');
+    if (!profile)
+      throw new BadRequestException('Complete financial profile first');
 
     const loanAmount = parseFloat(data.loanAmount);
     let interestRate = parseFloat(data.interestRate) || 0;
@@ -50,7 +50,9 @@ export class LoansService {
     const startDate = new Date(data.startDate);
     const loanPurpose = data.loanPurpose || data.purpose || null;
     const providerName = data.providerName || null;
-    const institutionId = data.institutionId ? parseInt(data.institutionId, 10) : null;
+    const institutionId = data.institutionId
+      ? parseInt(data.institutionId, 10)
+      : null;
 
     if (institutionId) {
       const inst = await this.loanRepo.manager.findOne(Institution, {
@@ -62,26 +64,24 @@ export class LoansService {
       }
     }
 
-    // Auto-calculate EMI from principal, rate, and term
     const monthlyDeduction = data.monthlyDeduction
       ? parseFloat(data.monthlyDeduction)
       : calculateMonthlyInstallment(loanAmount, interestRate, loanTermMonths);
 
-    // Calculate how many months already paid based on startDate
     const now = new Date();
-    const monthsDiff = (now.getFullYear() - startDate.getFullYear()) * 12 + (now.getMonth() - startDate.getMonth());
+    const monthsDiff =
+      (now.getFullYear() - startDate.getFullYear()) * 12 +
+      (now.getMonth() - startDate.getMonth());
     const paidMonths = Math.max(0, Math.min(monthsDiff, loanTermMonths));
 
-    // Compute remaining balance (amortization-aware)
     let remainingBalance = loanAmount;
     if (interestRate > 0 && paidMonths > 0) {
       const r = interestRate / 100 / 12;
-      // Outstanding balance after k payments: P × [(1+r)^n - (1+r)^k] / [(1+r)^n - 1]
       const factor_n = Math.pow(1 + r, loanTermMonths);
       const factor_k = Math.pow(1 + r, paidMonths);
-      remainingBalance = loanAmount * (factor_n - factor_k) / (factor_n - 1);
+      remainingBalance = (loanAmount * (factor_n - factor_k)) / (factor_n - 1);
     } else if (paidMonths > 0) {
-      remainingBalance = loanAmount - (monthlyDeduction * paidMonths);
+      remainingBalance = loanAmount - monthlyDeduction * paidMonths;
     }
     remainingBalance = Math.max(0, remainingBalance);
 
@@ -100,7 +100,6 @@ export class LoansService {
       loanPurpose,
     });
 
-    // Update profile totals
     profile.totalBorrowedAmount += loanAmount;
     profile.existingLoanAmount += Math.round(monthlyDeduction);
     await this.profileRepo.save(profile);
@@ -110,9 +109,6 @@ export class LoansService {
     return saved;
   }
 
-  /**
-   * Get a full amortization schedule for a specific loan.
-   */
   async getRepaymentSchedule(userId: number, loanId: number) {
     const loan = await this.loanRepo.findOne({ where: { id: loanId, userId } });
     if (!loan) throw new NotFoundException('Loan not found');
@@ -148,26 +144,35 @@ export class LoansService {
 
   async applyLoan(userId: number, data: any) {
     const profile = await this.profileRepo.findOne({ where: { userId } });
-    if (!profile) throw new BadRequestException('Complete financial profile first');
+    if (!profile)
+      throw new BadRequestException('Complete financial profile first');
 
     const amount = parseFloat(data.amount);
     const duration = parseInt(data.durationMonths, 10);
     const institutionId = parseInt(data.institutionId, 10);
-    
+
     // Fetch institution to enforce fixed rates
     const inst = await this.appRepo.manager.findOne(Institution, {
       where: { id: institutionId },
       relations: ['criteria'],
     });
-    
-    const rate = (inst && inst.criteria && inst.criteria.fixedInterestRate) ? inst.criteria.fixedInterestRate : ((inst && inst.criteria && inst.criteria.interestRate) ? inst.criteria.interestRate : 18);
-    const monthlyInstallment = calculateMonthlyInstallment(amount, rate, duration);
+
+    const rate =
+      inst && inst.criteria && inst.criteria.fixedInterestRate
+        ? inst.criteria.fixedInterestRate
+        : inst && inst.criteria && inst.criteria.interestRate
+          ? inst.criteria.interestRate
+          : 18;
+    const monthlyInstallment = calculateMonthlyInstallment(
+      amount,
+      rate,
+      duration,
+    );
 
     const totalNewDebt = profile.existingLoanAmount + monthlyInstallment;
     const dtiRatio = (totalNewDebt / profile.monthlyNetSalary) * 100;
 
-    // Simple risk scoring
-    let riskScore = 100 - (dtiRatio * 0.8);
+    let riskScore = 100 - dtiRatio * 0.8;
     if (profile.monthlyNetSalary > 1000000) riskScore += 10;
     riskScore = Math.min(120, Math.max(20, Math.round(riskScore)));
 
@@ -192,18 +197,25 @@ export class LoansService {
   }
 
   async repayLoan(userId: number, loanId: number) {
-    const loan = await this.loanRepo.findOne({ where: { id: loanId, userId, isActive: true } });
+    const loan = await this.loanRepo.findOne({
+      where: { id: loanId, userId, isActive: true },
+    });
     if (!loan) throw new NotFoundException('Active loan not found');
 
     if (loan.remainingBalance > 0) {
       loan.paidMonths += 1;
-      // Amortization-aware balance update
       const monthlyRate = (loan.interestRate || 0) / 100 / 12;
       const interestPortion = loan.remainingBalance * monthlyRate;
       const principalPortion = loan.monthlyDeduction - interestPortion;
-      loan.remainingBalance = Math.max(0, loan.remainingBalance - principalPortion);
+      loan.remainingBalance = Math.max(
+        0,
+        loan.remainingBalance - principalPortion,
+      );
 
-      if (loan.remainingBalance <= 0 || loan.paidMonths >= loan.loanTermMonths) {
+      if (
+        loan.remainingBalance <= 0 ||
+        loan.paidMonths >= loan.loanTermMonths
+      ) {
         loan.isActive = false;
         loan.remainingBalance = 0;
       }
@@ -212,40 +224,60 @@ export class LoansService {
     return loan;
   }
 
+  async removeLoan(userId: number, loanId: number) {
+    const loan = await this.loanRepo.findOne({
+      where: { id: loanId, userId },
+    });
+    if (!loan) throw new NotFoundException('Loan not found');
+
+    const profile = await this.profileRepo.findOne({ where: { userId } });
+    if (profile && loan.isActive) {
+      profile.existingLoanAmount = Math.max(
+        0,
+        profile.existingLoanAmount - loan.monthlyDeduction,
+      );
+      await this.profileRepo.save(profile);
+    }
+
+    loan.isActive = false;
+    loan.remainingBalance = 0;
+    return this.loanRepo.save(loan);
+  }
+
   private async scheduleReminders(loan: Loan) {
-    // Generate simple reminders for the loan duration
     const reminders: Reminder[] = [];
-    let currentDate = new Date(loan.startDate);
+    const currentDate = new Date(loan.startDate);
 
     for (let i = 0; i < loan.loanTermMonths; i++) {
-      // Find deduction date for the month
       if (i > 0) {
         currentDate.setMonth(currentDate.getMonth() + 1);
       }
 
-      // 3 days before
       const reminder3 = new Date(currentDate);
       reminder3.setDate(reminder3.getDate() - 3);
 
-      reminders.push(this.reminderRepo.create({
-        loanId: loan.id,
-        userId: loan.userId,
-        scheduledAt: reminder3,
-        channel: 'BOTH',
-        status: 'PENDING'
-      }));
+      reminders.push(
+        this.reminderRepo.create({
+          loanId: loan.id,
+          userId: loan.userId,
+          scheduledAt: reminder3,
+          channel: 'BOTH',
+          status: 'PENDING',
+        }),
+      );
 
-      // 1 day before
       const reminder1 = new Date(currentDate);
       reminder1.setDate(reminder1.getDate() - 1);
 
-      reminders.push(this.reminderRepo.create({
-        loanId: loan.id,
-        userId: loan.userId,
-        scheduledAt: reminder1,
-        channel: 'BOTH',
-        status: 'PENDING'
-      }));
+      reminders.push(
+        this.reminderRepo.create({
+          loanId: loan.id,
+          userId: loan.userId,
+          scheduledAt: reminder1,
+          channel: 'BOTH',
+          status: 'PENDING',
+        }),
+      );
     }
     await this.reminderRepo.save(reminders);
   }

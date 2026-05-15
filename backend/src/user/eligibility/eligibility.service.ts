@@ -1,14 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { FindOptionsWhere, In, Repository } from 'typeorm';
 import { Institution } from '../../entities/institution.entity';
 import {
-  checkInstitution,
   rankInstitutions,
   CheckInstitutionParams,
   EmploymentCategory,
-  calculateMonthlyInstallment,
-  calculateDtiRatio,
   CompareResult,
   InstitutionEligibilityResult,
 } from '../lib/eligibilityEngine';
@@ -38,7 +35,7 @@ export class EligibilityService {
     } = params;
 
     // Load institutions with their criteria
-    const whereClause: any = { isActive: true };
+    const whereClause: FindOptionsWhere<Institution> = { isActive: true };
     if (institutionIds && institutionIds.length > 0) {
       whereClause.id = In(institutionIds);
     }
@@ -49,8 +46,8 @@ export class EligibilityService {
 
     // Build params for each institution and run the engine
     const checkParams: CheckInstitutionParams[] = institutions
-      .filter(inst => inst.criteria) // skip institutions with no criteria set
-      .map(inst => ({
+      .filter((inst) => inst.criteria) // skip institutions with no criteria set
+      .map((inst) => ({
         institutionId: inst.id,
         institutionName: inst.name,
         institutionType: inst.type,
@@ -110,8 +107,10 @@ export class EligibilityService {
       institutionIds: undefined, // all institutions
     });
 
+    const targetInstitutionId = parseInt(institutionId, 10);
     const allResults = [...compareResult.ranked, ...compareResult.ineligible];
-    const targetResult = allResults.find(r => r.institutionId === institutionId) ?? null;
+    const targetResult =
+      allResults.find((r) => r.institutionId === targetInstitutionId) ?? null;
 
     return {
       result: targetResult,
@@ -126,7 +125,7 @@ export class EligibilityService {
       relations: ['criteria'],
     });
 
-    return institutions.map(inst => ({
+    return institutions.map((inst) => ({
       id: inst.id,
       name: inst.name,
       type: inst.type,

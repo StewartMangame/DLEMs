@@ -9,7 +9,7 @@ import { InstitutionsModule } from '../institutions/institutions.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([FinancialProfile, User]),
-    InstitutionsModule
+    InstitutionsModule,
   ],
   controllers: [ProfileController],
   providers: [ProfileService],

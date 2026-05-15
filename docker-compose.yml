@@ -9,13 +9,14 @@ services:
       - '3001:3001'
     environment:
       - PORT=3001
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/loan_db
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - JWT_SECRET=super_secret_jwt_key
-    depends_on:
-      - postgres
-      - redis
+      - JWT_SECRET=change_this_customer_secret
+      - ADMIN_JWT_SECRET=change_this_admin_secret
+      - ADMIN_SEED_EMAIL=superadmin@dlem.mw
+      - ADMIN_SEED_PASSWORD=ChangeThisAdminPassword123!
+      - SQLITE_DB_PATH=/data/loan_db.sqlite
+      - TYPEORM_SYNC=true
+    volumes:
+      - backend-data:/data
     networks:
       - app-network
 
@@ -32,32 +33,9 @@ services:
     networks:
       - app-network
 
-  postgres:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: loan_db
-    ports:
-      - '5432:5432'
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    networks:
-      - app-network
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - '6379:6379'
-    volumes:
-      - redis-data:/data
-    networks:
-      - app-network
-
 networks:
   app-network:
     driver: bridge
 
 volumes:
-  postgres-data:
-  redis-data:
+  backend-data:

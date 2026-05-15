@@ -11,12 +11,17 @@ export class ProfileService {
   ) {}
 
   async getProfile(userId: number) {
-    const profile = await this.profileRepo.findOne({ where: { userId }, relations: ['salaryInstitution'] });
+    const profile = await this.profileRepo.findOne({
+      where: { userId },
+      relations: ['salaryInstitution'],
+    });
     return { profile };
   }
 
   async updateProfile(userId: number, data: any) {
-    let profile: FinancialProfile | null = await this.profileRepo.findOne({ where: { userId } });
+    let profile: FinancialProfile | null = await this.profileRepo.findOne({
+      where: { userId },
+    });
     if (!profile) {
       const newProfile = new FinancialProfile();
       newProfile.userId = userId;

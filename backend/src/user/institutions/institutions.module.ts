@@ -9,6 +9,6 @@ import { InstitutionsService } from './institutions.service';
   imports: [TypeOrmModule.forFeature([Institution, InstitutionCriteria])],
   controllers: [InstitutionsController],
   providers: [InstitutionsService],
-  exports: [InstitutionsService]
+  exports: [InstitutionsService],
 })
 export class InstitutionsModule {}

@@ -1,48 +1,92 @@
-# Smart Loan System (NestJS + React)
+# Smart Loan Eligibility and Repayment Tracking System
 
 ## Overview
-This repository contains the full-stack Smart Loan Eligibility and Loan Monitoring System.
-The frontend is a Next.js (React) application, and the backend is a NestJS project using PostgreSQL and Redis (via Bull for job queuing).
 
-## Prerequisites
-- Docker and Docker Compose
-- Node.js (v20+ recommended)
+This repository contains the full-stack DLEM prototype for borrowers in Malawi.
+It helps users create a financial profile, compare loan eligibility across
+banks, microfinance institutions, and SACCOs, record existing loans, and track
+repayment progress.
 
-## Quick Start (Dockerized)
-The easiest way to run the entire stack (Frontend, Backend, PostgreSQL, Redis) is via Docker Compose.
+## Stack
+
+- Frontend: Next.js and React
+- Backend: NestJS, TypeORM, JWT authentication, scheduled reminder checks
+- Database: SQLite through TypeORM (`backend/loan_db.sqlite`)
+
+The current prototype does not connect to live bank systems, CRB systems,
+PostgreSQL, or Redis. Lending rules are maintained internally.
+
+## Main Modules
+
+1. Auth: customer registration, login, logout, and JWT cookies.
+2. Profile: borrower financial profile with income, employment category,
+   dependants, salary institution, and current monthly deductions.
+3. Institutions: seeded Malawian lenders and internal eligibility criteria.
+4. Eligibility: rule-based comparison and ranked top-five recommendations.
+5. Loans: manual loan recording, monthly payment calculation, repayment
+   schedule, remaining balance, and repayment progress.
+6. Reminders: scheduled reminder records that are processed daily.
+7. Admin panel: institution/content/admin management for maintaining internal
+   data.
+
+## Required Environment
+
+Create or update `backend/.env` with:
+
+```env
+JWT_SECRET=change_this_customer_secret
+ADMIN_JWT_SECRET=change_this_admin_secret
+ADMIN_SEED_EMAIL=superadmin@dlem.mw
+ADMIN_SEED_PASSWORD=ChangeThisAdminPassword123!
+SQLITE_DB_PATH=loan_db.sqlite
+TYPEORM_SYNC=true
+PORT=3001
+```
+
+Do not use the sample secrets for production or public demos.
+
+Create or update `frontend/.env` with:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3001
+```
+
+## Local Development
+
+Install dependencies from the repository root:
+
+```bash
+npm install
+```
+
+Run both apps:
+
+```bash
+npm run dev:backend
+npm run dev:frontend
+```
+
+Default URLs:
+
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:3001/api
+
+## Docker
+
+The Docker Compose setup runs only the frontend and backend because this
+prototype uses SQLite inside the backend container.
 
 ```bash
 docker-compose up --build
 ```
 
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:3001
+## Verification
 
-## Application Architecture
-- **Backend (NestJS)**: TypeORM (Postgres), JWT Authentication, Bull (Redis) for queues.
-- **Frontend (Next.js)**: React 19 Frontend consuming the NestJS API.
-- **Database (PostgreSQL)**: Stores user and financial/loan data.
-- **Cache / Queue (Redis)**: Used for scheduling reminders 3 and 1 days before deduction dates.
+Useful checks:
 
-## Module Descriptions
-1. **Auth**: User registration, login, and JWT-based authentication.
-2. **Profile**: Financial profile (net salary, employer, salary institution).
-3. **Loan**: Loan recording and calculation.
-4. **Institution**: Endpoints for Institutions (Bank, Microfinance) and Super Admin.
-5. **Reminders**: Bull queues to trigger SMS/Email notifications.
-
-## Local Development (Without Docker)
-
-### Backend Setup
-1. `cd backend`
-2. `npm install`
-3. Make sure Postgres and Redis are running locally. You can use docker for just the DB services: `docker-compose up postgres redis -d`
-4. Update `.env` file in the backend to point to your local DB if needed.
-5. Create `.env` file with `DATABASE_URL`, `JWT_SECRET`, `REDIS_HOST`, `REDIS_PORT`.
-6. Run `npm run start:dev`.
-
-### Frontend Setup
-1. `cd frontend`
-2. `npm install`
-3. Make sure `.env` file contains `NEXT_PUBLIC_API_URL=http://localhost:3001`
-4. Run `npm run dev`.
+```bash
+npm run build --workspace=backend
+npm run lint --workspace=backend
+npm run lint --workspace=frontend
+npm test --workspace=backend -- --runInBand
+```

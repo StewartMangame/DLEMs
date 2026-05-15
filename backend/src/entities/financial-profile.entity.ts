@@ -1,7 +1,12 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column,
-  CreateDateColumn, UpdateDateColumn,
-  OneToOne, JoinColumn, ManyToOne,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToOne,
+  JoinColumn,
+  ManyToOne,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Institution } from './institution.entity';
@@ -14,7 +19,7 @@ export class FinancialProfile {
   @Column()
   userId: number;
 
-  @OneToOne(() => User, u => u.profile)
+  @OneToOne(() => User, (u) => u.profile)
   @JoinColumn({ name: 'userId' })
   user: User;
 
@@ -22,7 +27,7 @@ export class FinancialProfile {
   employerName: string;
 
   /**
-   * Core employment category — drives eligibility rules and loan multipliers.
+   * Core employment category drives eligibility rules and loan multipliers.
    * Allowed: "civil_servant" | "private_sector" | "self_employed" | "sacco_member"
    */
   @Column({ default: 'private_sector' })
@@ -38,7 +43,7 @@ export class FinancialProfile {
   @Column({ nullable: true })
   salaryInstitutionId: number;
 
-  @ManyToOne(() => Institution, i => i.profiles)
+  @ManyToOne(() => Institution, (i) => i.profiles)
   @JoinColumn({ name: 'salaryInstitutionId' })
   salaryInstitution: Institution;
 
@@ -60,6 +65,9 @@ export class FinancialProfile {
 
   @Column('float', { default: 0 })
   bankingYears: number;
+
+  @Column({ default: 0 })
+  dependants: number;
 
   @CreateDateColumn()
   createdAt: Date;

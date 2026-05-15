@@ -1,4 +1,12 @@
-import { Controller, Post, Body, Res, Req, Get, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Res,
+  Req,
+  Get,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
 import type { Response, Request } from 'express';
@@ -10,11 +18,11 @@ export class AuthController {
   @Post('login')
   async login(@Body() body: any, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.login(body);
-    res.cookie('jwt', result.access_token, { 
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 3600 * 1000 * 24 // 24 hours
+    res.cookie('jwt', result.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 3600 * 1000 * 24, // 24 hours
     });
     return result;
   }
@@ -22,11 +30,11 @@ export class AuthController {
   @Post('register')
   async register(@Body() body: any, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.register(body);
-     res.cookie('jwt', result.access_token, { 
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 3600 * 1000 * 24 
+    res.cookie('jwt', result.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 3600 * 1000 * 24,
     });
     return result;
   }

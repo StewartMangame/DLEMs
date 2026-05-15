@@ -18,8 +18,8 @@ export default function LandingPage() {
             <a href="#banks">Partners</a>
           </div>
           <div className={styles.navCta}>
-            <Link href="/login" className="btn btn-ghost btn-sm">Sign In</Link>
-            <Link href="/register" className="btn btn-primary btn-sm">Get Started</Link>
+            <Link href="/user/login" className="btn btn-ghost btn-sm">Sign In</Link>
+            <Link href="/user/register" className="btn btn-primary btn-sm">Get Started</Link>
           </div>
         </div>
       </nav>
@@ -38,14 +38,14 @@ export default function LandingPage() {
           </h1>
           <p className={`text-body ${styles.heroSub} animate-fadeInUp animate-delay-2`}>
             Check if you qualify for a personal loan in minutes — without visiting a branch.
-            Apply online, track repayments, and get real-time decisions from Mwai Bank,
-            Kokko Bank of Malawi, and KFS Bank.
+            Apply online, track repayments, and get real-time decisions from FDH Bank,
+            Malawi Police SACCO, and FINCA Malawi.
           </p>
           <div className={`${styles.heroActions} animate-fadeInUp animate-delay-3`}>
-            <Link href="/register" className="btn btn-primary btn-lg">
+            <Link href="/user/register" className="btn btn-primary btn-lg">
               Check My Eligibility →
             </Link>
-            <Link href="/login" className="btn btn-outline btn-lg">
+            <Link href="/user/login" className="btn btn-outline btn-lg">
               Sign In to Dashboard
             </Link>
           </div>
@@ -66,7 +66,7 @@ export default function LandingPage() {
 
           <div className={`${styles.heroStats} animate-fadeInUp animate-delay-5`}>
             <div className={styles.heroStat}>
-              <span className={styles.heroStatValue}>3 Banks</span>
+              <span className={styles.heroStatValue}>3 Institutions</span>
               <span className={styles.heroStatLabel}>Supported</span>
             </div>
             <div className={styles.heroStatDivider} />
@@ -126,16 +126,25 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Bank Partners ── */}
+      {/* ── Institution Partners ── */}
       <section id="banks" className={styles.section}>
         <div className="container">
           <div className={styles.sectionHeader}>
-            <h2 className="text-h2">Our Banking Partners</h2>
+            <h2 className="text-h2">Our Institution Partners</h2>
+            <p className="text-body" style={{ color: "var(--color-text-secondary)" }}>
+              Trusted Malawian lenders — one eligibility check covers all of them.
+            </p>
           </div>
           <div className={styles.banks}>
             {BANKS.map((b, i) => (
               <div key={i} className={`card ${styles.bankCard}`}>
-                <div className={styles.bankEmoji}>{b.emoji}</div>
+                <div className={styles.bankLogoWrapper}>
+                  {b.logo ? (
+                    <img src={b.logo} alt={b.name} className={styles.bankLogo} />
+                  ) : (
+                    <div className={styles.bankEmoji}>{b.emoji}</div>
+                  )}
+                </div>
                 <div>
                   <div className="text-h3">{b.name}</div>
                   <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>{b.tagline}</div>
@@ -154,7 +163,7 @@ export default function LandingPage() {
             <p style={{ color: "var(--color-text-secondary)" }}>
               Join thousands of Malawians easing their banking experience digitally.
             </p>
-            <Link href="/register" className="btn btn-primary btn-lg">
+            <Link href="/user/register" className="btn btn-primary btn-lg">
               Create Free Account →
             </Link>
           </div>
@@ -173,8 +182,8 @@ export default function LandingPage() {
               Digital Loan Eligibility & Management System · Malawi · Prototype 2024
             </p>
             <div className={styles.footerLinks}>
-              <Link href="/login">Sign In</Link>
-              <Link href="/register">Register</Link>
+              <Link href="/user/login">Sign In</Link>
+              <Link href="/user/register">Register</Link>
             </div>
           </div>
         </div>
@@ -200,7 +209,7 @@ const STEPS = [
 ];
 
 const BANKS = [
-  { emoji: "", name: "Mwai Bank", tagline: "Friends of Development" },
-  { emoji: "", name: "Kokko Bank", tagline: "Your Trusted Partner" },
-  { emoji: "", name: "KFS Bank", tagline: "Africa Is Our Home" },
+  { logo: "/logos/fdh.png", emoji: "🏦", name: "FDH Bank", tagline: "Personal & salary loans · civil servants & private sector" },
+  { logo: "/logos/sacco.png", emoji: "🤝", name: "Malawi Police SACCO", tagline: "Member loans · competitive rates · Malawi Police SACCO" },
+  { logo: "/logos/finca.png", emoji: "🏦", name: "FINCA Malawi", tagline: "Group / Village Bank loans · business owners" },
 ];
