@@ -28,8 +28,14 @@ export class AuthController {
   }
 
   @Post('register')
-  async register(@Body() body: any, @Res({ passthrough: true }) res: Response) {
+  async register(@Body() body: any) {
     const result = await this.authService.register(body);
+    return result; // Does not set cookie, just returns message
+  }
+
+  @Post('verify-otp')
+  async verifyOtp(@Body() body: any, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.verifyOtp(body);
     res.cookie('jwt', result.access_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -37,6 +43,11 @@ export class AuthController {
       maxAge: 3600 * 1000 * 24,
     });
     return result;
+  }
+
+  @Post('resend-otp')
+  async resendOtp(@Body() body: { email: string }) {
+    return this.authService.resendOtp(body.email);
   }
 
   @Post('logout')

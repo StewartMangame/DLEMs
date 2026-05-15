@@ -14,6 +14,7 @@ import { LoanApplication } from './entities/loan-application.entity';
 import { LoanProduct } from './entities/loan-product.entity';
 import { Loan } from './entities/loan.entity';
 import { NotificationLog } from './entities/notification-log.entity';
+import { Otp } from './entities/otp.entity';
 import { Reminder } from './entities/reminder.entity';
 import { Sacco } from './entities/sacco.entity';
 import { User } from './entities/user.entity';
@@ -63,6 +64,7 @@ import { AppService } from './app.service';
           ContentString,
           Announcement,
           EligibilityCheckLog,
+          Otp,
         ],
         synchronize: config.get<string>('TYPEORM_SYNC', 'true') === 'true',
       }),
