@@ -84,11 +84,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {msg && (
-        <div className={`alert alert-${msg.type === "success" ? "success" : "danger"}`}>
-          {msg.text}
-        </div>
-      )}
+
 
       <form onSubmit={handleSubmit} className={styles.form}>
         <div className={`card ${styles.section}`}>
@@ -183,6 +179,11 @@ export default function ProfilePage() {
 
 
         <div className={styles.formActions}>
+          {msg && (
+            <div className={`alert alert-${msg.type === "success" ? "success" : "danger"}`} style={{ width: '100%', marginBottom: '16px' }}>
+              {msg.text}
+            </div>
+          )}
           <button type="submit" className="btn btn-primary btn-lg" disabled={saving}>
             {saving ? <><span className="loading-spinner" /> Saving...</> : "Save Profile"}
           </button>
