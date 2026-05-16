@@ -28,6 +28,7 @@ export interface InstitutionConfig {
   name: string;
   type: string;                    // e.g. 'SACCO' | 'Commercial Bank'
   description: string;
+  logoUrl?: string;
 
   // Membership (SACCO-specific — set minimumMembershipMonths to 0 for banks)
   membershipRequired: boolean;

@@ -20,3 +20,17 @@ loan_db.sqlite
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# TypeScript incremental build files
+*.tsbuildinfo
+backend/dist/
+frontend/.next/
+
+# Local runtime data
+backend/loan_db.sqlite
+backend/*.sqlite
+
+# Local environment files
+.env.local
+frontend/.env.local
+backend/.env.local

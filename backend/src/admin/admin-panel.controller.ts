@@ -22,7 +22,7 @@ import { CreateAdminDto, UpdateAdminDto } from './dto/admin-user.dto';
 
 const Guard = () => UseGuards(AuthGuard('admin-jwt'));
 
-@Controller('admin-panel')
+@Controller('admin')
 @UseGuards(AuthGuard('admin-jwt'))
 export class AdminPanelController {
   constructor(private readonly svc: AdminPanelService) {}
