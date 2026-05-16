@@ -63,6 +63,11 @@ export default function LoginPage() {
               <label className="form-label" htmlFor="password">Password</label>
               <input id="password" name="password" type="password" required className="form-input"
                 placeholder="Your password" value={form.password} onChange={handleChange} />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.25rem' }}>
+                <Link href="/user/forgot-password" className="text-sm" style={{ color: "var(--color-primary)" }}>
+                  Forgot Password?
+                </Link>
+              </div>
             </div>
             <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: "100%", marginTop: 4 }}>
               {loading ? <><span className="loading-spinner" /> Signing in…</> : "Sign In →"}
