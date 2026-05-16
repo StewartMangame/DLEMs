@@ -1,6 +1,17 @@
 import Link from "next/link";
 import Image from "next/image";
 import styles from "./page.module.css";
+import { 
+  Hexagon, 
+  Zap, 
+  Globe, 
+  Calculator, 
+  Clock, 
+  LayoutDashboard, 
+  ShieldCheck, 
+  Building2,
+  ArrowRight
+} from "lucide-react";
 
 export default function LandingPage() {
   return (
@@ -9,7 +20,7 @@ export default function LandingPage() {
       <nav className={styles.nav}>
         <div className={`container ${styles.navInner}`}>
           <div className={styles.logo}>
-            <span className={styles.logoIcon}>⬡</span>
+            <Hexagon size={24} className={styles.logoIcon} />
             <span>DLEM</span>
           </div>
           <div className={styles.navLinks}>
@@ -43,7 +54,7 @@ export default function LandingPage() {
           </p>
           <div className={`${styles.heroActions} animate-fadeInUp animate-delay-3`}>
             <Link href="/register" className="btn btn-primary btn-lg">
-              Check My Eligibility →
+              Check My Eligibility <ArrowRight size={20} style={{ marginLeft: 8 }} />
             </Link>
             <Link href="/login" className="btn btn-outline btn-lg">
               Sign In to Dashboard
@@ -96,7 +107,9 @@ export default function LandingPage() {
             {FEATURES.map((f, i) => (
               <div key={i} className={`card card-hover ${styles.featureCard}`}
                 style={{ animationDelay: `${i * 0.1}s` }}>
-                <div className={styles.featureIcon}>{f.icon}</div>
+                <div className={styles.featureIcon}>
+                  <f.icon size={32} color="var(--color-primary)" />
+                </div>
                 <h3 className="text-h3">{f.title}</h3>
                 <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>{f.desc}</p>
               </div>
@@ -135,7 +148,9 @@ export default function LandingPage() {
           <div className={styles.banks}>
             {BANKS.map((b, i) => (
               <div key={i} className={`card ${styles.bankCard}`}>
-                <div className={styles.bankEmoji}>{b.emoji}</div>
+                <div className={styles.bankEmoji}>
+                  <Building2 size={32} color="var(--color-primary)" />
+                </div>
                 <div>
                   <div className="text-h3">{b.name}</div>
                   <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>{b.tagline}</div>
@@ -155,7 +170,7 @@ export default function LandingPage() {
               Join thousands of Malawians easing their banking experience digitally.
             </p>
             <Link href="/register" className="btn btn-primary btn-lg">
-              Create Free Account →
+              Create Free Account <ArrowRight size={20} style={{ marginLeft: 8 }} />
             </Link>
           </div>
         </div>
@@ -166,7 +181,7 @@ export default function LandingPage() {
         <div className="container">
           <div className={styles.footerInner}>
             <div className={styles.logo}>
-              <span className={styles.logoIcon}>⬡</span>
+              <Hexagon size={24} className={styles.logoIcon} />
               <span>DLEM</span>
             </div>
             <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
@@ -184,12 +199,12 @@ export default function LandingPage() {
 }
 
 const FEATURES = [
-  { icon: "", title: "Instant Eligibility Check", desc: "Get an automated risk score and eligibility verdict in under 2 minutes based on your financial profile." },
-  { icon: "", title: "Apply From Anywhere", desc: "Submit your personal loan application from your phone or computer — no branch visit required." },
-  { icon: "", title: "Loan Repayment Simulator", desc: "Calculate your monthly installments, total cost, and full amortization schedule before you commit." },
-  { icon: "", title: "Real-Time Status Tracking", desc: "Track your application status from submission through credit officer review to final decision." },
-  { icon: "", title: "Active Loan Dashboard", desc: "Monitor outstanding balance, paid months, and upcoming payments from your personal dashboard." },
-  { icon: "", title: "Secure & Private", desc: "Your financial data is encrypted and protected. Only you and your bank officer can access your profile." },
+  { icon: Zap, title: "Instant Eligibility Check", desc: "Get an automated risk score and eligibility verdict in under 2 minutes based on your financial profile." },
+  { icon: Globe, title: "Apply From Anywhere", desc: "Submit your personal loan application from your phone or computer — no branch visit required." },
+  { icon: Calculator, title: "Loan Repayment Simulator", desc: "Calculate your monthly installments, total cost, and full amortization schedule before you commit." },
+  { icon: Clock, title: "Real-Time Status Tracking", desc: "Track your application status from submission through credit officer review to final decision." },
+  { icon: LayoutDashboard, title: "Active Loan Dashboard", desc: "Monitor outstanding balance, paid months, and upcoming payments from your personal dashboard." },
+  { icon: ShieldCheck, title: "Secure & Private", desc: "Your financial data is encrypted and protected. Only you and your bank officer can access your profile." },
 ];
 
 const STEPS = [
@@ -200,7 +215,8 @@ const STEPS = [
 ];
 
 const BANKS = [
-  { emoji: "", name: "Mwai Bank", tagline: "Friends of Development" },
-  { emoji: "", name: "Kokko Bank", tagline: "Your Trusted Partner" },
-  { emoji: "", name: "KFS Bank", tagline: "Africa Is Our Home" },
+  { name: "Mwai Bank", tagline: "Friends of Development" },
+  { name: "Kokko Bank", tagline: "Your Trusted Partner" },
+  { name: "KFS Bank", tagline: "Africa Is Our Home" },
 ];
+

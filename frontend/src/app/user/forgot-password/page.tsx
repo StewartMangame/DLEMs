@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import styles from "../auth.module.css";
+import { Hexagon, ArrowLeft, Mail } from "lucide-react";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -15,10 +16,6 @@ export default function ForgotPasswordPage() {
     setMessage("");
     setLoading(true);
     try {
-      // DLEM's backend is likely running on port 3001 if frontend is on 3000,
-      // but if we are using the Next.js API proxy, we use /api/auth/...
-      // Wait, let's look at login page: fetch("/api/auth/login"...)
-      // So we will use the same pattern.
       const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -42,9 +39,14 @@ export default function ForgotPasswordPage() {
       <div className={styles.bgOrb1} />
       <div className={styles.bgOrb2} />
       <div className={styles.container}>
-        <Link href="/" className={styles.logo}>
-          <span className={styles.logoIcon}>⬡</span> DLEM
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
+          <Link href="/" className={styles.logo}>
+            <Hexagon size={24} className={styles.logoIcon} /> DLEM
+          </Link>
+          <Link href="/login" className="btn btn-ghost btn-sm" style={{ gap: '8px' }}>
+            <ArrowLeft size={16} /> Back to Login
+          </Link>
+        </div>
         <div className={`card ${styles.card} ${styles.cardNarrow}`}>
           <div className={styles.cardHeader}>
             <h1 className="text-h2">Forgot Password</h1>
@@ -64,7 +66,7 @@ export default function ForgotPasswordPage() {
                   placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
               <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: "100%", marginTop: 4 }}>
-                {loading ? <><span className="loading-spinner" /> Sending…</> : "Send Reset Link"}
+                {loading ? <><span className="loading-spinner" /> Sending…</> : <><Mail size={20} style={{ marginRight: 8 }} /> Send Reset Link</>}
               </button>
             </form>
           )}

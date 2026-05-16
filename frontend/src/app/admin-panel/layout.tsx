@@ -3,25 +3,40 @@ import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import styles from "./layout.module.css";
+import { 
+  Hexagon, 
+  LayoutDashboard, 
+  Building, 
+  Handshake, 
+  Users, 
+  CheckCircle2, 
+  Wallet, 
+  Globe, 
+  Megaphone, 
+  Key, 
+  ClipboardList, 
+  LogOut, 
+  Menu 
+} from "lucide-react";
 
 const NAV_SUPER = [
-  { href: "/admin-panel/dashboard", icon: "◉", label: "Dashboard" },
-  { href: "/admin-panel/institutions", icon: "🏛", label: "Institutions" },
-  { href: "/admin-panel/saccos", icon: "🤝", label: "SACCOs" },
-  { href: "/admin-panel/users", icon: "👥", label: "Users" },
-  { href: "/admin-panel/eligibility", icon: "✅", label: "Eligibility Monitor" },
-  { href: "/admin-panel/loans", icon: "💰", label: "Loan Tracking" },
-  { href: "/admin-panel/content", icon: "🌐", label: "Content & Language" },
-  { href: "/admin-panel/announcements", icon: "📢", label: "Announcements" },
-  { href: "/admin-panel/admins", icon: "🔑", label: "Admin Accounts" },
-  { href: "/admin-panel/activity-log", icon: "📋", label: "Activity Log" },
+  { href: "/admin-panel/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/admin-panel/institutions", icon: Building, label: "Institutions" },
+  { href: "/admin-panel/saccos", icon: Handshake, label: "SACCOs" },
+  { href: "/admin-panel/users", icon: Users, label: "Users" },
+  { href: "/admin-panel/eligibility", icon: CheckCircle2, label: "Eligibility Monitor" },
+  { href: "/admin-panel/loans", icon: Wallet, label: "Loan Tracking" },
+  { href: "/admin-panel/content", icon: Globe, label: "Content & Language" },
+  { href: "/admin-panel/announcements", icon: Megaphone, label: "Announcements" },
+  { href: "/admin-panel/admins", icon: Key, label: "Admin Accounts" },
+  { href: "/admin-panel/activity-log", icon: ClipboardList, label: "Activity Log" },
 ];
 
 const NAV_CONTENT = [
-  { href: "/admin-panel/dashboard", icon: "◉", label: "Dashboard" },
-  { href: "/admin-panel/institutions", icon: "🏛", label: "Institutions" },
-  { href: "/admin-panel/content", icon: "🌐", label: "Content & Language" },
-  { href: "/admin-panel/announcements", icon: "📢", label: "Announcements" },
+  { href: "/admin-panel/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/admin-panel/institutions", icon: Building, label: "Institutions" },
+  { href: "/admin-panel/content", icon: Globe, label: "Content & Language" },
+  { href: "/admin-panel/announcements", icon: Megaphone, label: "Announcements" },
 ];
 
 export default function AdminPanelLayout({ children }: { children: React.ReactNode }) {
@@ -66,7 +81,7 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
 
       <aside className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ""}`}>
         <div className={styles.sidebarHeader}>
-          <span className={styles.logoIcon}>⬡</span>
+          <Hexagon size={24} className={styles.logoIcon} />
           <div>
             <div className={styles.logoText}>DLEM Admin</div>
             <div className={styles.logoRole}>
@@ -83,7 +98,7 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
               className={`${styles.navItem} ${pathname.startsWith(item.href) && item.href !== "/admin-panel/dashboard" ? styles.navActive : pathname === item.href ? styles.navActive : ""}`}
               onClick={() => setSidebarOpen(false)}
             >
-              <span className={styles.navIcon}>{item.icon}</span>
+              <item.icon size={20} className={styles.navIcon} />
               <span>{item.label}</span>
             </Link>
           ))}
@@ -99,15 +114,17 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
               </div>
             </div>
           </div>
-          <button onClick={logout} className={styles.logoutBtn}>
-            ← Sign out
+          <button onClick={logout} className={styles.logoutBtn} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <LogOut size={18} /> Sign out
           </button>
         </div>
       </aside>
 
       <div className={styles.mainWrapper}>
         <header className={styles.mobileHeader}>
-          <button className={styles.menuBtn} onClick={() => setSidebarOpen(v => !v)}>☰</button>
+          <button className={styles.menuBtn} onClick={() => setSidebarOpen(v => !v)}>
+            <Menu size={24} />
+          </button>
           <span className={styles.mobileTitle}>DLEM Admin</span>
         </header>
         <main className={styles.main}>
@@ -117,3 +134,4 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
     </div>
   );
 }
+

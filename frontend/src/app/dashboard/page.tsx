@@ -4,6 +4,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import { useLanguage } from "@/lib/LanguageContext";
+import { 
+  Info, 
+  Building2, 
+  Scale, 
+  PlusCircle, 
+  Clock, 
+  UserCircle 
+} from "lucide-react";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -56,8 +64,8 @@ export default function DashboardPage() {
       </div>
 
       {!profile && (
-        <div className={`alert alert-info ${styles.profileAlert}`}>
-          <span>ℹ</span>
+        <div className={`alert alert-info ${styles.profileAlert}`} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Info size={24} />
           <div>
             <strong>{t("home.completeProfile")}</strong> {t("home.unlockMsg")}{" "}
             <Link href="/dashboard/profile">{t("home.setupLink")}</Link>
@@ -140,7 +148,9 @@ export default function DashboardPage() {
         <div className={styles.actions}>
           {ACTIONS.map((a, i) => (
             <Link key={i} href={a.href} className={`card card-hover ${styles.actionCard}`}>
-              <div className={styles.actionIcon} style={{ background: a.color }}>{a.icon}</div>
+              <div className={styles.actionIcon} style={{ background: a.color }}>
+                <a.icon size={20} color="var(--color-text-primary)" />
+              </div>
               <div>
                 <div style={{ fontWeight: 600, fontSize: "0.95rem" }}>{a.title}</div>
                 <div className="text-xs" style={{ color: "var(--color-text-secondary)" }}>{a.desc}</div>
@@ -189,11 +199,11 @@ export default function DashboardPage() {
 }
 
 const ACTIONS = [
-  { href: "/dashboard/institutions", icon: "🏦", title: "Check Eligibility", desc: "See which institutions you qualify for", color: "rgba(0,200,150,0.15)" },
-  { href: "/dashboard/eligibility",  icon: "✦",  title: "Compare Lenders",  desc: "Side-by-side bank comparison",          color: "rgba(30,111,255,0.15)" },
-  { href: "/dashboard/loans/add",    icon: "✚",  title: "Record Manual Loan", desc: "Track your existing loans",           color: "rgba(255,184,0,0.15)" },
-  { href: "/dashboard/loans",        icon: "◷",  title: "Active Loans",       desc: "View amortization schedules",         color: "rgba(255,59,92,0.1)" },
-  { href: "/dashboard/profile",      icon: "◎",  title: "Update Profile",     desc: "Edit financial information",          color: "rgba(0,180,216,0.15)" },
+  { href: "/dashboard/institutions", icon: Building2, title: "Check Eligibility", desc: "See which institutions you qualify for", color: "rgba(0,200,150,0.15)" },
+  { href: "/dashboard/eligibility",  icon: Scale,     title: "Compare Lenders",  desc: "Side-by-side bank comparison",          color: "rgba(30,111,255,0.15)" },
+  { href: "/dashboard/loans/add",    icon: PlusCircle, title: "Record Manual Loan", desc: "Track your existing loans",           color: "rgba(255,184,0,0.15)" },
+  { href: "/dashboard/loans",        icon: Clock,      title: "Active Loans",       desc: "View amortization schedules",         color: "rgba(255,59,92,0.1)" },
+  { href: "/dashboard/profile",      icon: UserCircle, title: "Update Profile",     desc: "Edit financial information",          color: "rgba(0,180,216,0.15)" },
 ];
 
 const STATUS_BADGE: Record<string, string> = {
@@ -202,3 +212,4 @@ const STATUS_BADGE: Record<string, string> = {
 const RISK_BADGE: Record<string, string> = {
   EXCELLENT: "badge-success", GOOD: "badge-info", FAIR: "badge-warning", POOR: "badge-danger", UNKNOWN: "badge-neutral",
 };
+

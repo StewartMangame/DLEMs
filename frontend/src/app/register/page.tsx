@@ -3,6 +3,16 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import styles from "../auth.module.css";
+import { 
+  Hexagon, 
+  ArrowLeft, 
+  UserPlus, 
+  Eye, 
+  EyeOff, 
+  XCircle, 
+  CheckCircle2,
+  AlertCircle 
+} from "lucide-react";
 
 interface Institution {
   id: number;
@@ -53,7 +63,6 @@ export default function RegisterPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        // NestJS error shape: { message: string | string[], error: string, statusCode: number }
         const msg: string = Array.isArray(data.message)
           ? data.message.join(", ")
           : data.message || data.error || "Registration failed. Please try again.";
@@ -73,9 +82,14 @@ export default function RegisterPage() {
       <div className={styles.bgOrb1} />
       <div className={styles.bgOrb2} />
       <div className={styles.container}>
-        <Link href="/" className={styles.logo}>
-          <span className={styles.logoIcon}>⬡</span> DLEM
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
+          <Link href="/" className={styles.logo}>
+            <Hexagon size={24} className={styles.logoIcon} /> DLEM
+          </Link>
+          <Link href="/" className="btn btn-ghost btn-sm" style={{ gap: '8px' }}>
+            <ArrowLeft size={16} /> Back to Home
+          </Link>
+        </div>
         <div className={`card ${styles.card}`}>
           <div className={styles.cardHeader}>
             <h1 className="text-h2">Create Account</h1>
@@ -85,8 +99,8 @@ export default function RegisterPage() {
           </div>
 
           {error && (
-            <div className="alert alert-danger" role="alert">
-              <span>✗</span>
+            <div className="alert alert-danger" role="alert" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <AlertCircle size={20} />
               <div>{error}</div>
             </div>
           )}
@@ -155,7 +169,7 @@ export default function RegisterPage() {
                     }}
                     aria-label={showPw ? "Hide password" : "Show password"}
                   >
-                    {showPw ? "🙈" : "👁"}
+                    {showPw ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
               </div>
@@ -166,13 +180,13 @@ export default function RegisterPage() {
                   autoComplete="new-password"
                   placeholder="Repeat password" value={form.confirmPassword} onChange={handleChange} />
                 {form.confirmPassword && form.password !== form.confirmPassword && (
-                  <div style={{ marginTop: 4, fontSize: "0.8rem", color: "var(--color-danger)" }}>
-                    ✗ Passwords do not match
+                  <div style={{ marginTop: 4, fontSize: "0.8rem", color: "var(--color-danger)", display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <XCircle size={14} /> Passwords do not match
                   </div>
                 )}
                 {form.confirmPassword && form.password === form.confirmPassword && form.password.length >= 8 && (
-                  <div style={{ marginTop: 4, fontSize: "0.8rem", color: "var(--color-success)" }}>
-                    ✓ Passwords match
+                  <div style={{ marginTop: 4, fontSize: "0.8rem", color: "var(--color-success)", display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <CheckCircle2 size={14} /> Passwords match
                   </div>
                 )}
               </div>
@@ -184,7 +198,7 @@ export default function RegisterPage() {
               disabled={loading || (form.confirmPassword.length > 0 && form.password !== form.confirmPassword)}
               style={{ width: "100%", marginTop: 8 }}
             >
-              {loading ? <><span className="loading-spinner" /> Creating Account…</> : "Create Account →"}
+              {loading ? <><span className="loading-spinner" /> Creating Account…</> : <><UserPlus size={20} style={{ marginRight: 8 }} /> Create Account</>}
             </button>
           </form>
 
@@ -197,3 +211,4 @@ export default function RegisterPage() {
     </div>
   );
 }
+

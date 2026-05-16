@@ -3,10 +3,11 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import styles from "./layout.module.css";
+import { Hexagon, FileText, PieChart, ArrowLeft } from "lucide-react";
 
 const NAV = [
-  { href: "/admin", icon: "◈", label: "Applications" },
-  { href: "/admin/stats", icon: "♟", label: "Statistics" },
+  { href: "/admin", icon: FileText, label: "Applications" },
+  { href: "/admin/stats", icon: PieChart, label: "Statistics" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -41,7 +42,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <aside className={styles.sidebar}>
         <div className={styles.sidebarTop}>
           <div className={styles.logo}>
-            <span className={styles.logoIcon}>⬡</span>
+            <Hexagon size={24} className={styles.logoIcon} />
             <div>
               <div className={styles.logoText}>DLEM Admin</div>
               <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>Credit Officer Portal</div>
@@ -51,7 +52,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <nav className={styles.nav}>
           {NAV.map(item => (
             <Link key={item.href} href={item.href} className={styles.navItem}>
-              <span>{item.icon}</span> {item.label}
+              <item.icon size={18} style={{ marginRight: '10px' }} /> {item.label}
             </Link>
           ))}
         </nav>
@@ -65,8 +66,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <span className="badge badge-danger">ADMIN</span>
             </div>
           </div>
-          <Link href="/" className="btn btn-ghost btn-sm" style={{ width: "100%", marginTop: 12 }}>
-            ← Back to Site
+          <Link href="/" className="btn btn-ghost btn-sm" style={{ width: "100%", marginTop: 12, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <ArrowLeft size={16} /> Back to Site
           </Link>
         </div>
       </aside>
@@ -78,3 +79,4 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     </div>
   );
 }
+

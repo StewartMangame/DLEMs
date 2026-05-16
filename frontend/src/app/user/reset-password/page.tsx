@@ -3,6 +3,7 @@ import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import styles from "../auth.module.css";
+import { Hexagon, ArrowLeft, KeyRound } from "lucide-react";
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -44,7 +45,7 @@ function ResetPasswordForm() {
       }
       setMessage("Password has been reset successfully. Redirecting to login...");
       setTimeout(() => {
-        router.push("/user/login");
+        router.push("/login");
       }, 2000);
     } catch {
       setError("Network error. Please try again.");
@@ -79,7 +80,7 @@ function ResetPasswordForm() {
               placeholder="Confirm new password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
           </div>
           <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: "100%", marginTop: 4 }}>
-            {loading ? <><span className="loading-spinner" /> Resetting…</> : "Reset Password"}
+            {loading ? <><span className="loading-spinner" /> Resetting…</> : <><KeyRound size={20} style={{ marginRight: 8 }} /> Reset Password</>}
           </button>
         </form>
       )}
@@ -93,9 +94,14 @@ export default function ResetPasswordPage() {
       <div className={styles.bgOrb1} />
       <div className={styles.bgOrb2} />
       <div className={styles.container}>
-        <Link href="/" className={styles.logo}>
-          <span className={styles.logoIcon}>⬡</span> DLEM
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
+          <Link href="/" className={styles.logo}>
+            <Hexagon size={24} className={styles.logoIcon} /> DLEM
+          </Link>
+          <Link href="/login" className="btn btn-ghost btn-sm" style={{ gap: '8px' }}>
+            <ArrowLeft size={16} /> Back to Login
+          </Link>
+        </div>
         <div className={`card ${styles.card} ${styles.cardNarrow}`}>
           <div className={styles.cardHeader}>
             <h1 className="text-h2">Set New Password</h1>
@@ -107,10 +113,11 @@ export default function ResetPasswordPage() {
             <ResetPasswordForm />
           </Suspense>
           <p className={styles.switchLink}>
-            <Link href="/user/login">Back to Sign In</Link>
+            <Link href="/login">Back to Sign In</Link>
           </p>
         </div>
       </div>
     </div>
   );
 }
+
