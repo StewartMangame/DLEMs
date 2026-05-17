@@ -79,7 +79,7 @@ export class AuthService {
         existing.phone = registerDto.phone;
         existing.passwordHash = await bcrypt.hash(registerDto.password, 10);
         await this.userRepository.save(existing);
-        
+
         await this.generateAndSendOtp(existing.email);
         return { message: 'OTP sent successfully to email' };
       }
@@ -142,7 +142,7 @@ export class AuthService {
 
   async verifyOtp(verifyDto: { email: string; otp: string }) {
     const { email, otp } = verifyDto;
-    
+
     const otpRecord = await this.otpRepository.findOne({
       where: { email, code: otp, verified: false },
       order: { createdAt: 'DESC' },
