@@ -1,4 +1,9 @@
-import { Hexagon, Eye, EyeOff, Mail, ArrowLeft, User, IdCard, BadgeId, Phone, CheckCircle2 } from "lucide-react";
+"use client";
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import styles from "../auth.module.css";
+import { Hexagon, Eye, EyeOff, Mail, ArrowLeft, User, IdCard, Badge, Phone, CheckCircle2 } from "lucide-react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function isValidEmail(email: string): boolean {
@@ -236,7 +241,7 @@ export default function RegisterPage() {
                 <div className="form-group">
                   <label className="form-label" htmlFor="employeeNumber">Employee / Member ID</label>
                   <div className={styles.inputWrapper}>
-                    <BadgeId size={18} className={styles.fieldIcon} />
+                    <Badge size={18} className={styles.fieldIcon} />
                     <input id="employeeNumber" name="employeeNumber" required className="form-input"
                       placeholder="e.g. CS-2024-XXXX" value={form.employeeNumber} onChange={handleChange} />
                   </div>

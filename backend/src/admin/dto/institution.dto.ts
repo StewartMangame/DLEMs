@@ -11,7 +11,8 @@ import {
   ValidateNested,
   MinLength,
 } from 'class-validator';
-import { Type, PartialType } from '@nestjs/mapped-types';
+import { PartialType } from '@nestjs/mapped-types';
+import { Type } from 'class-transformer';
 
 type InstitutionType = 'bank' | 'sacco' | 'microfinance' | 'other';
 type InstitutionStatus = 'active' | 'inactive' | 'pending_verification';

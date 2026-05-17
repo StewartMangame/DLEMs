@@ -200,7 +200,11 @@ export class AdminPanelController {
 
   @Post('announcements')
   createAnnouncement(@Req() req: any, @Body() body: CreateAnnouncementDto) {
-    return this.svc.createAnnouncement(req.user, body);
+    return this.svc.createAnnouncement(req.user, {
+      ...body,
+      startDate: body.startDate ? new Date(body.startDate) : undefined,
+      expiryDate: new Date(body.expiryDate),
+    });
   }
 
   @Put('announcements/:id')
