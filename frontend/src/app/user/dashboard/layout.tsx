@@ -4,15 +4,28 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import styles from "./layout.module.css";
 import { LanguageProvider, useLanguage } from "@/lib/LanguageContext";
-
-type Theme = "dark" | "light";
+import { 
+  Hexagon, 
+  LayoutDashboard, 
+  UserCircle, 
+  Building2, 
+  Scale, 
+  Wallet, 
+  LogOut, 
+  Sun, 
+  Moon, 
+  Menu,
+  FileText,
+  PieChart,
+  ArrowLeft
+} from "lucide-react";
 
 const NAV_ITEMS = [
-  { href: "/user/dashboard", icon: "D", key: "nav.dashboard" },
-  { href: "/user/dashboard/profile", icon: "P", key: "nav.profile" },
-  { href: "/user/dashboard/institutions", icon: "I", key: "nav.institutions" },
-  { href: "/user/dashboard/eligibility", icon: "C", key: "nav.compare" },
-  { href: "/user/dashboard/loans", icon: "L", key: "nav.loans" },
+  { href: "/user/dashboard", icon: LayoutDashboard, key: "nav.dashboard" },
+  { href: "/user/dashboard/profile", icon: UserCircle, key: "nav.profile" },
+  { href: "/user/dashboard/institutions", icon: Building2, key: "nav.institutions" },
+  { href: "/user/dashboard/eligibility", icon: Scale, key: "nav.compare" },
+  { href: "/user/dashboard/loans", icon: Wallet, key: "nav.loans" },
 ];
 
 function getSavedTheme(): Theme {
@@ -56,10 +69,13 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         }`}
       >
         <div className={styles.sidebarTop}>
-          <Link href="/" className={styles.logo}>
-            <span className={styles.logoIcon}>D</span>
-            <span className={styles.logoText}>DLEM</span>
-          </Link>
+          <div className={styles.logo}>
+            <Hexagon size={24} className={styles.logoIcon} />
+            <div>
+              <div className={styles.logoText}>DLEM</div>
+              <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>Portal</div>
+            </div>
+          </div>
         </div>
         <nav className={styles.nav}>
           {NAV_ITEMS.map(item => (
@@ -71,17 +87,18 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               }`}
               onClick={() => setSidebarOpen(false)}
             >
-              <span className={styles.navIcon} aria-hidden="true">
-                {item.icon}
-              </span>
+              <item.icon size={20} className={styles.navIcon} />
               <span>{t(item.key)}</span>
             </Link>
           ))}
         </nav>
         <div className={styles.sidebarBottom}>
           <div className={styles.divider} />
-          <button onClick={handleLogout} className={styles.logoutBtn}>
-            <span aria-hidden="true">X</span> {t("nav.logout")}
+          <Link href="/" className="btn btn-ghost btn-sm" style={{ width: "100%", marginBottom: 12, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <ArrowLeft size={16} /> Back to Site
+          </Link>
+          <button onClick={handleLogout} className={styles.logoutBtn} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <LogOut size={18} /> {t("nav.logout")}
           </button>
         </div>
       </aside>
@@ -94,8 +111,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               className={styles.menuBtn}
               onClick={() => setSidebarOpen(!sidebarOpen)}
               aria-label="Toggle menu"
+              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
             >
-              Menu
+              <Menu size={20} />
             </button>
             <Link
               href="/user/dashboard/institutions"
@@ -129,9 +147,31 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               onClick={toggleTheme}
               className="btn btn-ghost"
               aria-label="Toggle theme"
-              style={{ padding: "8px 16px", minWidth: "140px" }}
+              style={{ padding: "8px 16px", minWidth: "140px", display: 'flex', alignItems: 'center', gap: '8px' }}
             >
-              {theme === "dark" ? t("theme.light") : t("theme.dark")}
+              {theme === "dark" ? <><Sun size={18} /> {t("theme.light")}</> : <><Moon size={18} /> {t("theme.dark")}</>}
+            </button>
+          </div>
+        </header>
+              style={{
+                padding: "6px 28px 6px 12px",
+                minWidth: "125px",
+                fontSize: "0.9rem",
+                backgroundPosition: "right 8px center",
+                border: "1px solid var(--color-border)",
+              }}
+            >
+              <option value="en">English</option>
+              <option value="ny">Chichewa</option>
+            </select>
+
+            <button
+              onClick={toggleTheme}
+              className="btn btn-ghost"
+              aria-label="Toggle theme"
+              style={{ padding: "8px 16px", minWidth: "140px", display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              {theme === "dark" ? <><Sun size={18} /> {t("theme.light")}</> : <><Moon size={18} /> {t("theme.dark")}</>}
             </button>
           </div>
         </header>

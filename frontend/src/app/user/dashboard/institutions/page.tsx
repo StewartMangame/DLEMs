@@ -16,6 +16,24 @@ import type {
   LoanTypeConfig,
   EmploymentCategory,
 } from "@/lib/institutions/types";
+import { 
+  Building2, 
+  Handshake, 
+  CheckCircle2, 
+  AlertTriangle, 
+  Hourglass, 
+  XCircle, 
+  Calendar, 
+  Clock, 
+  Wallet, 
+  Calculator, 
+  Users, 
+  BarChart3, 
+  Info, 
+  Building,
+  ChevronRight,
+  ChevronLeft
+} from "lucide-react";
 
 // ─── Step IDs ──────────────────────────────────────────────────────────────────
 type Step = "select" | "intake" | "results";
@@ -303,7 +321,7 @@ export default function InstitutionsPage() {
               <div key={s} style={{ display: "flex", alignItems: "center", flex: i < STEPS.length - 1 ? 1 : "0 0 auto" }}>
                 <div className={styles.step}>
                   <div className={`${styles.stepDot} ${isActive ? styles.active : ""} ${isDone ? styles.done : ""}`}>
-                    {isDone ? "✓" : i + 1}
+                    {isDone ? <CheckCircle2 size={16} /> : i + 1}
                   </div>
                   <span className={`${styles.stepLabel} ${isActive ? styles.active : ""} ${isDone ? styles.done : ""}`}>
                     {ny ? STEP_LABELS[s].ny : STEP_LABELS[s].en}
@@ -474,7 +492,7 @@ function InstitutionCard({
   onSelectProduct?: (productId: string) => void;
   ny: boolean;
 }) {
-  const typeIcon = institution.type === "SACCO" ? "🤝" : "🏦";
+  const TypeIcon = institution.type === "SACCO" ? Handshake : Building2;
 
   return (
     <div
@@ -489,14 +507,11 @@ function InstitutionCard({
     >
       <div>
         <div className={styles.cardTop}>
-        <div className={styles.cardIcon}>
-          {institution.logoUrl ? (
-            <img src={institution.logoUrl} alt={institution.name} className={styles.partnerLogo} />
-          ) : (
-            typeIcon
-          )}
+          <div className={styles.cardIcon}><TypeIcon size={24} /></div>
+          <div className={`${styles.checkmark} ${selected ? styles.selected : ""}`}>
+            {selected && <CheckCircle2 size={18} />}
+          </div>
         </div>
-        <div className={`${styles.checkmark} ${selected ? styles.selected : ""}`}>✓</div>
       </div>
 
       <div className={styles.cardName}>{institution.name}</div>
@@ -519,21 +534,22 @@ function InstitutionCard({
 
       <div style={{ marginTop: "var(--space-md)", fontSize: "0.8rem", color: "var(--color-text-muted)", pointerEvents: "none" }}>
         {institution.minimumMembershipMonths > 0 && (
-          <div>📅 {ny ? "Unansi wofunikira:" : "Min. membership:"} {institution.minimumMembershipMonths} {ny ? "miyezi" : "months"}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Calendar size={12} /> {ny ? "Unansi wofunikira:" : "Min. membership:"} {institution.minimumMembershipMonths} {ny ? "miyezi" : "months"}
+          </div>
         )}
-        <div style={{ marginTop: institution.minimumMembershipMonths > 0 ? 4 : 0 }}>
-          ⏱ {ny ? "Nthawi yotsatira:" : "Turnaround:"} {institution.turnaroundDays}
+        <div style={{ marginTop: institution.minimumMembershipMonths > 0 ? 4 : 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Clock size={12} /> {ny ? "Nthawi yotsatira:" : "Turnaround:"} {institution.turnaroundDays}
         </div>
         {institution.id === "sacco-group" ? (
-          <div style={{ marginTop: 4 }}>
-            💰 {ny ? "Ngongole:" : "Loan:"} {ny ? "Zimatengera SACCO" : "Varies by SACCO"}
+          <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Wallet size={12} /> {ny ? "Ngongole:" : "Loan:"} {ny ? "Zimatengera SACCO" : "Varies by SACCO"}
           </div>
         ) : (
-          <div style={{ marginTop: 4 }}>
-            💰 {ny ? "Ngongole:" : "Loan:"} {mwk(institution.comparisonFields.minimumLoanMWK)} – {mwk(institution.comparisonFields.maximumLoanMWK)}
+          <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Wallet size={12} /> {ny ? "Ngongole:" : "Loan:"} {mwk(institution.comparisonFields.minimumLoanMWK)} – {mwk(institution.comparisonFields.maximumLoanMWK)}
           </div>
         )}
-      </div>
       </div>
 
       {selected && institution.requiresProductSelection && (
@@ -580,7 +596,7 @@ function SaccoIntakeForm({
   return (
     <div className={`card ${styles.intakeCard}`}>
       <div className={styles.intakeTitle}>
-        <div className={styles.intakeIcon}>🤝</div>
+        <div className={styles.intakeIcon}><Handshake size={24} /></div>
         <div>
           <h2 className="text-h3">{ny ? "Zambiri za SACCO Yanu" : "Your SACCO Membership Details"}</h2>
           <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
@@ -629,10 +645,13 @@ function SaccoIntakeForm({
             ))}
           </div>
           {!intake.isSaccoMember && (
-            <div className="alert alert-warning" style={{ marginTop: "var(--space-md)" }}>
-              ⚠ {ny
-                ? "Ngati simuli membala wa SACCO, simutha kulowera malowo."
-                : "If you are not a SACCO member, you will not qualify for SACCO institutions."}
+            <div className="alert alert-warning" style={{ marginTop: "var(--space-md)", display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <AlertTriangle size={20} />
+              <div>
+                {ny
+                  ? "Ngati simuli membala wa SACCO, simutha kulowera malowo."
+                  : "If you are not a SACCO member, you will not qualify for SACCO institutions."}
+              </div>
             </div>
           )}
         </div>
@@ -696,7 +715,7 @@ function BankIntakeForm({
   return (
     <div className={`card ${styles.intakeCard}`}>
       <div className={styles.intakeTitle}>
-        <div className={styles.intakeIcon}>🏦</div>
+        <div className={styles.intakeIcon}><Building2 size={24} /></div>
         <div>
           <h2 className="text-h3">{ny ? "Nkhani ya CRB" : "Credit Reference Bureau (CRB) Declaration"}</h2>
           <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
@@ -772,10 +791,13 @@ function BankIntakeForm({
         </div>
 
         {intake.hasCrbFlag === true && (
-          <div className="alert alert-warning" style={{ marginTop: "var(--space-md)" }}>
-            ⚠ {ny
-              ? "Zolemba za CRB zimatha kukhudza pangano lanu. Titha kupitirizabe kuyang'anira mwayi wanu."
-              : "A CRB flag may affect your application. We will still calculate your eligibility — the bank makes the final decision."}
+          <div className="alert alert-warning" style={{ marginTop: "var(--space-md)", display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertTriangle size={20} />
+            <div>
+              {ny
+                ? "Zolemba za CRB zimatha kukhudza pangano lanu. Titha kupitirizabe kuyang'anira mwayi wanu."
+                : "A CRB flag may affect your application. We will still calculate your eligibility — the bank makes the final decision."}
+            </div>
           </div>
         )}
       </div>
@@ -799,44 +821,44 @@ function EligibilityResultCard({
 
   const statusMeta = {
     likely_eligible: {
-      icon: "✅",
+      icon: <CheckCircle2 size={32} color="var(--color-success)" />,
       title: ny ? "Mungayenera Ngongole" : "Likely Eligible",
       subtitle: ny
         ? "Muli ndi mwayi wopeza ngongole ku malo akuno."
         : "You appear to meet the eligibility criteria for this institution.",
       cls: styles.eligible,
       alertCls: "alert-success",
-      alertIcon: "✓",
+      alertIcon: <CheckCircle2 size={20} />,
     },
     borderline: {
-      icon: "⚠️",
+      icon: <AlertTriangle size={32} color="var(--color-warning)" />,
       title: ny ? "Mungayenera — Zobwezera CRB" : "Borderline — CRB Flag Declared",
       subtitle: ny
         ? "Mungayenera ngongole koma zolemba za CRB zingateteze pangano lanu."
         : "You may qualify, but your declared CRB flag may affect your application.",
       cls: styles.notYet,
       alertCls: "alert-warning",
-      alertIcon: "⚠",
+      alertIcon: <AlertTriangle size={20} />,
     },
     not_yet_eligible: {
-      icon: "⏳",
+      icon: <Hourglass size={32} color="var(--color-warning)" />,
       title: ny ? "Simunafikire Nthawi" : "Not Yet Eligible",
       subtitle: ny
         ? "Simunafikire zofunikira zonse koma mutha kubwereza mutsogolo."
         : "You do not yet meet all criteria, but you may qualify in the future.",
       cls: styles.notYet,
       alertCls: "alert-warning",
-      alertIcon: "⏳",
+      alertIcon: <Hourglass size={20} />,
     },
     not_eligible: {
-      icon: "❌",
+      icon: <XCircle size={32} color="var(--color-danger)" />,
       title: ny ? "Simuyenera" : "Not Eligible",
       subtitle: ny
         ? "Simukukwaniritsa zofunikira za malo akuno."
         : "You do not meet the eligibility requirements for this institution.",
       cls: styles.notEligible,
       alertCls: "alert-danger",
-      alertIcon: "✗",
+      alertIcon: <XCircle size={20} />,
     },
   }[status];
 
@@ -887,7 +909,7 @@ function EligibilityResultCard({
       {(status !== "likely_eligible") && (failedRule || failedRuleNy) && (
         <div
           className={`alert ${statusMeta.alertCls}`}
-          style={{ marginTop: "var(--space-md)" }}
+          style={{ marginTop: "var(--space-md)", display: 'flex', alignItems: 'center', gap: '8px' }}
         >
           <span>{statusMeta.alertIcon}</span>
           <div>
@@ -899,8 +921,8 @@ function EligibilityResultCard({
 
       {/* Civil servant informational note */}
       {(civilServantNote || civilServantNoteNy) && (
-        <div className="alert alert-info" style={{ marginTop: "var(--space-md)" }}>
-          <span>🏛</span>
+        <div className="alert alert-info" style={{ marginTop: "var(--space-md)", display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Building size={20} />
           <div>
             <strong>{ny ? "Cholinga cha Ogwira Ntchito Boma:" : "Civil Servant Note:"}</strong>{" "}
             {ny ? (civilServantNoteNy ?? civilServantNote) : civilServantNote}
@@ -966,8 +988,8 @@ function RepaymentCalculator({
 
   return (
     <div className={`card ${styles.calcCard}`} style={{ marginBottom: "var(--space-lg)" }}>
-      <h3 className="text-h3" style={{ marginBottom: "var(--space-xs)" }}>
-        🧮 {ny ? "Kasoti ya Malipiro" : "Repayment Calculator"}
+      <h3 className="text-h3" style={{ marginBottom: "var(--space-xs)", display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <Calculator size={20} /> {ny ? "Kasoti ya Malipiro" : "Repayment Calculator"}
       </h3>
       <p className="text-sm" style={{ color: "var(--color-text-secondary)", marginBottom: "var(--space-lg)" }}>
         {ny
@@ -1099,10 +1121,13 @@ function RepaymentCalculator({
 
           {/* Affordability check */}
           {breakdown.monthlyRepayment > profileSummary.availableRepayment && (
-            <div className="alert alert-warning" style={{ marginTop: "var(--space-md)" }}>
-              ⚠ {ny
-                ? `Malipiro apamwezi (${mwk(breakdown.monthlyRepayment)}) aposa malo otsala (${mwk(profileSummary.availableRepayment)}). Gwiritsani ntchito nthawi yaitali kapena ngongole yochepa.`
-                : `The estimated monthly repayment (${mwk(breakdown.monthlyRepayment)}) exceeds your available repayment capacity (${mwk(profileSummary.availableRepayment)}). Consider a longer term or smaller amount.`}
+            <div className="alert alert-warning" style={{ marginTop: "var(--space-md)", display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <AlertTriangle size={20} />
+              <div>
+                {ny
+                  ? `Malipiro apamwezi (${mwk(breakdown.monthlyRepayment)}) aposa malo otsala (${mwk(profileSummary.availableRepayment)}). Gwiritsani ntchito nthawi yaitali kapena ngongole yochepa.`
+                  : `The estimated monthly repayment (${mwk(breakdown.monthlyRepayment)}) exceeds your available repayment capacity (${mwk(profileSummary.availableRepayment)}). Consider a longer term or smaller amount.`}
+              </div>
             </div>
           )}
         </>
@@ -1110,7 +1135,7 @@ function RepaymentCalculator({
 
       {/* Repayment method note */}
       <div className={styles.repaymentNote}>
-        <span className={styles.repaymentNoteIcon}>ℹ</span>
+        <span className={styles.repaymentNoteIcon}><Info size={16} /></span>
         <div>
           <strong>{ny ? "Njira ya Malipiro:" : "Repayment Method:"}</strong>{" "}
           {ny ? institution.repaymentMethodNoteNy : institution.repaymentMethodNote}
@@ -1185,7 +1210,7 @@ function ComparisonTable({
           listStyle: "none",
         }}
       >
-        📊 {ny
+        <BarChart3 size={20} /> {ny
           ? `Tebulo la Kuyerekeza — ${institutionDisplayName}`
           : `Side-by-Side Comparison — ${institutionDisplayName}`}
         <span className="text-sm" style={{ color: "var(--color-text-muted)", fontWeight: 400 }}>
@@ -1263,7 +1288,7 @@ function FincaIntakeForm({
   return (
     <div className={`card ${styles.intakeCard}`}>
       <div className={styles.intakeTitle}>
-        <div className={styles.intakeIcon}>👥</div>
+        <div className={styles.intakeIcon}><Users size={24} /></div>
         <div>
           <h2 className="text-h3">{ny ? "Zambiri za Ngongole ya Gulu" : "Group Loan Details"}</h2>
           <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>

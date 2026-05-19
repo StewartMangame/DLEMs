@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import styles from "../auth.module.css";
+import { Hexagon, ArrowLeft, LogIn } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -40,9 +41,14 @@ export default function LoginPage() {
       <div className={styles.bgOrb1} />
       <div className={styles.bgOrb2} />
       <div className={styles.container}>
-        <Link href="/" className={styles.logo}>
-          <span className={styles.logoIcon}>⬡</span> DLEM
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
+          <Link href="/" className={styles.logo}>
+            <Hexagon size={24} className={styles.logoIcon} /> DLEM
+          </Link>
+          <Link href="/" className="btn btn-ghost btn-sm" style={{ gap: '8px' }}>
+            <ArrowLeft size={16} /> Back to Home
+          </Link>
+        </div>
         <div className={`card ${styles.card} ${styles.cardNarrow}`}>
           <div className={styles.cardHeader}>
             <h1 className="text-h2">Welcome Back</h1>
@@ -63,9 +69,14 @@ export default function LoginPage() {
               <label className="form-label" htmlFor="password">Password</label>
               <input id="password" name="password" type="password" required className="form-input"
                 placeholder="Your password" value={form.password} onChange={handleChange} />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.25rem' }}>
+                <Link href="/user/forgot-password" className="text-sm" style={{ color: "var(--color-primary)" }}>
+                  Forgot Password?
+                </Link>
+              </div>
             </div>
             <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: "100%", marginTop: 4 }}>
-              {loading ? <><span className="loading-spinner" /> Signing in…</> : "Sign In →"}
+              {loading ? <><span className="loading-spinner" /> Signing in…</> : <><LogIn size={20} style={{ marginRight: 8 }} /> Sign In</>}
             </button>
           </form>
 
@@ -87,3 +98,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
