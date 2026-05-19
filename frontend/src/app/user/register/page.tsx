@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import styles from "../auth.module.css";
+import { Hexagon, Eye, EyeOff, Mail, ArrowLeft, User, IdCard, Badge, Phone, CheckCircle2 } from "lucide-react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function isValidEmail(email: string): boolean {
@@ -190,7 +191,8 @@ export default function RegisterPage() {
       <div className={styles.bgOrb2} />
       <div className={styles.container}>
         <Link href="/" className={styles.logo}>
-          <span className={styles.logoIcon}>⬡</span> DLEM
+          <Hexagon size={28} className={styles.logoIcon} />
+          <span>DLEM</span>
         </Link>
 
         {/* ── STEP 1: Details ── */}
@@ -219,45 +221,60 @@ export default function RegisterPage() {
               <div className="grid-2">
                 <div className="form-group">
                   <label className="form-label" htmlFor="fullName">Full Name</label>
-                  <input id="fullName" name="fullName" required className="form-input"
-                    placeholder="e.g. John Banda" value={form.fullName} onChange={handleChange} />
+                  <div className={styles.inputWrapper}>
+                    <User size={18} className={styles.fieldIcon} />
+                    <input id="fullName" name="fullName" required className="form-input"
+                      placeholder="e.g. John Banda" value={form.fullName} onChange={handleChange} />
+                  </div>
                 </div>
                 <div className="form-group">
                   <label className="form-label" htmlFor="nationalId">National ID</label>
-                  <input id="nationalId" name="nationalId" required className="form-input"
-                    placeholder="MW-XXXXXXXXXX" value={form.nationalId} onChange={handleChange} />
+                  <div className={styles.inputWrapper}>
+                    <IdCard size={18} className={styles.fieldIcon} />
+                    <input id="nationalId" name="nationalId" required className="form-input"
+                      placeholder="MW-XXXXXXXXXX" value={form.nationalId} onChange={handleChange} />
+                  </div>
                 </div>
               </div>
 
               <div className="grid-2">
                 <div className="form-group">
                   <label className="form-label" htmlFor="employeeNumber">Employee / Member ID</label>
-                  <input id="employeeNumber" name="employeeNumber" required className="form-input"
-                    placeholder="e.g. CS-2024-XXXX" value={form.employeeNumber} onChange={handleChange} />
+                  <div className={styles.inputWrapper}>
+                    <Badge size={18} className={styles.fieldIcon} />
+                    <input id="employeeNumber" name="employeeNumber" required className="form-input"
+                      placeholder="e.g. CS-2024-XXXX" value={form.employeeNumber} onChange={handleChange} />
+                  </div>
                 </div>
                 <div className="form-group">
                   <label className="form-label" htmlFor="phone">Phone Number</label>
-                  <input id="phone" name="phone" required className="form-input" type="tel"
-                    placeholder="+265 XXXXXXXX" value={form.phone} onChange={handleChange} />
+                  <div className={styles.inputWrapper}>
+                    <Phone size={18} className={styles.fieldIcon} />
+                    <input id="phone" name="phone" required className="form-input" type="tel"
+                      placeholder="+265 XXXXXXXX" value={form.phone} onChange={handleChange} />
+                  </div>
                 </div>
               </div>
 
               {/* Email with live validation */}
               <div className="form-group">
                 <label className="form-label" htmlFor="email">Email Address</label>
-                <input
-                  id="email" name="email" type="email" required className="form-input"
-                  autoComplete="email"
-                  placeholder="yourname@example.com"
-                  value={form.email}
-                  onChange={handleChange}
-                  onBlur={() => setEmailTouched(true)}
-                  style={{
-                    borderColor: emailTouched
-                      ? emailValid ? "var(--color-success)" : "var(--color-danger)"
-                      : undefined,
-                  }}
-                />
+                <div className={styles.inputWrapper}>
+                  <Mail size={18} className={styles.fieldIcon} />
+                  <input
+                    id="email" name="email" type="email" required className="form-input"
+                    autoComplete="email"
+                    placeholder="yourname@example.com"
+                    value={form.email}
+                    onChange={handleChange}
+                    onBlur={() => setEmailTouched(true)}
+                    style={{
+                      borderColor: emailTouched
+                        ? emailValid ? "var(--color-success)" : "var(--color-danger)"
+                        : undefined,
+                    }}
+                  />
+                </div>
                 {emailTouched && !emailValid && (
                   <div style={{ marginTop: 4, fontSize: "0.8rem", color: "var(--color-danger)" }}>
                     ✗ Enter a valid email address (e.g. john@example.com)
@@ -288,10 +305,11 @@ export default function RegisterPage() {
                         position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
                         background: "none", border: "none", cursor: "pointer",
                         color: "var(--color-text-muted)", fontSize: "1rem", padding: 4,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
                       }}
                       aria-label={showPw ? "Hide password" : "Show password"}
                     >
-                      {showPw ? "🙈" : "👁"}
+                      {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                   {form.password.length > 0 && form.password.length < 8 && (
@@ -342,7 +360,19 @@ export default function RegisterPage() {
         {step === "otp" && (
           <div className={`card ${styles.card} ${styles.cardNarrow}`}>
             <div className={styles.cardHeader}>
-              <div style={{ fontSize: "2.5rem", marginBottom: 8 }}>📧</div>
+              <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
+                <div style={{ 
+                  background: 'var(--color-primary-glow)', 
+                  padding: '20px', 
+                  borderRadius: '50%', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  border: '1px solid var(--color-primary)'
+                }}>
+                  <Mail size={40} color="var(--color-primary)" />
+                </div>
+              </div>
               <h1 className="text-h2">Check Your Email</h1>
               <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
                 We sent a 6-digit verification code to
@@ -434,9 +464,10 @@ export default function RegisterPage() {
                 style={{
                   background: "none", border: "none", cursor: "pointer",
                   color: "var(--color-text-muted)", fontSize: "0.85rem",
+                  display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center', width: '100%'
                 }}
               >
-                ← Back to edit details
+                <ArrowLeft size={14} /> Back to edit details
               </button>
             </div>
           </div>

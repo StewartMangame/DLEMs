@@ -1,12 +1,30 @@
+# Dependencies
 node_modules/
-.next/
 dist/
-coverage/
-.devlogs/
+
+# Environment variables
+.env
+.env.local
+
+# Database
+*.sqlite
+*.db
+loan_db.sqlite
+
+# Build files
+*.tsbuildinfo
+
+# Logs
 *.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
 
 # TypeScript incremental build files
 *.tsbuildinfo
+backend/dist/
+frontend/.next/
 
 # Local runtime data
 backend/loan_db.sqlite
@@ -15,3 +33,4 @@ backend/*.sqlite
 # Local environment files
 .env.local
 frontend/.env.local
+backend/.env.local

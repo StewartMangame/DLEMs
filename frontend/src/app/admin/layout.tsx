@@ -3,25 +3,40 @@ import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import styles from "./layout.module.css";
+import { 
+  Hexagon, 
+  LayoutDashboard, 
+  Building2, 
+  Users, 
+  Scale, 
+  Wallet, 
+  Globe, 
+  Megaphone, 
+  Key, 
+  List, 
+  ArrowLeft,
+  PieChart,
+  Handshake
+} from "lucide-react";
 
 const NAV_SUPER = [
-  { href: "/admin/dashboard", icon: "◉", label: "Dashboard" },
-  { href: "/admin/institutions", icon: "🏛", label: "Institutions" },
-  { href: "/admin/saccos", icon: "🤝", label: "SACCOs" },
-  { href: "/admin/users", icon: "👥", label: "Users" },
-  { href: "/admin/eligibility", icon: "✅", label: "Eligibility Monitor" },
-  { href: "/admin/loans", icon: "💰", label: "Loan Tracking" },
-  { href: "/admin/content", icon: "🌐", label: "Content & Language" },
-  { href: "/admin/announcements", icon: "📢", label: "Announcements" },
-  { href: "/admin/admins", icon: "🔑", label: "Admin Accounts" },
-  { href: "/admin/activity-log", icon: "📋", label: "Activity Log" },
+  { href: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/admin/institutions", icon: Building2, label: "Institutions" },
+  { href: "/admin/saccos", icon: Handshake, label: "SACCOs" },
+  { href: "/admin/users", icon: Users, label: "Users" },
+  { href: "/admin/eligibility", icon: Scale, label: "Eligibility Monitor" },
+  { href: "/admin/loans", icon: Wallet, label: "Loan Tracking" },
+  { href: "/admin/content", icon: Globe, label: "Content & Language" },
+  { href: "/admin/announcements", icon: Megaphone, label: "Announcements" },
+  { href: "/admin/admins", icon: Key, label: "Admin Accounts" },
+  { href: "/admin/activity-log", icon: List, label: "Activity Log" },
 ];
 
 const NAV_CONTENT = [
-  { href: "/admin/dashboard", icon: "◉", label: "Dashboard" },
-  { href: "/admin/institutions", icon: "🏛", label: "Institutions" },
-  { href: "/admin/content", icon: "🌐", label: "Content & Language" },
-  { href: "/admin/announcements", icon: "📢", label: "Announcements" },
+  { href: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/admin/institutions", icon: Building2, label: "Institutions" },
+  { href: "/admin/content", icon: Globe, label: "Content & Language" },
+  { href: "/admin/announcements", icon: Megaphone, label: "Announcements" },
 ];
 
 export default function AdminPanelLayout({ children }: { children: React.ReactNode }) {
@@ -66,7 +81,7 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
 
       <aside className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ""}`}>
         <div className={styles.sidebarHeader}>
-          <span className={styles.logoIcon}>⬡</span>
+          <Hexagon size={24} className={styles.logoIcon} />
           <div>
             <div className={styles.logoText}>DLEM Admin</div>
             <div className={styles.logoRole}>
@@ -83,7 +98,7 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
               className={`${styles.navItem} ${pathname.startsWith(item.href) && item.href !== "/admin/dashboard" ? styles.navActive : pathname === item.href ? styles.navActive : ""}`}
               onClick={() => setSidebarOpen(false)}
             >
-              <span className={styles.navIcon}>{item.icon}</span>
+              <item.icon size={18} className={styles.navIcon} />
               <span>{item.label}</span>
             </Link>
           ))}
@@ -99,7 +114,10 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
               </div>
             </div>
           </div>
-          <button onClick={logout} className={styles.logoutBtn}>
+          <Link href="/" className="btn btn-ghost btn-sm" style={{ width: "100%", marginTop: 12, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <ArrowLeft size={16} /> Back to Site
+          </Link>
+          <button onClick={logout} className={styles.logoutBtn} style={{ marginTop: 8 }}>
             ← Sign out
           </button>
         </div>
@@ -117,3 +135,4 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
     </div>
   );
 }
+

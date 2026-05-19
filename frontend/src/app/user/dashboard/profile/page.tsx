@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import styles from "./page.module.css";
+import { Save, ArrowLeft } from "lucide-react";
 
 interface Profile {
   bank: string;
@@ -75,20 +77,19 @@ export default function ProfilePage() {
 
   return (
     <div className={styles.page}>
-      <div className={styles.header}>
+      <div className={styles.header} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
         <div>
           <h1 className="text-h2">Financial Profile</h1>
           <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
             This information is used to calculate your loan eligibility and risk score across Malawian lenders.
           </p>
         </div>
+        <Link href="/dashboard" className="btn btn-ghost btn-sm" style={{ gap: '8px' }}>
+          <ArrowLeft size={16} /> Back to Dashboard
+        </Link>
       </div>
 
-      {msg && (
-        <div className={`alert alert-${msg.type === "success" ? "success" : "danger"}`}>
-          {msg.text}
-        </div>
-      )}
+
 
       <form onSubmit={handleSubmit} className={styles.form}>
         <div className={`card ${styles.section}`}>
@@ -181,12 +182,19 @@ export default function ProfilePage() {
         </div>
 
 
+        {msg && (
+          <div className={`alert alert-${msg.type === "success" ? "success" : "danger"}`} style={{ width: '100%', marginBottom: '16px' }}>
+            {msg.text}
+          </div>
+        )}
+
         <div className={styles.formActions}>
-          <button type="submit" className="btn btn-primary btn-lg" disabled={saving}>
-            {saving ? <><span className="loading-spinner" /> Saving...</> : "Save Profile"}
+          <button type="submit" className="btn btn-primary btn-lg" disabled={saving} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {saving ? <><span className="loading-spinner" /> Saving...</> : <><Save size={20} /> Save Profile</>}
           </button>
         </div>
       </form>
     </div>
   );
 }
+
