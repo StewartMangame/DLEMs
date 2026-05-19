@@ -126,7 +126,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Bank Partners ── */}
+      {/* ── Institution Partners ── */}
       <section id="banks" className={styles.section}>
         <div className="container">
           <div className={styles.sectionHeader}>
@@ -139,7 +139,11 @@ export default function LandingPage() {
             {BANKS.map((b, i) => (
               <div key={i} className={`card ${styles.bankCard}`}>
                 <div className={styles.bankLogoWrapper}>
-                  <img src={b.logo} alt={b.name} className={styles.bankLogo} />
+                  {b.logo ? (
+                    <img src={b.logo} alt={b.name} className={styles.bankLogo} />
+                  ) : (
+                    <div className={styles.bankEmoji}>{b.emoji}</div>
+                  )}
                 </div>
                 <div>
                   <div className="text-h3">{b.name}</div>
@@ -205,7 +209,7 @@ const STEPS = [
 ];
 
 const BANKS = [
-  { logo: "/logos/fdh.png", name: "FDH Bank", tagline: "Personal & salary loans · civil servants & private sector" },
-  { logo: "/logos/sacco.png", name: "SACCO", tagline: "Member loans · competitive rates · Malawi Police SACCO" },
-  { logo: "/logos/finca.png", name: "FINCA", tagline: "Group / Village Bank loans · business owners" },
+  { logo: "/logos/fdh.png", emoji: "🏦", name: "FDH Bank", tagline: "Personal & salary loans · civil servants & private sector" },
+  { logo: "/logos/sacco.png", emoji: "🤝", name: "Malawi Police SACCO", tagline: "Member loans · competitive rates · Malawi Police SACCO" },
+  { logo: "/logos/finca.png", emoji: "🏦", name: "FINCA Malawi", tagline: "Group / Village Bank loans · business owners" },
 ];

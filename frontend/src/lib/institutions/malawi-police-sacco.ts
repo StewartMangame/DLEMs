@@ -13,6 +13,7 @@ export const MALAWI_POLICE_SACCO: InstitutionConfig = {
   logoUrl: '/logos/sacco.png',
   description:
     'A member-owned savings and credit cooperative serving Malawi Police Service personnel. Offers competitive loan terms exclusively to registered SACCO members.',
+  logoUrl: '/logos/sacco.png',
 
   // ── Membership ──────────────────────────────────────────────────────────────
   membershipRequired: true,

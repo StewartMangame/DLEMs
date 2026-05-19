@@ -69,6 +69,32 @@ const SEED_INSTITUTIONS = [
       notes: 'Group lending required. 2.5% processing fee and 5% cash collateral required.',
     },
   },
+  {
+    name: 'Thato Micro-lend Solutions',
+    type: 'MICROFINANCE',
+    criteria: {
+      interestRate: 40,
+      maxDtiRatio: 0.5,
+      minNetSalary: 20_000,
+      minRepaymentMonths: 1,
+      maxRepaymentMonths: 24,
+      processingFeePercent: 4.0,
+      civilServantMultiplier: 3,
+      privateMultiplier: 2,
+      selfEmployedMultiplier: 2,
+      saccoMemberMultiplier: 3,
+      eligibleEmploymentTypes: [
+        'civil_servant',
+        'private_sector',
+        'self_employed',
+        'sacco_member',
+      ],
+      requiresGuarantor: false,
+      requiresPayslip: false,
+      notes:
+        'Lowest minimum salary threshold in the market. Flexible repayment with no payslip required. Maximum term of 24 months. Ideal for micro-entrepreneurs.',
+    },
+  },
 ];
 
 @Injectable()
