@@ -182,12 +182,13 @@ export default function ProfilePage() {
         </div>
 
 
+        {msg && (
+          <div className={`alert alert-${msg.type === "success" ? "success" : "danger"}`} style={{ width: '100%', marginBottom: '16px' }}>
+            {msg.text}
+          </div>
+        )}
+
         <div className={styles.formActions}>
-          {msg && (
-            <div className={`alert alert-${msg.type === "success" ? "success" : "danger"}`} style={{ width: '100%', marginBottom: '16px' }}>
-              {msg.text}
-            </div>
-          )}
           <button type="submit" className="btn btn-primary btn-lg" disabled={saving} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {saving ? <><span className="loading-spinner" /> Saving...</> : <><Save size={20} /> Save Profile</>}
           </button>

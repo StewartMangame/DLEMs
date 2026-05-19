@@ -551,7 +551,6 @@ function InstitutionCard({
           </div>
         )}
       </div>
-      </div>
 
       {selected && institution.requiresProductSelection && (
         <div 
