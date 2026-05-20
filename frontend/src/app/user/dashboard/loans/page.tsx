@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import RepaymentButton from "./RepaymentButton";
+import { Trash2 } from "lucide-react";
 
 const STATUS_BADGE: Record<string, string> = {
   PENDING: "badge-warning", APPROVED: "badge-success", REJECTED: "badge-danger", ACTIVE: "badge-info",
@@ -62,6 +63,27 @@ export default function LoansPage() {
               const progress = (loan.paidMonths / loan.loanTermMonths) * 100;
               return (
                 <div key={loan.id} className={`card ${styles.activeLoanCard}`}>
+                  <div className={styles.cardChrome}>
+                    <span className="badge badge-info">Active</span>
+                    <button
+                      onClick={() => {
+                        if (confirm("Are you sure you want to remove this loan? This will also update your monthly debt capacity.")) {
+                          fetch(`/api/loans/${loan.id}`, { method: "DELETE" })
+                            .then(r => r.json())
+                            .then(data => {
+                              if (data.success) {
+                                setLoans(prev => prev.filter(l => l.id !== loan.id));
+                              }
+                            });
+                        }
+                      }}
+                      className={styles.deleteBtn}
+                      title="Remove loan"
+                      aria-label="Remove loan"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                   <div className={styles.loanTop}>
                     <div>
                       <div className="text-sm" style={{ color: "var(--color-text-muted)" }}>
@@ -71,7 +93,6 @@ export default function LoansPage() {
                         MK {loan.loanAmount.toLocaleString()}
                       </div>
                     </div>
-                    <span className="badge badge-info">Active</span>
                   </div>
                   <div className={styles.loanStats}>
                     <div>
@@ -103,29 +124,15 @@ export default function LoansPage() {
                   </div>
                   <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
                     <div style={{ flexGrow: 1 }}>
-                      <RepaymentButton loanId={loan.id} monthlyInstallment={loan.monthlyDeduction} />
+                      <RepaymentButton
+                        loanId={loan.id}
+                        remainingBalance={Math.max(0, loan.remainingBalance || 0)}
+                        onComplete={() => setLoans(prev => prev.filter(l => l.id !== loan.id))}
+                      />
                     </div>
                     <Link href={`/user/dashboard/loans/${loan.id}`} className="btn btn-outline" style={{ flexGrow: 1, justifyContent: "center" }}>
                       View Schedule
                     </Link>
-                    <button 
-                      onClick={() => {
-                        if (confirm("Are you sure you want to remove this loan? This will also update your monthly debt capacity.")) {
-                          fetch(`/api/loans/${loan.id}`, { method: "DELETE" })
-                            .then(r => r.json())
-                            .then(data => {
-                              if (data.success) {
-                                setLoans(prev => prev.filter(l => l.id !== loan.id));
-                              }
-                            });
-                        }
-                      }}
-                      className="btn btn-ghost" 
-                      style={{ color: "var(--color-danger)", padding: "0 8px" }}
-                      title="Remove loan"
-                    >
-                      🗑
-                    </button>
                   </div>
                 </div>
               );

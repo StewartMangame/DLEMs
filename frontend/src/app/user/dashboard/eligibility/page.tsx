@@ -22,6 +22,39 @@ interface Institution {
   } | null;
 }
 
+async function readJsonResponse<T>(res: Response): Promise<T> {
+  const contentType = res.headers.get("content-type") || "";
+  const body = contentType.includes("application/json")
+    ? await res.json()
+    : await res.text();
+
+  if (!res.ok) {
+    const message =
+      typeof body === "object" && body && "message" in body
+        ? String(body.message)
+        : typeof body === "string" && body.trim()
+          ? body
+          : `Request failed with status ${res.status}`;
+    throw new Error(message);
+  }
+
+  if (typeof body === "string") {
+    throw new Error("The server returned a non-JSON response.");
+  }
+
+  return body as T;
+}
+
+const LENDER_LOGOS: Record<string, string> = {
+  "FDH Bank": "/logos/fdh.png",
+  "Malawi Police SACCO": "/logos/sacco.png",
+  "FINCA Malawi": "/logos/finca.png",
+};
+
+function lenderLogo(name: string, institutions: Institution[]) {
+  return institutions.find(i => i.name === name)?.logoUrl || LENDER_LOGOS[name];
+}
+
 export default function EligibilityPage() {
   const { t } = useLanguage();
   const [profile, setProfile] = useState<FinancialProfile | null>(null);
@@ -31,27 +64,35 @@ export default function EligibilityPage() {
   const [result, setResult] = useState<CompareResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [checked, setChecked] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/profile")
-      .then(res => res.json())
+      .then(res => readJsonResponse<{ profile?: FinancialProfile }>(res))
       .then(data => {
         if (data.profile) setProfile(data.profile);
+      })
+      .catch(err => {
+        setError(err instanceof Error ? err.message : "Failed to load profile.");
       });
 
     fetch("/api/eligibility/institutions")
-      .then(res => res.json())
+      .then(res => readJsonResponse<Institution[] | { institutions?: Institution[] }>(res))
       .then(data => {
         let list = Array.isArray(data) ? data : (data.institutions || []);
         // Only allow the 3 active institutions
         const allowed = ["FDH Bank", "Malawi Police SACCO", "FINCA Malawi"];
         setInstitutions(list.filter((i: Institution) => allowed.includes(i.name)));
+      })
+      .catch(err => {
+        setError(err instanceof Error ? err.message : "Failed to load institutions.");
       });
   }, []);
 
   const runCheck = async () => {
     if (!profile) return;
     setLoading(true);
+    setError(null);
 
     const payload = {
       monthlyNetSalary: profile.monthlyNetSalary || 0,
@@ -68,11 +109,11 @@ export default function EligibilityPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
+      const data = await readJsonResponse<CompareResult>(res);
       setResult(data);
       setChecked(true);
     } catch (err) {
-      console.error("Comparison failed", err);
+      setError(err instanceof Error ? err.message : "Comparison failed.");
     } finally {
       setLoading(false);
     }
@@ -99,6 +140,8 @@ export default function EligibilityPage() {
           {t("eligibility.profileRequiredEnd")}
         </div>
       )}
+
+      {error && <div className="alert alert-danger">{error}</div>}
 
       <div className={`card ${styles.paramsCard}`}>
         <h2
@@ -215,12 +258,14 @@ export default function EligibilityPage() {
                     </div>
                   )}
                   <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "0.5rem" }}>
-                    {institutions.find(i => i.name === inst.institutionName)?.logoUrl && (
-                      <img 
-                        src={institutions.find(i => i.name === inst.institutionName)?.logoUrl} 
-                        alt="" 
-                        style={{ width: "32px", height: "32px", objectFit: "contain" }} 
-                      />
+                    {lenderLogo(inst.institutionName, institutions) && (
+                      <span className={styles.resultLogoWrapper}>
+                        <img
+                          src={lenderLogo(inst.institutionName, institutions)}
+                          alt={inst.institutionName}
+                          className={styles.resultLogo}
+                        />
+                      </span>
                     )}
                     <h3
                       style={{
@@ -340,7 +385,18 @@ export default function EligibilityPage() {
                       padding: "1.5rem",
                     }}
                   >
-                    <h4 style={{ fontWeight: 600 }}>{inst.institutionName}</h4>
+                    <div className={styles.ineligibleHeader}>
+                      {lenderLogo(inst.institutionName, institutions) && (
+                        <span className={styles.ineligibleLogoWrapper}>
+                          <img
+                            src={lenderLogo(inst.institutionName, institutions)}
+                            alt={inst.institutionName}
+                            className={styles.ineligibleLogo}
+                          />
+                        </span>
+                      )}
+                      <h4 style={{ fontWeight: 600 }}>{inst.institutionName}</h4>
+                    </div>
                     <div
                       className="text-sm"
                       style={{
@@ -379,8 +435,10 @@ export default function EligibilityPage() {
             {institutions.map(inst => (
               <div key={inst.id} className="card" style={{ padding: "1.5rem" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>
-                  {inst.logoUrl ? (
-                    <img src={inst.logoUrl} alt="" style={{ width: "40px", height: "40px", objectFit: "contain" }} />
+                  {lenderLogo(inst.name, institutions) ? (
+                    <span className={styles.availableLogoWrapper}>
+                      <img src={lenderLogo(inst.name, institutions)} alt={inst.name} className={styles.availableLogo} />
+                    </span>
                   ) : (
                     <div style={{ width: "40px", height: "40px", background: "var(--color-bg-alt)", borderRadius: "var(--radius-sm)", display: "flex", alignItems: "center", justifyContent: "center" }}>🏦</div>
                   )}

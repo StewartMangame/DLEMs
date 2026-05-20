@@ -2,6 +2,27 @@
 .header { margin-bottom: 0; }
 .paramsCard { display: flex; flex-direction: column; }
 
+.resultLogoWrapper,
+.availableLogoWrapper,
+.ineligibleLogoWrapper {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.resultLogo,
+.availableLogo,
+.ineligibleLogo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .results { display: flex; flex-direction: column; gap: var(--space-lg); }
 
 .profileSummaryRow {
@@ -41,4 +62,28 @@
 
 .topRanked:hover {
   border-color: rgba(0, 200, 150, 0.8);
+}
+
+.resultLogoWrapper {
+  width: 44px;
+  height: 44px;
+  padding: 6px;
+}
+
+.availableLogoWrapper {
+  width: 48px;
+  height: 48px;
+  padding: 6px;
+}
+
+.ineligibleHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.ineligibleLogoWrapper {
+  width: 36px;
+  height: 36px;
+  padding: 5px;
 }

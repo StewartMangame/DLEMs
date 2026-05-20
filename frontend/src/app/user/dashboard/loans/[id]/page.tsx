@@ -8,6 +8,7 @@ export default function LoanSchedulePage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [markingMonth, setMarkingMonth] = useState<number | null>(null);
 
   useEffect(() => {
     if (!params.id) return;
@@ -25,6 +26,24 @@ export default function LoanSchedulePage() {
         setLoading(false);
       });
   }, [params.id]);
+
+  const markNextMonthPaid = async (month: number) => {
+    if (!confirm(`Mark month ${month} as paid?`)) return;
+    setMarkingMonth(month);
+    try {
+      const res = await fetch(`/api/loans/repay/${params.id}`, { method: "POST" });
+      if (!res.ok) {
+        const body = await res.json();
+        throw new Error(body.error || "Could not mark month as paid");
+      }
+      const updated = await fetch(`/api/loans/schedule/${params.id}`).then(r => r.json());
+      setData(updated);
+    } catch (err: any) {
+      alert(err.message || "Network error. Please try again.");
+    } finally {
+      setMarkingMonth(null);
+    }
+  };
 
   if (loading) return <div style={{ padding: 40 }}>Loading schedule...</div>;
   if (error) return <div className="alert alert-danger" style={{ margin: 40 }}>{error}</div>;
@@ -73,6 +92,7 @@ export default function LoanSchedulePage() {
               <th style={{ padding: "12px 8px" }}>Principal (MK)</th>
               <th style={{ padding: "12px 8px" }}>Interest (MK)</th>
               <th style={{ padding: "12px 8px" }}>Balance (MK)</th>
+              <th style={{ padding: "12px 8px" }}>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -90,6 +110,21 @@ export default function LoanSchedulePage() {
                 <td style={{ padding: "12px 8px", color: "var(--color-primary)" }}>{row.principal.toLocaleString()}</td>
                 <td style={{ padding: "12px 8px", color: "var(--color-warning)" }}>{row.interest.toLocaleString()}</td>
                 <td style={{ padding: "12px 8px", fontWeight: 600 }}>{row.balance.toLocaleString()}</td>
+                <td style={{ padding: "12px 8px" }}>
+                  {row.isPaid ? (
+                    <span className="text-xs text-muted">Recorded</span>
+                  ) : row.month === loan.paidMonths + 1 && loan.isActive ? (
+                    <button
+                      className="btn btn-primary btn-sm"
+                      onClick={() => markNextMonthPaid(row.month)}
+                      disabled={markingMonth === row.month}
+                    >
+                      {markingMonth === row.month ? "Saving..." : "Mark Month Paid"}
+                    </button>
+                  ) : (
+                    <span className="text-xs text-muted">Pending</span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

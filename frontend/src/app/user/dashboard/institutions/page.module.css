@@ -84,6 +84,23 @@
   gap: var(--space-md);
 }
 
+.compareSummaryLogo {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.partnerLogo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .institutionCard {
   padding: var(--space-lg);
   cursor: pointer;
@@ -388,6 +405,15 @@
   gap: var(--space-lg);
 }
 
+.fixedInterestInput,
+.fixedInterestInput:disabled {
+  background: rgba(148, 163, 184, 0.12);
+  border-color: rgba(148, 163, 184, 0.35);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+  opacity: 1;
+}
+
 .calcResults {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -452,6 +478,12 @@
 
 /* ── Comparison table ─────────────────────────────────────────────────────── */
 .compareCard { animation: fadeInUp 0.45s ease forwards; }
+
+.compareSummaryLogo {
+  width: 36px;
+  height: 36px;
+  padding: 5px;
+}
 
 .compareTable {
   width: 100%;

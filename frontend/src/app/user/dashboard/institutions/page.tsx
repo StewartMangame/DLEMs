@@ -50,6 +50,17 @@ function mwk(n: number) {
   return `MWK ${Math.round(n).toLocaleString()}`;
 }
 
+const LENDER_LOGOS: Record<string, string> = {
+  "FDH Bank": "/logos/fdh.png",
+  "Malawi Police SACCO": "/logos/sacco.png",
+  "FINCA Malawi": "/logos/finca.png",
+  "SACCO": "/logos/sacco.png",
+};
+
+function institutionLogo(institution: Pick<InstitutionConfig, "name" | "logoUrl">) {
+  return institution.logoUrl || LENDER_LOGOS[institution.name];
+}
+
 // ─── Profile shape returned by /api/profile ────────────────────────────────────
 interface UserProfile {
   monthlySalary?: number;
@@ -134,6 +145,7 @@ export default function InstitutionsPage() {
         id: "sacco-group",
         name: "SACCO",
         type: "SACCO",
+        logoUrl: "/logos/sacco.png",
         description: "Select this if you are a member of a SACCO. You will be asked to choose your specific SACCO from a list.",
         membershipRequired: true,
         crbCheckRequired: false,
@@ -493,6 +505,7 @@ function InstitutionCard({
   ny: boolean;
 }) {
   const TypeIcon = institution.type === "SACCO" ? Handshake : Building2;
+  const logo = institutionLogo(institution);
 
   return (
     <div
@@ -507,7 +520,13 @@ function InstitutionCard({
     >
       <div>
         <div className={styles.cardTop}>
-          <div className={styles.cardIcon}><TypeIcon size={24} /></div>
+          <div className={styles.cardIcon}>
+            {logo ? (
+              <img src={logo} alt={institution.name} className={styles.partnerLogo} />
+            ) : (
+              <TypeIcon size={24} />
+            )}
+          </div>
           <div className={`${styles.checkmark} ${selected ? styles.selected : ""}`}>
             {selected && <CheckCircle2 size={18} />}
           </div>
@@ -992,9 +1011,13 @@ function RepaymentCalculator({
         <Calculator size={20} /> {ny ? "Kasoti ya Malipiro" : "Repayment Calculator"}
       </h3>
       <p className="text-sm" style={{ color: "var(--color-text-secondary)", marginBottom: "var(--space-lg)" }}>
-        {ny
-          ? "Sankhani mtundu wa ngongole, cholinga cha faida, ndi nthawi yolipira."
-          : "Select a loan type, enter the interest rate offered by the institution, and choose a repayment term."}
+        {institution.fixedInterestRate !== undefined
+          ? (ny
+            ? "Sankhani mtundu wa ngongole ndi nthawi yolipira. Faida ya malo ano ndi yosasintha."
+            : "Select a loan type and repayment term. This institution's interest rate is fixed.")
+          : (ny
+            ? "Sankhani mtundu wa ngongole, cholinga cha faida, ndi nthawi yolipira."
+            : "Select a loan type, enter the interest rate offered by the institution, and choose a repayment term.")}
       </p>
 
       {/* Loan type selector */}
@@ -1028,11 +1051,12 @@ function RepaymentCalculator({
             min={1}
             max={100}
             step={0.5}
-            className="form-input"
+            className={`form-input ${institution.fixedInterestRate !== undefined ? styles.fixedInterestInput : ""}`}
             placeholder="e.g. 24"
             value={state.rate || ""}
             onChange={e => onChange({ rate: parseFloat(e.target.value) || 0 })}
             disabled={institution.fixedInterestRate !== undefined}
+            aria-readonly={institution.fixedInterestRate !== undefined}
           />
           <div className="form-help">
             {institution.fixedInterestRate !== undefined
@@ -1210,6 +1234,13 @@ function ComparisonTable({
           listStyle: "none",
         }}
       >
+        <span className={styles.compareSummaryLogo}>
+          {institutionLogo(institution) ? (
+            <img src={institutionLogo(institution)} alt={institution.name} className={styles.partnerLogo} />
+          ) : (
+            <BarChart3 size={18} />
+          )}
+        </span>
         <BarChart3 size={20} /> {ny
           ? `Tebulo la Kuyerekeza — ${institutionDisplayName}`
           : `Side-by-Side Comparison — ${institutionDisplayName}`}

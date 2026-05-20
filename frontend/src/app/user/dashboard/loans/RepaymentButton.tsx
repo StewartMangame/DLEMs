@@ -4,25 +4,27 @@ import { useRouter } from "next/navigation";
 
 interface RepaymentButtonProps {
   loanId: number;
-  monthlyInstallment: number;
+  remainingBalance: number;
+  onComplete?: () => void;
 }
 
-export default function RepaymentButton({ loanId, monthlyInstallment }: RepaymentButtonProps) {
+export default function RepaymentButton({ loanId, remainingBalance, onComplete }: RepaymentButtonProps) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleRepay = async () => {
-    if (!confirm(`Confirm monthly repayment of MK ${monthlyInstallment.toLocaleString()}?\n\nReminder: Ensure sufficient funds are available in your account before deduction.`)) {
+    if (!confirm(`Mark this whole loan as fully paid?\n\nRemaining balance: MK ${remainingBalance.toLocaleString(undefined, { maximumFractionDigits: 0 })}`)) {
       return;
     }
 
     setLoading(true);
     try {
-      const res = await fetch(`/api/loans/repay/${loanId}`, { method: "POST" });
+      const res = await fetch(`/api/loans/complete/${loanId}`, { method: "POST" });
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || "Payment failed");
+        alert(data.error || "Could not complete loan");
       } else {
+        onComplete?.();
         router.refresh();
       }
     } catch {
@@ -39,7 +41,7 @@ export default function RepaymentButton({ loanId, monthlyInstallment }: Repaymen
       disabled={loading}
       style={{ width: "100%", marginTop: 16 }}
     >
-      {loading ? "Processing..." : "Mark as Paid"}
+      {loading ? "Processing..." : "Mark Loan as Fully Paid"}
     </button>
   );
 }

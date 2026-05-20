@@ -212,10 +212,40 @@ export class LoansService {
       ) {
         loan.isActive = false;
         loan.remainingBalance = 0;
+        const profile = await this.profileRepo.findOne({ where: { userId } });
+        if (profile) {
+          profile.existingLoanAmount = Math.max(
+            0,
+            profile.existingLoanAmount - loan.monthlyDeduction,
+          );
+          await this.profileRepo.save(profile);
+        }
       }
       return this.loanRepo.save(loan);
     }
     return loan;
+  }
+
+  async completeLoan(userId: number, loanId: number) {
+    const loan = await this.loanRepo.findOne({
+      where: { id: loanId, userId, isActive: true },
+    });
+    if (!loan) throw new NotFoundException('Active loan not found');
+
+    loan.paidMonths = loan.loanTermMonths;
+    loan.remainingBalance = 0;
+    loan.isActive = false;
+
+    const profile = await this.profileRepo.findOne({ where: { userId } });
+    if (profile) {
+      profile.existingLoanAmount = Math.max(
+        0,
+        profile.existingLoanAmount - loan.monthlyDeduction,
+      );
+      await this.profileRepo.save(profile);
+    }
+
+    return this.loanRepo.save(loan);
   }
 
   async removeLoan(userId: number, loanId: number) {

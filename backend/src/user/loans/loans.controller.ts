@@ -56,6 +56,15 @@ export class LoansController {
     return { success: true, loan };
   }
 
+  @Post('complete/:id')
+  async completeLoan(@Req() req: any, @Param('id') id: string) {
+    const loan = await this.loansService.completeLoan(
+      req.user.userId,
+      parseInt(id, 10),
+    );
+    return { success: true, loan };
+  }
+
   @Delete(':id')
   async removeLoan(@Req() req: any, @Param('id') id: string) {
     await this.loansService.removeLoan(req.user.userId, parseInt(id, 10));

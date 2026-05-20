@@ -4,7 +4,44 @@
 
 .activeGrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-lg); }
 
-.activeLoanCard { display: flex; flex-direction: column; gap: var(--space-lg); }
+.activeLoanCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  position: relative;
+  padding-top: calc(var(--space-xl) + 18px);
+}
+
+.cardChrome {
+  position: absolute;
+  top: var(--space-md);
+  left: var(--space-md);
+  right: var(--space-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.deleteBtn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-danger);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  pointer-events: auto;
+}
+
+.deleteBtn:hover {
+  border-color: var(--color-danger);
+  background: var(--color-danger-bg);
+}
 
 .loanTop { display: flex; align-items: flex-start; justify-content: space-between; }
 

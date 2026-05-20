@@ -28,6 +28,8 @@ const NAV_ITEMS = [
   { href: "/user/dashboard/loans", icon: Wallet, key: "nav.loans" },
 ];
 
+type Theme = "dark" | "light";
+
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState<Theme>("dark");
