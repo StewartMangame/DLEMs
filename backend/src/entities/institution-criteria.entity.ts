@@ -33,6 +33,12 @@ export class InstitutionCriteria {
   @Column('float', { default: 25 })
   interestRate: number;
 
+  @Column('float', { nullable: true })
+  fixedInterestRate: number;
+
+  @Column({ nullable: true })
+  interestRateLabel: string;
+
   /** Processing / application fee as a percentage of loan amount */
   @Column('float', { default: 0 })
   processingFeePercent: number;

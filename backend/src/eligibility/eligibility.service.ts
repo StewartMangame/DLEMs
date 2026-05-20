@@ -129,9 +129,12 @@ export class EligibilityService {
       id: inst.id,
       name: inst.name,
       type: inst.type,
+      fixedInterestRate: inst.criteria?.fixedInterestRate || null,
       criteria: inst.criteria
         ? {
             interestRate: inst.criteria.interestRate,
+            fixedInterestRate: inst.criteria.fixedInterestRate,
+            interestRateLabel: inst.criteria.interestRateLabel,
             minNetSalary: inst.criteria.minNetSalary,
             maxDtiRatio: inst.criteria.maxDtiRatio,
             minRepaymentMonths: inst.criteria.minRepaymentMonths,

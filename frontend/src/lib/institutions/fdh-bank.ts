@@ -13,7 +13,6 @@ export const FDH_BANK: InstitutionConfig = {
   type: 'Commercial Bank',
   description:
     'A leading commercial bank in Malawi offering personal and salary loans to civil servants and private sector employees. Loans are processed at physical branches with fixed interest rates and salary deduction repayment.',
-  logoUrl: '/logos/fdh.png',
 
   // ── Membership ──────────────────────────────────────────────────────────────
   // Banks do not require SACCO membership — set to 0 to suppress the SACCO intake form.
