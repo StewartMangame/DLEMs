@@ -33,6 +33,12 @@ export class InstitutionCriteria {
   @Column('float', { default: 25 })
   interestRate: number;
 
+  @Column('float', { nullable: true })
+  fixedInterestRate: number;
+
+  @Column({ nullable: true })
+  interestRateLabel: string;
+
   /** Processing / application fee as a percentage of loan amount */
   @Column('float', { default: 0 })
   processingFeePercent: number;
@@ -81,6 +87,10 @@ export class InstitutionCriteria {
   /** Human-readable conditions / notes shown to the user */
   @Column('text', { nullable: true })
   notes: string;
+
+  /** Dynamic custom criteria added by admin: { name: string, value: string }[] */
+  @Column('simple-json', { nullable: true, default: '[]' })
+  customCriteria: any;
 
   @UpdateDateColumn()
   updatedAt: Date;

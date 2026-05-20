@@ -6,17 +6,14 @@ const ADMIN_API = process.env.NEXT_PUBLIC_ADMIN_API_URL || "http://127.0.0.1:300
 const nextConfig: NextConfig = {
   async rewrites() {
     return [
-      // ── Admin API calls → admin backend ──────────────────────────────────
-      {
-        source: "/api/admin/:path*",
-        destination: `${ADMIN_API}/api/admin/:path*`,
-      },
-      // ── Admin-panel API calls (legacy prefix kept for compatibility) ──────
       {
         source: "/api/admin-panel/:path*",
         destination: `${ADMIN_API}/api/admin-panel/:path*`,
       },
-      // ── User API calls → user backend ────────────────────────────────────
+      {
+        source: "/api/admin/:path*",
+        destination: `${ADMIN_API}/api/admin/:path*`,
+      },
       {
         source: "/api/:path*",
         destination: `${USER_API}/api/:path*`,

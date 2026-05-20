@@ -1,36 +1,42 @@
 # Dependencies
 node_modules/
 dist/
+backend/dist/
+frontend/.next/
+.next/
+coverage/
 
-# Environment variables
+# Environment files
 .env
 .env.local
+.env.development
+.env.production
+.env.*.local
+frontend/.env.local
+backend/.env
+backend/.env.local
 
-# Database
+# Databases
 *.sqlite
+*.sqlite3
 *.db
-loan_db.sqlite
+backend/loan_db.sqlite
+backend/*.sqlite
+backend/prisma/*.db
+backend/prisma/*.sqlite
 
 # Build files
 *.tsbuildinfo
+tsconfig.tsbuildinfo
 
 # Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+.devlogs/
 
 # OS generated files
 .DS_Store
 Thumbs.db
-
-# TypeScript incremental build files
-*.tsbuildinfo
-backend/dist/
-frontend/.next/
-
-# Local runtime data
-backend/loan_db.sqlite
-backend/*.sqlite
-
-# Local environment files
-.env.local
-frontend/.env.local
-backend/.env.local

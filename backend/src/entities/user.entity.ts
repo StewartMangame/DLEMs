@@ -41,6 +41,9 @@ export class User {
   @Column({ default: 'customer' })
   role: string;
 
+  @Column({ default: false })
+  isEmailVerified: boolean;
+
   @Column({ default: 'active' })
   accountStatus: string; // 'active' | 'suspended'
 
