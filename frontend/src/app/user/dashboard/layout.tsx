@@ -28,19 +28,21 @@ const NAV_ITEMS = [
   { href: "/user/dashboard/loans", icon: Wallet, key: "nav.loans" },
 ];
 
-function getSavedTheme(): Theme {
-  if (typeof window === "undefined") return "dark";
-  return window.localStorage.getItem("dlem_theme") === "light"
-    ? "light"
-    : "dark";
-}
-
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [theme, setTheme] = useState<Theme>(getSavedTheme);
+  const [theme, setTheme] = useState<Theme>("dark");
   const pathname = usePathname();
   const router = useRouter();
   const { t, language, setLanguage } = useLanguage();
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedTheme = window.localStorage.getItem("dlem_theme");
+      if (savedTheme === "light" || savedTheme === "dark") {
+        setTheme(savedTheme as Theme);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -153,28 +155,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             </button>
           </div>
         </header>
-              style={{
-                padding: "6px 28px 6px 12px",
-                minWidth: "125px",
-                fontSize: "0.9rem",
-                backgroundPosition: "right 8px center",
-                border: "1px solid var(--color-border)",
-              }}
-            >
-              <option value="en">English</option>
-              <option value="ny">Chichewa</option>
-            </select>
 
-            <button
-              onClick={toggleTheme}
-              className="btn btn-ghost"
-              aria-label="Toggle theme"
-              style={{ padding: "8px 16px", minWidth: "140px", display: 'flex', alignItems: 'center', gap: '8px' }}
-            >
-              {theme === "dark" ? <><Sun size={18} /> {t("theme.light")}</> : <><Moon size={18} /> {t("theme.dark")}</>}
-            </button>
-          </div>
-        </header>
 
         <main className={styles.content}>
           <Suspense

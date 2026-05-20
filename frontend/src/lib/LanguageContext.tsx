@@ -123,14 +123,15 @@ const LanguageContext = createContext<LanguageContextProps>({
   t: key => key,
 });
 
-function getSavedLanguage(): Language {
-  if (typeof window === "undefined") return "en";
-  const saved = window.localStorage.getItem("dlem_lang");
-  return saved === "ny" || saved === "en" ? saved : "en";
-}
-
 export const LanguageProvider = ({ children }: { children: React.ReactNode }) => {
-  const [language, setLanguageState] = useState<Language>(getSavedLanguage);
+  const [language, setLanguageState] = useState<Language>("en");
+
+  React.useEffect(() => {
+    const saved = window.localStorage.getItem("dlem_lang");
+    if (saved === "ny" || saved === "en") {
+      setLanguageState(saved);
+    }
+  }, []);
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);

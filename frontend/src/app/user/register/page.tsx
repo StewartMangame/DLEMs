@@ -100,9 +100,8 @@ export default function RegisterPage() {
         return;
       }
 
-      // Backend sent OTP to email — move to Step 2
-      setStep("otp");
-      startResendCooldown();
+      // Bypass OTP for now as requested
+      router.push("/user/dashboard");
     } catch {
       setError("Network error — could not reach the server. Please check your connection.");
     } finally {
