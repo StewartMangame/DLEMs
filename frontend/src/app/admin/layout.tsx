@@ -7,11 +7,9 @@ import styles from "./layout.module.css";
 const NAV_SUPER = [
   { href: "/admin/dashboard", icon: "◉", label: "Dashboard" },
   { href: "/admin/institutions", icon: "🏛", label: "Institutions" },
-  { href: "/admin/saccos", icon: "🤝", label: "SACCOs" },
   { href: "/admin/users", icon: "👥", label: "Users" },
   { href: "/admin/eligibility", icon: "✅", label: "Eligibility Monitor" },
   { href: "/admin/loans", icon: "💰", label: "Loan Tracking" },
-  { href: "/admin/content", icon: "🌐", label: "Content & Language" },
   { href: "/admin/announcements", icon: "📢", label: "Announcements" },
   { href: "/admin/admins", icon: "🔑", label: "Admin Accounts" },
   { href: "/admin/activity-log", icon: "📋", label: "Activity Log" },
@@ -20,7 +18,6 @@ const NAV_SUPER = [
 const NAV_CONTENT = [
   { href: "/admin/dashboard", icon: "◉", label: "Dashboard" },
   { href: "/admin/institutions", icon: "🏛", label: "Institutions" },
-  { href: "/admin/content", icon: "🌐", label: "Content & Language" },
   { href: "/admin/announcements", icon: "📢", label: "Announcements" },
 ];
 

@@ -6,9 +6,7 @@ import { AdminUser } from '../entities/admin-user.entity';
 import { AdminActivityLog } from '../entities/admin-activity-log.entity';
 import { Institution } from '../entities/institution.entity';
 import { InstitutionCriteria } from '../entities/institution-criteria.entity';
-import { Sacco } from '../entities/sacco.entity';
 import { LoanProduct } from '../entities/loan-product.entity';
-import { ContentString } from '../entities/content-string.entity';
 import { Announcement } from '../entities/announcement.entity';
 import { EligibilityCheckLog } from '../entities/eligibility-check-log.entity';
 import { User } from '../entities/user.entity';
@@ -36,9 +34,7 @@ import { PassportModule } from '@nestjs/passport';
       AdminActivityLog,
       Institution,
       InstitutionCriteria,
-      Sacco,
       LoanProduct,
-      ContentString,
       Announcement,
       EligibilityCheckLog,
       User,

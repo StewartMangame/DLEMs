@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { ModalCloseButton } from "../icons";
 import styles from "../institutions/institutions.module.css";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -152,7 +153,7 @@ function AnnouncementModal({ announcement, onClose, onSaved }: { announcement?: 
       <div className={styles.modal}>
         <div className={styles.modalHeader}>
           <h2>{isEdit ? "Edit Announcement" : "New Announcement"}</h2>
-          <button className={styles.modalClose} onClick={onClose}>✕</button>
+          <ModalCloseButton className={styles.modalClose} onClose={onClose} />
         </div>
         <div className={styles.modalBody}>
           {error && <div className={styles.formError}>{error}</div>}
