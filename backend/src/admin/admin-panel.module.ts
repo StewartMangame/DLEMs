@@ -8,9 +8,11 @@ import { Institution } from '../entities/institution.entity';
 import { InstitutionCriteria } from '../entities/institution-criteria.entity';
 import { LoanProduct } from '../entities/loan-product.entity';
 import { Announcement } from '../entities/announcement.entity';
+import { ContentString } from '../entities/content-string.entity';
 import { EligibilityCheckLog } from '../entities/eligibility-check-log.entity';
 import { User } from '../entities/user.entity';
 import { Loan } from '../entities/loan.entity';
+import { Sacco } from '../entities/sacco.entity';
 import { AdminPanelController } from './admin-panel.controller';
 import { AdminPanelService } from './admin-panel.service';
 import { AdminPanelAuthController } from './admin-panel-auth.controller';
@@ -36,9 +38,11 @@ import { PassportModule } from '@nestjs/passport';
       InstitutionCriteria,
       LoanProduct,
       Announcement,
+      ContentString,
       EligibilityCheckLog,
       User,
       Loan,
+      Sacco,
     ]),
   ],
   controllers: [AdminPanelController, AdminPanelAuthController],

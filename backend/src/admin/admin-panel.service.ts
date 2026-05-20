@@ -18,9 +18,11 @@ import { Institution } from '../entities/institution.entity';
 import { InstitutionCriteria } from '../entities/institution-criteria.entity';
 import { LoanProduct } from '../entities/loan-product.entity';
 import { Announcement } from '../entities/announcement.entity';
+import { ContentString } from '../entities/content-string.entity';
 import { EligibilityCheckLog } from '../entities/eligibility-check-log.entity';
 import { User } from '../entities/user.entity';
 import { Loan } from '../entities/loan.entity';
+import { Sacco } from '../entities/sacco.entity';
 
 @Injectable()
 export class AdminPanelService {
@@ -34,10 +36,13 @@ export class AdminPanelService {
     @InjectRepository(LoanProduct) private productRepo: Repository<LoanProduct>,
     @InjectRepository(Announcement)
     private announcementRepo: Repository<Announcement>,
+    @InjectRepository(ContentString)
+    private contentRepo: Repository<ContentString>,
     @InjectRepository(EligibilityCheckLog)
     private eligCheckRepo: Repository<EligibilityCheckLog>,
     @InjectRepository(User) private userRepo: Repository<User>,
     @InjectRepository(Loan) private loanRepo: Repository<Loan>,
+    @InjectRepository(Sacco) private saccoRepo: Repository<Sacco>,
   ) {}
 
   // ─── Activity Logging ──────────────────────────────────────────────────────
@@ -344,6 +349,60 @@ export class AdminPanelService {
   }
 
   // ─── Section 3: User Management ────────────────────────────────────────────
+  async listSaccos() {
+    return this.saccoRepo.find({ order: { name: 'ASC' } });
+  }
+
+  async createSacco(admin: any, data: Partial<Sacco>) {
+    this.requireSuper(admin);
+    const sacco = this.saccoRepo.create({
+      name: data.name,
+      status: data.status ?? 'active',
+      notes: data.notes,
+    });
+    await this.saccoRepo.save(sacco);
+    await this.log(admin.adminId, 'sacco.create', {
+      entityType: 'Sacco',
+      entityId: String(sacco.id),
+      description: `Created SACCO: ${sacco.name}`,
+    });
+    return { success: true, sacco };
+  }
+
+  async updateSacco(admin: any, id: number, data: Partial<Sacco>) {
+    this.requireSuper(admin);
+    const sacco = await this.saccoRepo.findOne({ where: { id } });
+    if (!sacco) throw new NotFoundException('SACCO not found');
+
+    this.saccoRepo.merge(sacco, {
+      name: data.name ?? sacco.name,
+      status: data.status ?? sacco.status,
+      notes: data.notes ?? sacco.notes,
+    });
+    await this.saccoRepo.save(sacco);
+    await this.log(admin.adminId, 'sacco.update', {
+      entityType: 'Sacco',
+      entityId: String(id),
+      description: `Updated SACCO: ${sacco.name}`,
+    });
+    return { success: true, sacco };
+  }
+
+  async deleteSacco(admin: any, id: number) {
+    this.requireSuper(admin);
+    const sacco = await this.saccoRepo.findOne({ where: { id } });
+    if (!sacco) throw new NotFoundException('SACCO not found');
+
+    sacco.status = 'inactive';
+    await this.saccoRepo.save(sacco);
+    await this.log(admin.adminId, 'sacco.deactivate', {
+      entityType: 'Sacco',
+      entityId: String(id),
+      description: `Deactivated SACCO: ${sacco.name}`,
+    });
+    return { success: true };
+  }
+
   async listUsers(
     page = 1,
     limit = 20,
@@ -522,6 +581,52 @@ export class AdminPanelService {
   }
 
   // ─── Section 6: Announcements ──────────────────────────────────────────────
+  async listContent(page = 1, limit = 50, status?: string, search?: string) {
+    const qb = this.contentRepo.createQueryBuilder('c');
+    if (status) qb.andWhere('c.status = :status', { status });
+    if (search) {
+      qb.andWhere('(c.key LIKE :search OR c.english LIKE :search OR c.chichewa LIKE :search)', {
+        search: `%${search}%`,
+      });
+    }
+    qb.orderBy('c.key', 'ASC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [items, total] = await qb.getManyAndCount();
+    return { items, total, page, pages: Math.ceil(total / limit) };
+  }
+
+  async createContent(admin: any, data: Partial<ContentString>) {
+    const content = this.contentRepo.create({
+      key: data.key,
+      english: data.english,
+      chichewa: data.chichewa,
+      status: data.status ?? 'placeholder',
+    });
+    await this.contentRepo.save(content);
+    await this.log(admin.adminId, 'content.create', {
+      entityType: 'ContentString',
+      entityId: String(content.id),
+      description: `Created content string: ${content.key}`,
+    });
+    return { success: true, content };
+  }
+
+  async updateContent(admin: any, id: number, data: Partial<ContentString>) {
+    const content = await this.contentRepo.findOne({ where: { id } });
+    if (!content) throw new NotFoundException('Content string not found');
+
+    this.contentRepo.merge(content, data);
+    await this.contentRepo.save(content);
+    await this.log(admin.adminId, 'content.update', {
+      entityType: 'ContentString',
+      entityId: String(id),
+      description: `Updated content string: ${content.key}`,
+    });
+    return { success: true, content };
+  }
+
   async listAnnouncements(page = 1, limit = 20) {
     const [items, total] = await this.announcementRepo.findAndCount({
       order: { createdAt: 'DESC' },
