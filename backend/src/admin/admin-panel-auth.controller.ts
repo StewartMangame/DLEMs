@@ -12,7 +12,7 @@ import { AdminPanelAuthService } from './admin-panel-auth.service';
 import type { Response } from 'express';
 import { LoginDto } from './dto/login.dto';
 
-@Controller('admin/auth')
+@Controller('admin-panel/auth')
 export class AdminPanelAuthController {
   constructor(private readonly authService: AdminPanelAuthService) {}
 

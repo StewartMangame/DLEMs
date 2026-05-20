@@ -19,7 +19,7 @@ export default function EditInstitutionPage() {
   const [showAddProduct, setShowAddProduct] = useState(false);
 
   const load = useCallback(() => {
-    fetch(`/api/admin/institutions/${id}`)
+    fetch(`/api/admin-panel/institutions/${id}`)
       .then(r => r.json())
       .then(d => {
         setData(d.institution);
@@ -56,7 +56,7 @@ export default function EditInstitutionPage() {
   async function save() {
     setSaving(true); setMsg("");
     const body = { ...form, requiredDocuments: docs, criteria: criteriaForm };
-    const res = await fetch(`/api/admin/institutions/${id}`, {
+    const res = await fetch(`/api/admin-panel/institutions/${id}`, {
       method: "PUT", headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
@@ -84,13 +84,13 @@ export default function EditInstitutionPage() {
       <div className={styles.pageHeader}>
         <div>
           <div style={{ fontSize: "0.8rem", color: "var(--ap-text-muted)", marginBottom: "0.5rem" }}>
-            <Link href="/admin/institutions" style={{ color: "var(--ap-accent-light)", textDecoration: "none" }}>← Institutions</Link>
+            <Link href="/admin-panel/institutions" style={{ color: "var(--ap-accent-light)", textDecoration: "none" }}>← Institutions</Link>
           </div>
           <h1 className={styles.pageTitle}>{data.name}</h1>
           <p className={styles.pageSub}>{data.type} · Last updated {new Date(data.updatedAt).toLocaleDateString()}</p>
         </div>
         <div style={{ display: "flex", gap: "0.5rem" }}>
-          <Link href={`/admin/institutions/${id}/changelog`} className={styles.actionBtn}>View Change Log</Link>
+          <Link href={`/admin-panel/institutions/${id}/changelog`} className={styles.actionBtn}>View Change Log</Link>
           <button className={styles.saveBtn} onClick={save} disabled={saving} style={{ padding: "0.625rem 1.5rem" }}>
             {saving ? "Saving…" : "Save Changes"}
           </button>
@@ -298,7 +298,7 @@ export default function EditInstitutionPage() {
                         }}>{p.status.replace("_", " ").toUpperCase()}</span>
                         <button onClick={() => {
                           const newStatus = p.status === "active" ? "inactive" : "active";
-                          fetch(`/api/admin/products/${p.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: newStatus }) }).then(load);
+                          fetch(`/api/admin-panel/products/${p.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: newStatus }) }).then(load);
                         }} className={styles.actionBtn}>Toggle Status</button>
                       </div>
                     </div>
@@ -324,7 +324,7 @@ function AddProductModal({ institutionId, onClose, onSaved }: { institutionId: n
 
   async function save() {
     setSaving(true);
-    const res = await fetch(`/api/admin/institutions/${institutionId}/products`, {
+    const res = await fetch(`/api/admin-panel/institutions/${institutionId}/products`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form),
     });
     setSaving(false);
