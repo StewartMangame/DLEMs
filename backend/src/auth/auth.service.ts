@@ -129,16 +129,26 @@ export class AuthService {
     await this.otpRepository.save(otp);
 
     // Send Email
-    await this.transporter.sendMail({
-      from: process.env.SMTP_FROM || '"DLEM" <noreply@dlem.mw>',
-      to: email,
-      subject: 'DLEM - Verify your account',
-      html: `
-        <h2>Account Verification</h2>
-        <p>Your verification code is: <strong>${code}</strong></p>
-        <p>This code will expire in 10 minutes.</p>
-      `,
-    });
+    try {
+      await this.transporter.sendMail({
+        from: process.env.SMTP_FROM || '"DLEM" <noreply@dlem.mw>',
+        to: email,
+        subject: 'DLEM - Verify your account',
+        html: `
+          <h2>Account Verification</h2>
+          <p>Your verification code is: <strong>${code}</strong></p>
+          <p>This code will expire in 10 minutes.</p>
+        `,
+      });
+      console.log(`\n[EMAIL SENT] OTP code sent successfully to ${email} via SMTP.`);
+    } catch (smtpError: any) {
+      console.warn(`\n[SMTP WARNING] Failed to send email via SMTP: ${smtpError.message}`);
+      console.log(`\n\n-------------------------------------------------------------`);
+      console.log(`[MOCK EMAIL SENT TO ${email}]`);
+      console.log(`Subject: DLEM - Verify your account`);
+      console.log(`Body: Your verification code is: ${code}`);
+      console.log(`-------------------------------------------------------------\n\n`);
+    }
   }
 
   async verifyOtp(verifyDto: { email: string; otp: string }) {
