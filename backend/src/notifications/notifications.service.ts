@@ -21,7 +21,7 @@ export class NotificationsService {
     try {
       // 🔔 Simulated notification
       this.logger.log(
-        `Sending reminder → User: ${reminder.userId}, Loan: ${reminder.loanId}, Date: ${reminder.scheduledAt}`,
+        `Sending reminder → User: ${reminder.userId}, Loan: ${reminder.loanId}, Date: ${reminder.scheduledAt.toISOString()}`,
       );
 
       const success = true;
@@ -37,9 +37,7 @@ export class NotificationsService {
     } catch (error: any) {
       const message = error?.message || 'Unknown error';
 
-      this.logger.error(
-        `Failed to send reminder ${reminder.id}: ${message}`,
-      );
+      this.logger.error(`Failed to send reminder ${reminder.id}: ${message}`);
 
       await this.logRepo.save({
         reminderId: reminder.id,

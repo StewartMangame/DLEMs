@@ -585,9 +585,12 @@ export class AdminPanelService {
     const qb = this.contentRepo.createQueryBuilder('c');
     if (status) qb.andWhere('c.status = :status', { status });
     if (search) {
-      qb.andWhere('(c.key LIKE :search OR c.english LIKE :search OR c.chichewa LIKE :search)', {
-        search: `%${search}%`,
-      });
+      qb.andWhere(
+        '(c.key LIKE :search OR c.english LIKE :search OR c.chichewa LIKE :search)',
+        {
+          search: `%${search}%`,
+        },
+      );
     }
     qb.orderBy('c.key', 'ASC')
       .skip((page - 1) * limit)

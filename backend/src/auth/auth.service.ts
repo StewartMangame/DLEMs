@@ -44,7 +44,8 @@ export class AuthService {
     html: string;
     fallbackText: string;
   }) {
-    const from = this.configService.get<string>('SMTP_FROM') || '"DLEM" <noreply@dlem.mw>';
+    const from =
+      this.configService.get<string>('SMTP_FROM') || '"DLEM" <noreply@dlem.mw>';
 
     try {
       await this.transporter.sendMail({
@@ -53,14 +54,22 @@ export class AuthService {
         subject: options.subject,
         html: options.html,
       });
-      console.log(`\n[EMAIL SENT] ${options.subject} sent successfully to ${options.to}.`);
+      console.log(
+        `\n[EMAIL SENT] ${options.subject} sent successfully to ${options.to}.`,
+      );
     } catch (smtpError: any) {
-      console.warn(`\n[SMTP WARNING] Failed to send "${options.subject}" to ${options.to}: ${smtpError.message}`);
-      console.log(`\n\n-------------------------------------------------------------`);
+      console.warn(
+        `\n[SMTP WARNING] Failed to send "${options.subject}" to ${options.to}: ${smtpError.message}`,
+      );
+      console.log(
+        `\n\n-------------------------------------------------------------`,
+      );
       console.log(`[MOCK EMAIL SENT TO ${options.to}]`);
       console.log(`Subject: ${options.subject}`);
       console.log(`Body: ${options.fallbackText}`);
-      console.log(`-------------------------------------------------------------\n\n`);
+      console.log(
+        `-------------------------------------------------------------\n\n`,
+      );
     }
   }
 
@@ -96,7 +105,7 @@ export class AuthService {
       where: [
         { email: registerDto.email },
         { nationalId: registerDto.nationalId },
-        { employeeNumber: registerDto.employeeNumber }
+        { employeeNumber: registerDto.employeeNumber },
       ],
     });
 
@@ -221,7 +230,10 @@ export class AuthService {
     const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
       // Return a success message even if the user doesn't exist to prevent email enumeration
-      return { message: 'If that email address is in our database, we will send you an email to reset your password.' };
+      return {
+        message:
+          'If that email address is in our database, we will send you an email to reset your password.',
+      };
     }
 
     const resetToken = crypto.randomBytes(32).toString('hex');
@@ -251,7 +263,10 @@ export class AuthService {
       fallbackText: `You requested a password reset. Use this link to reset your password:\n${resetUrl}`,
     });
 
-    return { message: 'If that email address is in our database, we will send you an email to reset your password.' };
+    return {
+      message:
+        'If that email address is in our database, we will send you an email to reset your password.',
+    };
   }
 
   async resetPassword(token: string, newPassword: string) {
