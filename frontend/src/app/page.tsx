@@ -29,8 +29,8 @@ export default function LandingPage() {
             <a href="#banks">Partners</a>
           </div>
           <div className={styles.navCta}>
-            <Link href="/login" className="btn btn-ghost btn-sm">Sign In</Link>
-            <Link href="/register" className="btn btn-primary btn-sm">Get Started</Link>
+            <Link href="/user/login" className="btn btn-ghost btn-sm">Sign In</Link>
+            <Link href="/user/register" className="btn btn-primary btn-sm">Get Started</Link>
           </div>
         </div>
       </nav>
@@ -53,10 +53,10 @@ export default function LandingPage() {
             Malawi Police SACCO, and FINCA Malawi.
           </p>
           <div className={`${styles.heroActions} animate-fadeInUp animate-delay-3`}>
-            <Link href="/register" className="btn btn-primary btn-lg">
+            <Link href="/user/register" className="btn btn-primary btn-lg">
               Check My Eligibility <ArrowRight size={20} style={{ marginLeft: 8 }} />
             </Link>
-            <Link href="/login" className="btn btn-outline btn-lg">
+            <Link href="/user/login" className="btn btn-outline btn-lg">
               Sign In to Dashboard
             </Link>
           </div>
@@ -178,7 +178,7 @@ export default function LandingPage() {
             <p style={{ color: "var(--color-text-secondary)" }}>
               Join thousands of Malawians easing their banking experience digitally.
             </p>
-            <Link href="/register" className="btn btn-primary btn-lg">
+            <Link href="/user/register" className="btn btn-primary btn-lg">
               Create Free Account <ArrowRight size={20} style={{ marginLeft: 8 }} />
             </Link>
           </div>
@@ -197,8 +197,8 @@ export default function LandingPage() {
               Digital Loan Eligibility & Management System · Malawi · Prototype 2024
             </p>
             <div className={styles.footerLinks}>
-              <Link href="/login">Sign In</Link>
-              <Link href="/register">Register</Link>
+              <Link href="/user/login">Sign In</Link>
+              <Link href="/user/register">Register</Link>
             </div>
           </div>
         </div>

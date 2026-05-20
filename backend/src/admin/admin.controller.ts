@@ -11,7 +11,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { AdminService } from './admin.service';
 
-@Controller('admin')
+@Controller('admin-legacy')
 @UseGuards(AuthGuard('jwt'))
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
