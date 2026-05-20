@@ -44,6 +44,7 @@ export default function EditInstitutionPage() {
             civilServantMultiplier: c.civilServantMultiplier, privateMultiplier: c.privateMultiplier,
             selfEmployedMultiplier: c.selfEmployedMultiplier, saccoMemberMultiplier: c.saccoMemberMultiplier,
             requiresGuarantor: c.requiresGuarantor, requiresPayslip: c.requiresPayslip, notes: c.notes || "",
+            customCriteria: c.customCriteria || [],
           });
         }
         setProducts(d.products || []);
@@ -194,6 +195,55 @@ export default function EditInstitutionPage() {
                 <textarea value={criteriaForm.notes || ""} onChange={e => setCriteriaForm((f: any) => ({ ...f, notes: e.target.value }))} rows={4}
                   style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--ap-border)", borderRadius: "8px", padding: "0.625rem", color: "var(--ap-text)", width: "100%", outline: "none" }} />
               </label>
+
+              <div style={{ marginTop: "1.5rem" }}>
+                <h4 style={{ color: "var(--ap-text)", marginBottom: "0.75rem", fontSize: "0.95rem" }}>Custom Criteria</h4>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1rem" }}>
+                  {(criteriaForm.customCriteria || []).map((cc: any, i: number) => (
+                    <div key={i} style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+                      <input
+                        value={cc.name}
+                        onChange={e => {
+                          const updated = [...(criteriaForm.customCriteria || [])];
+                          updated[i].name = e.target.value;
+                          setCriteriaForm({ ...criteriaForm, customCriteria: updated });
+                        }}
+                        placeholder="Criteria Name"
+                        style={{ flex: 1, background: "rgba(255,255,255,0.05)", border: "1px solid var(--ap-border)", borderRadius: "8px", padding: "0.625rem 0.875rem", color: "var(--ap-text)", outline: "none" }}
+                      />
+                      <input
+                        value={cc.value}
+                        onChange={e => {
+                          const updated = [...(criteriaForm.customCriteria || [])];
+                          updated[i].value = e.target.value;
+                          setCriteriaForm({ ...criteriaForm, customCriteria: updated });
+                        }}
+                        placeholder="Value / Condition"
+                        style={{ flex: 2, background: "rgba(255,255,255,0.05)", border: "1px solid var(--ap-border)", borderRadius: "8px", padding: "0.625rem 0.875rem", color: "var(--ap-text)", outline: "none" }}
+                      />
+                      <button
+                        onClick={() => {
+                          const updated = (criteriaForm.customCriteria || []).filter((_: any, idx: number) => idx !== i);
+                          setCriteriaForm({ ...criteriaForm, customCriteria: updated });
+                        }}
+                        style={{ background: "none", border: "none", color: "var(--ap-danger)", cursor: "pointer", fontSize: "1.2rem" }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => {
+                      const updated = [...(criteriaForm.customCriteria || []), { name: "", value: "" }];
+                      setCriteriaForm({ ...criteriaForm, customCriteria: updated });
+                    }}
+                    className={styles.saveBtn}
+                    style={{ width: "fit-content", marginTop: "0.5rem", padding: "0.5rem 1rem", fontSize: "0.85rem", background: "rgba(255,255,255,0.08)", color: "var(--ap-text)" }}
+                  >
+                    + Add Custom Criteria
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 

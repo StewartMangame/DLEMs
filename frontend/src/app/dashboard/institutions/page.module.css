@@ -1,0 +1,512 @@
+/* ── Page shell ─────────────────────────────────────────────────────────── */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+  max-width: 960px;
+}
+
+.header { margin-bottom: 0; }
+
+/* ── Step indicator ─────────────────────────────────────────────────────── */
+.stepIndicator {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: var(--space-md);
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-shrink: 0;
+}
+
+.stepDot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 2px solid var(--color-border);
+  background: var(--color-bg-card);
+  color: var(--color-text-muted);
+  transition: all var(--transition-base);
+  flex-shrink: 0;
+}
+
+.stepDot.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+  box-shadow: 0 0 0 4px var(--color-primary-glow);
+}
+
+.stepDot.done {
+  border-color: var(--color-success);
+  background: var(--color-success);
+  color: #fff;
+}
+
+.stepLabel {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  transition: color var(--transition-fast);
+}
+
+.stepLabel.active { color: var(--color-primary); }
+.stepLabel.done   { color: var(--color-success); }
+
+.stepConnector {
+  flex: 1;
+  min-width: 24px;
+  height: 2px;
+  background: var(--color-border);
+  margin: 0 var(--space-sm);
+  flex-shrink: 0;
+  transition: background var(--transition-base);
+}
+
+.stepConnector.done { background: var(--color-success); }
+
+/* ── Institution grid ─────────────────────────────────────────────────────── */
+.institutionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-md);
+}
+
+.institutionCard {
+  padding: var(--space-lg);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  border: 2px solid var(--color-border);
+  position: relative;
+  overflow: hidden;
+}
+
+.institutionCard::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--color-primary-glow), transparent);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+  pointer-events: none;
+}
+
+.institutionCard:hover {
+  border-color: var(--color-border-active);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-primary);
+}
+
+.institutionCard.selected {
+  border-color: var(--color-primary);
+  background: linear-gradient(135deg, rgba(30,111,255,0.08), rgba(30,111,255,0.02));
+}
+
+.institutionCard.selected::after { opacity: 1; }
+
+.cardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: var(--space-md);
+  position: relative;
+  z-index: 1;
+}
+
+.cardIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(30,111,255,0.2), rgba(0,180,216,0.2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.checkmark {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  color: transparent;
+  transition: all var(--transition-base);
+  flex-shrink: 0;
+}
+
+.institutionCard.selected .checkmark {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.cardName {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+  position: relative;
+  z-index: 1;
+}
+
+.cardDesc {
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin-top: var(--space-sm);
+  position: relative;
+  z-index: 1;
+}
+
+.cardMeta {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  margin-top: var(--space-md);
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Product Selection ─────────────────────────────────────────────────────── */
+.productSelectionContainer {
+  margin-top: var(--space-lg);
+  padding-top: var(--space-md);
+  border-top: 1px dashed var(--color-border);
+  animation: fadeIn 0.3s ease;
+  position: relative;
+  z-index: 2;
+}
+
+.productGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-sm);
+}
+
+.productCard {
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-bg-alt);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.productCard:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-glow);
+}
+
+.productCard.selectedProduct {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.productCardLabel {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.productCardComingSoon {
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--color-border);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+/* ── SACCO intake form ─────────────────────────────────────────────────────── */
+.intakeCard {
+  border-left: 4px solid var(--color-primary);
+  animation: fadeInUp 0.35s ease forwards;
+}
+
+.intakeTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.intakeIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-glow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+/* ── Result section ─────────────────────────────────────────────────────────── */
+.resultCard {
+  animation: fadeInUp 0.4s ease forwards;
+  border-width: 2px;
+}
+
+.resultCard.eligible   { border-color: rgba(0, 200, 150, 0.5); background: linear-gradient(135deg, rgba(0,200,150,0.06), transparent); }
+.resultCard.notYet     { border-color: rgba(255, 184, 0, 0.5);  background: linear-gradient(135deg, rgba(255,184,0,0.06), transparent); }
+.resultCard.notEligible{ border-color: rgba(255, 59, 92, 0.5);  background: linear-gradient(135deg, rgba(255,59,92,0.06), transparent); }
+
+.resultHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.resultIcon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+
+.resultIcon.eligible    { background: rgba(0, 200, 150, 0.15); }
+.resultIcon.notYet      { background: rgba(255, 184, 0, 0.15);  }
+.resultIcon.notEligible { background: rgba(255, 59, 92, 0.15);  }
+
+.resultTitle { font-size: 1.3rem; font-weight: 800; margin-bottom: 2px; }
+.resultTitle.eligible    { color: var(--color-success); }
+.resultTitle.notYet      { color: var(--color-warning);  }
+.resultTitle.notEligible { color: var(--color-danger);   }
+
+.resultSubtitle { font-size: 0.9rem; color: var(--color-text-secondary); }
+
+.profileSummaryBar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: rgba(255,255,255,0.025);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-lg);
+}
+
+.summaryItem { text-align: center; }
+.summaryValue {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+.summaryLabel {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+}
+
+/* ── Loan type results grid ─────────────────────────────────────────────── */
+.loanTypeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+}
+
+.loanTypeItem {
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-md);
+  background: rgba(0, 200, 150, 0.07);
+  border: 1px solid rgba(0,200,150,0.2);
+}
+
+.loanTypeAmount {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--color-success);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.loanTypeName {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+}
+
+.loanTypeCap {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+}
+
+/* ── Repayment calculator ─────────────────────────────────────────────────── */
+.calcCard {
+  border-left: 4px solid var(--color-success);
+  animation: fadeInUp 0.4s ease forwards;
+}
+
+.calcGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+}
+
+.calcResults {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+  padding: var(--space-lg);
+  background: rgba(0,200,150,0.05);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(0,200,150,0.15);
+}
+
+.calcResultItem { text-align: center; }
+.calcResultValue { font-size: 1.25rem; font-weight: 800; color: var(--color-success); }
+.calcResultLabel { font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+
+.repaymentNote {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  background: rgba(255,184,0,0.08);
+  border-left: 3px solid var(--color-warning);
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  margin-top: var(--space-md);
+}
+
+.repaymentNoteIcon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+/* ── Fees Table ─────────────────────────────────────────────────────────────── */
+.feesSection {
+  margin-top: var(--space-lg);
+  padding-top: var(--space-md);
+  border-top: 1px dashed var(--color-border);
+}
+
+.feesTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.feesTable tr {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.feesTable tr:last-child {
+  border-bottom: none;
+}
+
+.feesTable td {
+  padding: 8px 4px;
+}
+
+.feesTable td:last-child {
+  text-align: right;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/* ── Comparison table ─────────────────────────────────────────────────────── */
+.compareCard { animation: fadeInUp 0.45s ease forwards; }
+
+.compareTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.compareTable tr { border-bottom: 1px solid var(--color-border); }
+.compareTable tr:last-child { border-bottom: none; }
+
+.compareTable td {
+  padding: 12px 16px;
+  vertical-align: top;
+}
+
+.compareTable td:first-child {
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  width: 45%;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.compareTable td:last-child {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/* ── Term selector ─────────────────────────────────────────────────────────── */
+.termSelector {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.termBtn {
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.termBtn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.termBtn.selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+}
+
+/* ── Action row ─────────────────────────────────────────────────────────────── */
+.actionRow {
+  display: flex;
+  gap: var(--space-md);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .profileSummaryBar { grid-template-columns: 1fr 1fr; }
+  .calcGrid          { grid-template-columns: 1fr; }
+  .calcResults       { grid-template-columns: 1fr 1fr; }
+  .stepLabel         { display: none; }
+}

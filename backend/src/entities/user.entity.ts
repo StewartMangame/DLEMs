@@ -48,6 +48,12 @@ export class User {
   accountStatus: string; // 'active' | 'suspended'
 
   @Column({ nullable: true })
+  resetPasswordToken: string;
+
+  @Column({ nullable: true })
+  resetPasswordExpires: Date;
+
+  @Column({ nullable: true })
   lastActiveAt: Date;
 
   @Column({ nullable: true })

@@ -88,6 +88,10 @@ export class InstitutionCriteria {
   @Column('text', { nullable: true })
   notes: string;
 
+  /** Dynamic custom criteria added by admin: { name: string, value: string }[] */
+  @Column('simple-json', { nullable: true, default: '[]' })
+  customCriteria: any;
+
   @UpdateDateColumn()
   updatedAt: Date;
 }
