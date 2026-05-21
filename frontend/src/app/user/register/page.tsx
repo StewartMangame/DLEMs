@@ -285,7 +285,7 @@ export default function RegisterPage() {
                   </div>
                 )}
                 <div className="form-help">
-                  A 6-digit verification code will be sent to this email after you submit.
+                  Your login details and notifications will be sent here.
                 </div>
               </div>
 
@@ -343,8 +343,8 @@ export default function RegisterPage() {
                 style={{ width: "100%", marginTop: 8 }}
               >
                 {loading
-                  ? <><span className="loading-spinner" /> Sending verification code…</>
-                  : "Continue — Send OTP →"}
+                  ? <><span className="loading-spinner" /> Creating Account…</>
+                  : "Create Account →"}
               </button>
             </form>
 

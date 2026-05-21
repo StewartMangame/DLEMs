@@ -35,9 +35,20 @@ export class AuthController {
   }
 
   @Post('register')
-  async register(@Body() body: RegisterDto) {
+  async register(
+    @Body() body: RegisterDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const result = await this.authService.register(body);
-    return result; // Does not set cookie, just returns message that OTP was sent
+
+    res.cookie('jwt', result.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 3600 * 1000 * 24, // 24 hours
+    });
+
+    return result;
   }
 
   @Post('verify-otp')

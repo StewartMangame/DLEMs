@@ -111,17 +111,38 @@ export class AuthService {
 
     if (existing) {
       if (existing.email === registerDto.email && !existing.isEmailVerified) {
-        // User exists but is unverified. Resend OTP and return.
-        // We also update their other details just in case they fixed a typo.
+        // Before updating, ensure new nationalId or employeeNumber aren't taken by OTHER users
+        const conflict = await this.userRepository.findOne({
+          where: [
+            { nationalId: registerDto.nationalId },
+            { employeeNumber: registerDto.employeeNumber },
+          ],
+        });
+        if (conflict && conflict.id !== existing.id) {
+          if (conflict.nationalId === registerDto.nationalId) {
+            throw new BadRequestException('National ID is already registered by another account');
+          }
+          if (conflict.employeeNumber === registerDto.employeeNumber) {
+            throw new BadRequestException('Employee Number is already registered by another account');
+          }
+        }
+
+        // User exists but is unverified. Verify them and log them in since OTP is disabled.
         existing.fullName = registerDto.fullName;
         existing.nationalId = registerDto.nationalId;
         existing.employeeNumber = registerDto.employeeNumber;
         existing.phone = registerDto.phone;
         existing.passwordHash = await bcrypt.hash(registerDto.password, 10);
+        existing.isEmailVerified = true;
         await this.userRepository.save(existing);
 
-        await this.generateAndSendOtp(existing.email);
-        return { message: 'OTP sent successfully to email' };
+        const payload = { sub: existing.id, role: existing.role };
+        const { passwordHash, ...safeUser } = existing;
+        return {
+          access_token: this.jwtService.sign(payload),
+          role: existing.role,
+          user: safeUser,
+        };
       }
 
       if (existing.email === registerDto.email) {
@@ -143,12 +164,16 @@ export class AuthService {
     user.phone = registerDto.phone;
     user.bank = registerDto.bank || null;
     user.role = 'customer';
-    user.isEmailVerified = false;
+    user.isEmailVerified = true;
     await this.userRepository.save(user);
 
-    await this.generateAndSendOtp(user.email);
-
-    return { message: 'OTP sent successfully to email' };
+    const payload = { sub: user.id, role: user.role };
+    const { passwordHash, ...safeUser } = user;
+    return {
+      access_token: this.jwtService.sign(payload),
+      role: user.role,
+      user: safeUser,
+    };
   }
 
   async generateAndSendOtp(email: string) {
