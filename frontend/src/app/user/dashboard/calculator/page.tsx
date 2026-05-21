@@ -1,49 +1,198 @@
 "use client";
+
 import { useState, useEffect, useMemo } from "react";
 import styles from "./page.module.css";
 import { calculateMonthlyInstallment } from "@/lib/eligibilityEngine";
 
+// Types and Interfaces
+interface Profile {
+  monthlySalary: number;
+  existingLoanAmount: number;
+}
+
+interface ScheduleRow {
+  month: number;
+  installment: number;
+  principal: number;
+  interest: number;
+  balance: number;
+}
+
+interface AffordabilityResult {
+  label: string;
+  color: string;
+  hint: string;
+}
+
+// Constants for loan parameters and thresholds
+const LOAN_CONFIG = {
+  MIN_AMOUNT: 50000,
+  MAX_AMOUNT: 50000000,
+  STEP_AMOUNT: 50000,
+  MIN_RATE: 10,
+  MAX_RATE: 36,
+  STEP_RATE: 0.5,
+  MIN_MONTHS: 6,
+  MAX_MONTHS: 60,
+  STEP_MONTHS: 6,
+  DTI_THRESHOLD_HIGH: 50,
+  DTI_THRESHOLD_MEDIUM: 30,
+} as const;
+
+// Helper functions
+const formatCurrency = (value: number): string => {
+  return value.toLocaleString(undefined, { maximumFractionDigits: 0 });
+};
+
+const calculateAffordability = (salary: number, totalNewDebt: number): AffordabilityResult => {
+  if (salary <= 0) {
+    return {
+      label: "Unknown",
+      color: "var(--color-text-muted)",
+      hint: "Complete profile for analysis",
+    };
+  }
+
+  const dti = (totalNewDebt / salary) * 100;
+
+  if (dti > LOAN_CONFIG.DTI_THRESHOLD_HIGH) {
+    return {
+      label: "High Risk / Unaffordable",
+      color: "var(--color-danger)",
+      hint: "DTI exceeds 50% threshold.",
+    };
+  }
+
+  if (dti >= LOAN_CONFIG.DTI_THRESHOLD_MEDIUM) {
+    return {
+      label: "Medium Risk / Caution",
+      color: "var(--color-warning)",
+      hint: "Approaching debt capacity limits.",
+    };
+  }
+
+  return {
+    label: "Low Risk / Affordable",
+    color: "var(--color-success)",
+    hint: "Well within your repayment capacity.",
+  };
+};
+
+const getInsightMessage = (dti: number): string => {
+  if (dti > LOAN_CONFIG.DTI_THRESHOLD_HIGH) {
+    return "Warning: You are over-leveraged for this amount.";
+  }
+  if (dti < 20) {
+    return "Good news! You qualify for higher loan capacity.";
+  }
+  return "Your request is within reasonable limits.";
+};
+
 export default function CalculatorPage() {
-  const [profile, setProfile] = useState<{ monthlySalary: number; existingLoanAmount: number } | null>(null);
+  // State variables and profile data
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [amount, setAmount] = useState(500000);
   const [rate, setRate] = useState(24);
   const [months, setMonths] = useState(24);
 
+  // Effects section to fetch user profile on component mount
   useEffect(() => {
-    fetch("/api/profile").then(r => r.json()).then(data => setProfile(data.profile));
+    const fetchProfile = async () => {
+      try {
+        const response = await fetch("/api/profile");
+        const data = await response.json();
+        setProfile(data.profile);
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+      }
+    };
+
+    fetchProfile();
   }, []);
 
-  const installment = calculateMonthlyInstallment(amount, rate, months);
-  const totalRepayable = installment * months;
+  // Memoized calculations for installment, total repayable, DTI, affordability, insights, and amortization schedule
+  const installment = useMemo(
+    () => calculateMonthlyInstallment(amount, rate, months),
+    [amount, rate, months]
+  );
 
-  // Affordability Logic
-  const salary = profile?.monthlySalary || 0;
-  const existingDebt = profile?.existingLoanAmount || 0;
+  const totalRepayable = useMemo(
+    () => installment * months,
+    [installment, months]
+  );
+
+  const salary = profile?.monthlySalary ?? 0;
+  const existingDebt = profile?.existingLoanAmount ?? 0;
   const totalNewDebt = existingDebt + installment;
   const projectedDti = salary > 0 ? (totalNewDebt / salary) * 100 : 0;
 
-  let affordability = { label: "Unknown", color: "var(--color-text-muted)", hint: "Complete profile for analysis" };
-  if (salary > 0) {
-    if (projectedDti > 50) affordability = { label: "High Risk / Unaffordable", color: "var(--color-danger)", hint: "DTI exceeds 50% threshold." };
-    else if (projectedDti >= 30) affordability = { label: "Medium Risk / Caution", color: "var(--color-warning)", hint: "Approaching debt capacity limits." };
-    else affordability = { label: "Low Risk / Affordable", color: "var(--color-success)", hint: "Well within your repayment capacity." };
-  }
+  const affordability = useMemo(
+    () => calculateAffordability(salary, totalNewDebt),
+    [salary, totalNewDebt]
+  );
 
-  const schedule: ScheduleRow[] = useMemo(() => {
+  const insightMessage = useMemo(
+    () => getInsightMessage(projectedDti),
+    [projectedDti]
+  );
+
+  const schedule = useMemo(() => {
     const rows: ScheduleRow[] = [];
     let balance = amount;
     const monthlyRate = rate / 100 / 12;
-    for (let i = 1; i <= months; i++) {
+
+    for (let month = 1; month <= months; month++) {
       const interest = balance * monthlyRate;
       const principal = installment - interest;
       balance = Math.max(0, balance - principal);
-      rows.push({ month: i, installment, interest, principal, balance });
+
+      rows.push({
+        month,
+        installment,
+        interest,
+        principal,
+        balance,
+      });
     }
+
     return rows;
   }, [amount, rate, months, installment]);
 
+  // Render helpers for sliders and other UI components
+  const renderSlider = (
+    label: string,
+    value: number,
+    setValue: (value: number) => void,
+    min: number,
+    max: number,
+    step: number,
+    formatValue: (value: number) => string,
+    minLabel: string,
+    maxLabel: string
+  ) => (
+    <div className="form-group">
+      <label className="form-label">
+        {label}: <strong>{formatValue(value)}</strong>
+      </label>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => setValue(Number(e.target.value))}
+        className={styles.slider}
+      />
+      <div className={styles.rangeLabels}>
+        <span>{minLabel}</span>
+        <span>{maxLabel}</span>
+      </div>
+    </div>
+  );
+
   return (
     <div className={styles.page}>
+      {/* Header */}
       <div className={styles.header}>
         <div>
           <h1 className="text-h2">Loan Calculator</h1>
@@ -53,78 +202,116 @@ export default function CalculatorPage() {
         </div>
       </div>
 
+      {/* Main Grid */}
       <div className={styles.grid}>
-        {/* Controls */}
+        {/* Controls Section */}
         <div className={`card ${styles.controls}`}>
-          <h2 className="text-h3" style={{ marginBottom: "var(--space-lg)" }}>Loan Parameters</h2>
+          <h2 className="text-h3" style={{ marginBottom: "var(--space-lg)" }}>
+            Loan Parameters
+          </h2>
 
-          <div className="form-group">
-            <label className="form-label">Loan Amount: <strong>MK {amount.toLocaleString()}</strong></label>
-            <input type="range" min={50000} max={50000000} step={50000}
-              value={amount} onChange={e => setAmount(Number(e.target.value))}
-              className={styles.slider} />
-            <div className={styles.rangeLabels}><span>MK 50K</span><span>MK 5M</span></div>
-          </div>
+          {renderSlider(
+            "Loan Amount",
+            amount,
+            setAmount,
+            LOAN_CONFIG.MIN_AMOUNT,
+            LOAN_CONFIG.MAX_AMOUNT,
+            LOAN_CONFIG.STEP_AMOUNT,
+            (v) => `MK ${formatCurrency(v)}`,
+            "MK 50K",
+            "MK 5M"
+          )}
 
-          <div className="form-group">
-            <label className="form-label">Annual Interest Rate: <strong>{rate}%</strong></label>
-            <input type="range" min={10} max={36} step={0.5}
-              value={rate} onChange={e => setRate(Number(e.target.value))}
-              className={styles.slider} />
-            <div className={styles.rangeLabels}><span>10%</span><span>36%</span></div>
-          </div>
+          {renderSlider(
+            "Annual Interest Rate",
+            rate,
+            setRate,
+            LOAN_CONFIG.MIN_RATE,
+            LOAN_CONFIG.MAX_RATE,
+            LOAN_CONFIG.STEP_RATE,
+            (v) => `${v}%`,
+            "10%",
+            "36%"
+          )}
 
-          <div className="form-group">
-            <label className="form-label">Repayment Period: <strong>{months} months ({(months / 12).toFixed(1)} yrs)</strong></label>
-            <input type="range" min={6} max={60} step={6}
-              value={months} onChange={e => setMonths(Number(e.target.value))}
-              className={styles.slider} />
-            <div className={styles.rangeLabels}><span>6 mo</span><span>60 mo</span></div>
-          </div>
+          {renderSlider(
+            "Repayment Period",
+            months,
+            setMonths,
+            LOAN_CONFIG.MIN_MONTHS,
+            LOAN_CONFIG.MAX_MONTHS,
+            LOAN_CONFIG.STEP_MONTHS,
+            (v) => `${v} months (${(v / 12).toFixed(1)} yrs)`,
+            "6 mo",
+            "60 mo"
+          )}
 
           {profile && (
             <div className={styles.affordabilityBox}>
-              <div className="text-xs" style={{ color: "var(--color-text-muted)", marginBottom: 4 }}>Affordability Indicator</div>
-              <div style={{ fontWeight: 700, color: affordability.color, fontSize: "1.1rem" }}>{affordability.label}</div>
-              <p className="text-xs" style={{ marginTop: 4 }}>{affordability.hint}</p>
+              <div
+                className="text-xs"
+                style={{ color: "var(--color-text-muted)", marginBottom: 4 }}
+              >
+                Affordability Indicator
+              </div>
+              <div
+                style={{
+                  fontWeight: 700,
+                  color: affordability.color,
+                  fontSize: "1.1rem",
+                }}
+              >
+                {affordability.label}
+              </div>
+              <p className="text-xs" style={{ marginTop: 4 }}>
+                {affordability.hint}
+              </p>
             </div>
           )}
         </div>
 
-        {/* Summary */}
+        {/* Summary Section */}
         <div className={styles.summary}>
           <div className={`card ${styles.summaryCard}`}>
             <div className="stat-label">Monthly Installment</div>
             <div className="stat-value text-gradient">
-              MK {installment.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              MK {formatCurrency(installment)}
             </div>
           </div>
+
           <div className={`card ${styles.summaryCard}`}>
             <div className="stat-label">Projected DTI</div>
             <div className="stat-value" style={{ color: affordability.color }}>
               {projectedDti.toFixed(1)}%
             </div>
           </div>
+
           <div className={`card ${styles.summaryCard}`}>
             <div className="stat-label">Total Repayable</div>
             <div className="stat-value">
-              MK {totalRepayable.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              MK {formatCurrency(totalRepayable)}
             </div>
           </div>
+
           <div className={`card ${styles.summaryCard} ${styles.insightsCard}`}>
-            <h4 className="text-xs" style={{ color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Insights</h4>
+            <h4
+              className="text-xs"
+              style={{
+                color: "var(--color-primary)",
+                textTransform: "uppercase",
+                letterSpacing: "0.1em",
+              }}
+            >
+              Insights
+            </h4>
             <p className="text-sm" style={{ marginTop: 8 }}>
-              {projectedDti > 50
-                ? "Warning: You are over-leveraged for this amount."
-                : projectedDti < 20
-                  ? "Good news! You qualify for higher loan capacity."
-                  : "Your request is within reasonable limits."}
+              {insightMessage}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Amortization Table */}
+      {/* Amortization Schedule */}
       <div className={styles.scheduleSection}>
         <h2 className="text-h3">Amortization Schedule</h2>
         <div className="table-wrapper">
@@ -139,18 +326,18 @@ export default function CalculatorPage() {
               </tr>
             </thead>
             <tbody>
-              {schedule.map(row => (
+              {schedule.map((row) => (
                 <tr key={row.month}>
                   <td>{row.month}</td>
-                  <td>{row.installment.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                  <td>{formatCurrency(row.installment)}</td>
                   <td style={{ color: "var(--color-success)" }}>
-                    {row.principal.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    {formatCurrency(row.principal)}
                   </td>
                   <td style={{ color: "var(--color-warning)" }}>
-                    {row.interest.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    {formatCurrency(row.interest)}
                   </td>
                   <td style={{ color: "var(--color-text-secondary)" }}>
-                    {row.balance.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    {formatCurrency(row.balance)}
                   </td>
                 </tr>
               ))}
@@ -160,12 +347,4 @@ export default function CalculatorPage() {
       </div>
     </div>
   );
-}
-
-interface ScheduleRow {
-  month: number;
-  installment: number;
-  principal: number;
-  interest: number;
-  balance: number;
 }
