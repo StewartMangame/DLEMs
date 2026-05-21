@@ -254,6 +254,9 @@ export class UpdateInstitutionDto {
 
 export class VerifyInstitutionDto {
   @IsOptional()
-  @IsDateString({}, { message: 'reviewDueDate must be a valid ISO date string' })
+  @IsDateString(
+    {},
+    { message: 'reviewDueDate must be a valid ISO date string' },
+  )
   reviewDueDate?: string;
 }

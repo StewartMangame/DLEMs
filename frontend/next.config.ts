@@ -1,9 +1,13 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const USER_API  = process.env.NEXT_PUBLIC_USER_API_URL  || "http://127.0.0.1:3001";
 const ADMIN_API = process.env.NEXT_PUBLIC_ADMIN_API_URL || "http://127.0.0.1:3001"; // same server, admin-panel prefix
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: path.resolve(__dirname, ".."),
+  },
   async rewrites() {
     return [
       {

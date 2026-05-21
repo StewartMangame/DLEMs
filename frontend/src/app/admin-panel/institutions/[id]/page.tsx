@@ -2,6 +2,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { ArrowLeft, CheckCircle2, XCircle, X } from "lucide-react";
+import { ModalCloseButton } from "../../icons";
 import styles from "../../institutions/institutions.module.css";
 
 export default function EditInstitutionPage() {
@@ -14,7 +16,7 @@ export default function EditInstitutionPage() {
   const [newDoc, setNewDoc] = useState("");
   const [products, setProducts] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState("");
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [tab, setTab] = useState<"general" | "criteria" | "docs" | "products">("general");
   const [showAddProduct, setShowAddProduct] = useState(false);
 
@@ -54,15 +56,15 @@ export default function EditInstitutionPage() {
   useEffect(() => { load(); }, [load]);
 
   async function save() {
-    setSaving(true); setMsg("");
+    setSaving(true); setFeedback(null);
     const body = { ...form, requiredDocuments: docs, criteria: criteriaForm };
     const res = await fetch(`/api/admin-panel/institutions/${id}`, {
       method: "PUT", headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
     setSaving(false);
-    if (res.ok) setMsg("✓ Changes saved successfully");
-    else setMsg("✗ Failed to save changes");
+    if (res.ok) setFeedback({ type: "success", text: "Changes saved successfully" });
+    else setFeedback({ type: "error", text: "Failed to save changes" });
   }
 
   function addDoc() {
@@ -84,7 +86,10 @@ export default function EditInstitutionPage() {
       <div className={styles.pageHeader}>
         <div>
           <div style={{ fontSize: "0.8rem", color: "var(--ap-text-muted)", marginBottom: "0.5rem" }}>
-            <Link href="/admin-panel/institutions" style={{ color: "var(--ap-accent-light)", textDecoration: "none" }}>← Institutions</Link>
+            <Link href="/admin-panel/institutions" style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", color: "var(--ap-accent-light)", textDecoration: "none" }}>
+              <ArrowLeft size={14} aria-hidden />
+              Institutions
+            </Link>
           </div>
           <h1 className={styles.pageTitle}>{data.name}</h1>
           <p className={styles.pageSub}>{data.type} · Last updated {new Date(data.updatedAt).toLocaleDateString()}</p>
@@ -97,7 +102,19 @@ export default function EditInstitutionPage() {
         </div>
       </div>
 
-      {msg && <div className={msg.startsWith("✓") ? styles.successMsg : styles.formError} style={{ marginBottom: "1rem" }}>{msg}</div>}
+      {feedback && (
+        <div
+          className={feedback.type === "success" ? styles.successMsg : styles.formError}
+          style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}
+        >
+          {feedback.type === "success" ? (
+            <CheckCircle2 size={16} aria-hidden />
+          ) : (
+            <XCircle size={16} aria-hidden />
+          )}
+          {feedback.text}
+        </div>
+      )}
 
       {/* Tab Bar */}
       <div style={{ display: "flex", gap: "0.25rem", marginBottom: "1.5rem", background: "var(--ap-surface)", borderRadius: "10px", padding: "4px", border: "1px solid var(--ap-border)", width: "fit-content" }}>
@@ -222,13 +239,15 @@ export default function EditInstitutionPage() {
                         style={{ flex: 2, background: "rgba(255,255,255,0.05)", border: "1px solid var(--ap-border)", borderRadius: "8px", padding: "0.625rem 0.875rem", color: "var(--ap-text)", outline: "none" }}
                       />
                       <button
+                        type="button"
                         onClick={() => {
                           const updated = (criteriaForm.customCriteria || []).filter((_: any, idx: number) => idx !== i);
                           setCriteriaForm({ ...criteriaForm, customCriteria: updated });
                         }}
-                        style={{ background: "none", border: "none", color: "var(--ap-danger)", cursor: "pointer", fontSize: "1.2rem" }}
+                        style={{ display: "flex", background: "none", border: "none", color: "var(--ap-danger)", cursor: "pointer", padding: "0.25rem" }}
+                        aria-label="Remove criteria"
                       >
-                        ✕
+                        <X size={16} />
                       </button>
                     </div>
                   ))}
@@ -255,7 +274,9 @@ export default function EditInstitutionPage() {
                 {docs.map((doc, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.75rem", background: "rgba(255,255,255,0.04)", borderRadius: "8px", padding: "0.625rem 1rem" }}>
                     <span style={{ flex: 1, color: "var(--ap-text)", fontSize: "0.875rem" }}>• {doc}</span>
-                    <button onClick={() => removeDoc(i)} style={{ background: "none", border: "none", color: "var(--ap-danger)", cursor: "pointer", fontSize: "1rem" }}>✕</button>
+                    <button type="button" onClick={() => removeDoc(i)} style={{ display: "flex", background: "none", border: "none", color: "var(--ap-danger)", cursor: "pointer", padding: "0.25rem" }} aria-label="Remove document">
+                      <X size={16} />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -336,7 +357,7 @@ function AddProductModal({ institutionId, onClose, onSaved }: { institutionId: n
       <div className={styles.modal}>
         <div className={styles.modalHeader}>
           <h2>Add Loan Product</h2>
-          <button className={styles.modalClose} onClick={onClose}>✕</button>
+          <ModalCloseButton className={styles.modalClose} onClose={onClose} />
         </div>
         <div className={styles.modalBody}>
           <div className={styles.formSection}>

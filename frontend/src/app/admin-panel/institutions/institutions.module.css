@@ -26,7 +26,7 @@
 }
 .searchInput { flex: 1; min-width: 180px; }
 .searchInput:focus, .select:focus { border-color: var(--ap-accent); }
-.select option { background: #1a1a2e; color: var(--ap-text); }
+.select option { background: var(--ap-option-bg); color: var(--ap-text); }
 
 .tableWrap {
   background: var(--ap-surface); border: 1px solid var(--ap-border);
@@ -34,7 +34,7 @@
 }
 .table { width: 100%; border-collapse: collapse; }
 .table th {
-  background: rgba(255,255,255,0.03);
+  background: var(--ap-table-header);
   padding: 0.875rem 1rem; text-align: left;
   font-size: 0.75rem; font-weight: 600; color: var(--ap-text-muted);
   text-transform: uppercase; letter-spacing: 0.06em;
@@ -45,7 +45,7 @@
   border-bottom: 1px solid var(--ap-border); vertical-align: middle;
 }
 .table tr:last-child td { border-bottom: none; }
-.table tbody tr:hover { background: rgba(255,255,255,0.02); }
+.table tbody tr:hover { background: var(--ap-table-row-hover); }
 
 .loadingCell, .emptyCell {
   text-align: center; padding: 3rem; color: var(--ap-text-muted);
@@ -69,13 +69,13 @@
 .actionRow { display: flex; gap: 0.4rem; flex-wrap: wrap; }
 .actionBtn {
   font-size: 0.75rem; font-weight: 600; padding: 4px 10px;
-  border-radius: 6px; border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px; border: 1px solid var(--ap-btn-outline);
   background: transparent; color: var(--ap-text-secondary);
   cursor: pointer; text-decoration: none; white-space: nowrap;
   transition: background 0.12s, color 0.12s;
   display: inline-flex; align-items: center;
 }
-.actionBtn:hover { background: rgba(255,255,255,0.08); color: var(--ap-text); }
+.actionBtn:hover { background: var(--ap-surface-hover); color: var(--ap-text); }
 .actionBtn.success { border-color: rgba(34,197,94,0.3); color: var(--ap-success); }
 .actionBtn.success:hover { background: rgba(34,197,94,0.1); }
 .actionBtn.danger { border-color: rgba(239,68,68,0.3); color: var(--ap-danger); }
@@ -98,15 +98,16 @@
 
 /* Modal */
 .modalBackdrop {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  position: fixed; inset: 0; background: var(--ap-overlay);
   z-index: 200; display: flex; align-items: center; justify-content: center;
   padding: 1rem;
 }
 .modal {
-  background: #12121f; border: 1px solid var(--ap-border);
+  background: var(--ap-sidebar-bg); border: 1px solid var(--ap-border);
   border-radius: 18px; width: 100%; max-width: 700px;
   max-height: 90vh; display: flex; flex-direction: column;
-  box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+  box-shadow: var(--ap-modal-shadow);
+  color: var(--ap-text);
 }
 .modalHeader {
   display: flex; justify-content: space-between; align-items: center;
@@ -114,8 +115,11 @@
 }
 .modalHeader h2 { font-size: 1.25rem; font-weight: 700; color: var(--ap-text); margin: 0; }
 .modalClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: none; border: none; color: var(--ap-text-muted);
-  font-size: 1.25rem; cursor: pointer; padding: 0.25rem;
+  cursor: pointer; padding: 0.25rem;
   transition: color 0.15s;
 }
 .modalClose:hover { color: var(--ap-danger); }
@@ -139,16 +143,16 @@
 .formSection label select,
 .formSection label textarea,
 .formSection textarea {
-  background: rgba(255,255,255,0.05); border: 1px solid var(--ap-border);
+  background: var(--ap-input-bg); border: 1px solid var(--ap-border);
   border-radius: 8px; padding: 0.625rem 0.875rem;
   color: var(--ap-text); font-size: 0.875rem; outline: none;
-  transition: border-color 0.15s; width: 100%;
+  transition: border-color 0.15s, background 0.15s; width: 100%;
 }
 .formSection label input:focus,
 .formSection label select:focus,
 .formSection label textarea:focus,
 .formSection textarea:focus { border-color: var(--ap-accent); }
-.formSection label select option { background: #1a1a2e; }
+.formSection label select option { background: var(--ap-option-bg); color: var(--ap-text); }
 
 .formGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.875rem; margin-bottom: 0.875rem; }
 
@@ -165,7 +169,7 @@
 }
 
 .cancelBtn {
-  background: transparent; border: 1px solid rgba(255,255,255,0.12);
+  background: transparent; border: 1px solid var(--ap-btn-outline);
   border-radius: 8px; padding: 0.625rem 1.25rem;
   color: var(--ap-text-muted); font-size: 0.875rem; cursor: pointer;
   transition: background 0.15s;

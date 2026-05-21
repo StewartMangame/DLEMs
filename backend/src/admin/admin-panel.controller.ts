@@ -13,11 +13,18 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminPanelService } from './admin-panel.service';
-import { CreateInstitutionDto, UpdateInstitutionDto, VerifyInstitutionDto } from './dto/institution.dto';
+import {
+  CreateInstitutionDto,
+  UpdateInstitutionDto,
+  VerifyInstitutionDto,
+} from './dto/institution.dto';
 import { CreateProductDto, UpdateProductDto } from './dto/loan-product.dto';
 import { CreateSaccoDto, UpdateSaccoDto } from './dto/sacco.dto';
 import { CreateContentDto, UpdateContentDto } from './dto/content.dto';
-import { CreateAnnouncementDto, UpdateAnnouncementDto } from './dto/announcement.dto';
+import {
+  CreateAnnouncementDto,
+  UpdateAnnouncementDto,
+} from './dto/announcement.dto';
 import { CreateAdminDto, UpdateAdminDto } from './dto/admin-user.dto';
 
 const Guard = () => UseGuards(AuthGuard('admin-jwt'));
@@ -74,7 +81,11 @@ export class AdminPanelController {
     @Param('id') id: string,
     @Body() body: VerifyInstitutionDto,
   ) {
-    return this.svc.verifyInstitution(req.user, +id, body.reviewDueDate ? new Date(body.reviewDueDate) : undefined);
+    return this.svc.verifyInstitution(
+      req.user,
+      +id,
+      body.reviewDueDate ? new Date(body.reviewDueDate) : undefined,
+    );
   }
 
   @Get('institutions/:id/changelog')
@@ -89,12 +100,20 @@ export class AdminPanelController {
   }
 
   @Post('institutions/:id/products')
-  createProduct(@Req() req: any, @Param('id') id: string, @Body() body: CreateProductDto) {
+  createProduct(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() body: CreateProductDto,
+  ) {
     return this.svc.createProduct(req.user, +id, body);
   }
 
   @Put('products/:id')
-  updateProduct(@Req() req: any, @Param('id') id: string, @Body() body: UpdateProductDto) {
+  updateProduct(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() body: UpdateProductDto,
+  ) {
     return this.svc.updateProduct(req.user, +id, body);
   }
 
@@ -110,7 +129,11 @@ export class AdminPanelController {
   }
 
   @Put('saccos/:id')
-  updateSacco(@Req() req: any, @Param('id') id: string, @Body() body: UpdateSaccoDto) {
+  updateSacco(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() body: UpdateSaccoDto,
+  ) {
     return this.svc.updateSacco(req.user, +id, body);
   }
 
@@ -188,7 +211,11 @@ export class AdminPanelController {
   }
 
   @Put('content/:id')
-  updateContent(@Req() req: any, @Param('id') id: string, @Body() body: UpdateContentDto) {
+  updateContent(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() body: UpdateContentDto,
+  ) {
     return this.svc.updateContent(req.user, +id, body);
   }
 
@@ -229,7 +256,11 @@ export class AdminPanelController {
   }
 
   @Put('admins/:id')
-  updateAdmin(@Req() req: any, @Param('id') id: string, @Body() body: UpdateAdminDto) {
+  updateAdmin(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() body: UpdateAdminDto,
+  ) {
     return this.svc.updateAdmin(req.user, +id, body);
   }
 
