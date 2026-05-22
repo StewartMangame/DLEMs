@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation";
 import styles from "../auth.module.css";
 import { Hexagon, Eye, EyeOff, Mail, ArrowLeft, User, IdCard, Badge, Phone, CheckCircle2 } from "lucide-react";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers 
 function isValidEmail(email: string): boolean {
   // RFC-compliant basic check: local@domain.tld
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
 }
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Types 
 type Step = "details" | "otp";
 
 interface FormData {
@@ -24,7 +24,7 @@ interface FormData {
   confirmPassword: string;
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// ─── Component 
 export default function RegisterPage() {
   const router = useRouter();
 
@@ -49,12 +49,12 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ── Field change ────────────────────────────────────────────────────────────
+  // ── Field change 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // ── Client-side validation ──────────────────────────────────────────────────
+  // ── Client-side validation 
   const emailValid = isValidEmail(form.email);
   const passwordsMatch = form.password === form.confirmPassword;
   const passwordLongEnough = form.password.length >= 8;
@@ -67,7 +67,7 @@ export default function RegisterPage() {
     passwordLongEnough &&
     passwordsMatch;
 
-  // ── Step 1 Submit — send registration + trigger OTP email ───────────────────
+  // ── Step 1 Submit — send registration + trigger OTP email 
   const handleDetailsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -109,7 +109,7 @@ export default function RegisterPage() {
     }
   };
 
-  // ── OTP digit input handling ────────────────────────────────────────────────
+  // ── OTP digit input handling 
   const handleOtpChange = (index: number, value: string) => {
     if (!/^\d?$/.test(value)) return; // digits only
     const next = [...otp];
@@ -128,7 +128,7 @@ export default function RegisterPage() {
     }
   };
 
-  // ── Step 2 Submit — verify OTP ──────────────────────────────────────────────
+  // ── Step 2 Submit — verify OTP
   const handleOtpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = otp.join("");
@@ -157,7 +157,7 @@ export default function RegisterPage() {
     }
   };
 
-  // ── Resend OTP ──────────────────────────────────────────────────────────────
+  // ── Resend OTP 
   const startResendCooldown = () => {
     setResendCooldown(60);
     const timer = setInterval(() => {
@@ -183,7 +183,7 @@ export default function RegisterPage() {
     }
   };
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  // ── Render 
   return (
     <div className={styles.page}>
       <div className={styles.bgOrb1} />
@@ -319,10 +319,25 @@ export default function RegisterPage() {
                 </div>
                 <div className="form-group">
                   <label className="form-label" htmlFor="confirmPassword">Confirm Password</label>
-                  <input id="confirmPassword" name="confirmPassword"
-                    type={showPw ? "text" : "password"} required className="form-input"
-                    autoComplete="new-password"
-                    placeholder="Repeat password" value={form.confirmPassword} onChange={handleChange} />
+                  <div style={{ position: "relative" }}>
+                    <input id="confirmPassword" name="confirmPassword"
+                      type={showPw ? "text" : "password"} required className="form-input"
+                      autoComplete="new-password"
+                      placeholder="Repeat password" value={form.confirmPassword} onChange={handleChange}
+                      style={{ paddingRight: "3rem" }}
+                    />
+                    <button type="button" onClick={() => setShowPw(p => !p)}
+                      style={{
+                        position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
+                        background: "none", border: "none", cursor: "pointer",
+                        color: "var(--color-text-muted)", fontSize: "1rem", padding: 4,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}
+                      aria-label={showPw ? "Hide password" : "Show password"}
+                    >
+                      {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                   {form.confirmPassword && !passwordsMatch && (
                     <div style={{ marginTop: 4, fontSize: "0.8rem", color: "var(--color-danger)" }}>
                       ✗ Passwords do not match
@@ -360,12 +375,12 @@ export default function RegisterPage() {
           <div className={`card ${styles.card} ${styles.cardNarrow}`}>
             <div className={styles.cardHeader}>
               <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
-                <div style={{ 
-                  background: 'var(--color-primary-glow)', 
-                  padding: '20px', 
-                  borderRadius: '50%', 
-                  display: 'flex', 
-                  alignItems: 'center', 
+                <div style={{
+                  background: 'var(--color-primary-glow)',
+                  padding: '20px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
                   justifyContent: 'center',
                   border: '1px solid var(--color-primary)'
                 }}>
@@ -459,7 +474,7 @@ export default function RegisterPage() {
             <div style={{ marginTop: "var(--space-md)", textAlign: "center" }}>
               <button
                 type="button"
-                onClick={() => { setStep("details"); setOtp(["","","","","",""]); setOtpError(""); }}
+                onClick={() => { setStep("details"); setOtp(["", "", "", "", "", ""]); setOtpError(""); }}
                 style={{
                   background: "none", border: "none", cursor: "pointer",
                   color: "var(--color-text-muted)", fontSize: "0.85rem",
@@ -476,7 +491,7 @@ export default function RegisterPage() {
   );
 }
 
-// ── Tiny helper: step progress dot ─────────────────────────────────────────────
+// ── Tiny helper: step progress dot 
 function stepDot(active: boolean): React.CSSProperties {
   return {
     width: active ? 24 : 8,

@@ -65,3 +65,25 @@
   border-radius: var(--radius-md);
   margin-top: var(--space-md);
 }
+
+.inputWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.inputWrapper input {
+  padding-right: 40px !important;
+}
+
+.fieldIcon {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+  pointer-events: none;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+}
+
