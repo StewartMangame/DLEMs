@@ -59,6 +59,7 @@ export default function EligibilityPage() {
   const { t } = useLanguage();
   const [profile, setProfile] = useState<FinancialProfile | null>(null);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [selectedInstitutionId, setSelectedInstitutionId] = useState<number | null>(null);
   const [loanAmount, setLoanAmount] = useState(500000);
   const [duration, setDuration] = useState(24);
   const [result, setResult] = useState<CompareResult | null>(null);
@@ -79,7 +80,7 @@ export default function EligibilityPage() {
     fetch("/api/eligibility/institutions")
       .then(res => readJsonResponse<Institution[] | { institutions?: Institution[] }>(res))
       .then(data => {
-        let list = Array.isArray(data) ? data : (data.institutions || []);
+        const list = Array.isArray(data) ? data : (data.institutions || []);
         // Only allow the 3 active institutions
         const allowed = ["FDH Bank", "Malawi Police SACCO", "FINCA Malawi"];
         setInstitutions(list.filter((i: Institution) => allowed.includes(i.name)));
@@ -90,7 +91,7 @@ export default function EligibilityPage() {
   }, []);
 
   const runCheck = async () => {
-    if (!profile) return;
+    if (!profile || !selectedInstitutionId) return;
     setLoading(true);
     setError(null);
 
@@ -100,7 +101,7 @@ export default function EligibilityPage() {
       employmentCategory: profile.employmentCategory || "private_sector",
       requestedAmount: loanAmount,
       requestedTermMonths: duration,
-      institutionIds: institutions.map(i => i.id),
+      institutionIds: [selectedInstitutionId],
     };
 
     try {
@@ -150,7 +151,7 @@ export default function EligibilityPage() {
         >
           {t("eligibility.parameters")}
         </h2>
-        <div className="grid-2">
+<div className="grid-2">
           <div className="form-group">
             <label className="form-label" htmlFor="loanAmount">
               {t("eligibility.amount")}
@@ -186,10 +187,30 @@ export default function EligibilityPage() {
             <div className="form-help">{t("eligibility.periodHelp")}</div>
           </div>
         </div>
+
+        <div className="form-group" style={{ marginTop: "var(--space-md)" }}>
+          <label className="form-label" htmlFor="institution">
+            {t("eligibility.selectInstitution", { default: "Select Institution" })}
+          </label>
+          <select
+            id="institution"
+            className="form-select"
+            value={selectedInstitutionId ?? ""}
+            onChange={event => setSelectedInstitutionId(Number(event.target.value))}
+          >
+            <option value="">-- {t("eligibility.chooseInstitution", { default: "Choose an institution" })} --</option>
+            {institutions.map(inst => (
+              <option key={inst.id} value={inst.id}>
+                {inst.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <button
           className="btn btn-primary btn-lg"
           onClick={runCheck}
-          disabled={!profile || loading}
+          disabled={!profile || loading || !selectedInstitutionId}
           style={{ marginTop: "var(--space-lg)", width: "100%" }}
         >
           {loading ? (
@@ -197,7 +218,7 @@ export default function EligibilityPage() {
               <span className="loading-spinner" /> {t("eligibility.loading")}
             </>
           ) : (
-            t("eligibility.compare")
+            t("eligibility.check")
           )}
         </button>
       </div>

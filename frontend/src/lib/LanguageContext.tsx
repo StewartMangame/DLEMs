@@ -39,7 +39,7 @@ const translations: Record<Language, TranslationMap> = {
     "eligibility.periodHelp": "Choose your comfortable repayment timeframe",
     "eligibility.months": "months",
     "eligibility.years": "years",
-    "eligibility.loading": "Scanning lenders...",
+    "eligibility.check": "Check Eligibility",
     "eligibility.compare": "Compare Eligible Lenders",
     "eligibility.summarySalary": "Based on your net salary of",
     "eligibility.summaryDeductions": "and existing deductions of",

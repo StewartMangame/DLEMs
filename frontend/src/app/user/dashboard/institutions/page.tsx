@@ -83,7 +83,7 @@ export default function InstitutionsPage() {
 
   // ── UI state ─────────────────────────────────────────────────────────────────
   const [step, setStep] = useState<Step>("select");
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // ── SACCO intake ─────────────────────────────────────────────────────────────
   const [saccoIntake, setSaccoIntake] = useState<SaccoIntakeData>({
@@ -164,18 +164,20 @@ export default function InstitutionsPage() {
   }, []);
 
   const selectedDisplayCards = useMemo(
-    () => displayCards.filter(i => selectedIds.includes(i.id)),
-    [selectedIds, displayCards]
+    () => (selectedId ? displayCards.filter(i => i.id === selectedId) : []),
+    [selectedId, displayCards]
   );
 
   const selectedInstitutions = useMemo(() => {
-    const insts = INSTITUTIONS.filter(i => selectedIds.includes(i.id) && i.type !== "SACCO");
-    if (selectedIds.includes("sacco-group") && saccoIntake.saccoName) {
+    const insts = selectedId
+      ? INSTITUTIONS.filter(i => i.id === selectedId && i.type !== "SACCO")
+      : [];
+    if (selectedId === "sacco-group" && saccoIntake.saccoName) {
       const selectedSacco = INSTITUTIONS.find(i => i.id === saccoIntake.saccoName);
       if (selectedSacco) insts.push(selectedSacco);
     }
     return insts;
-  }, [selectedIds, saccoIntake.saccoName]);
+  }, [selectedId, saccoIntake.saccoName]);
 
   const hasSaccoInstitution = useMemo(
     () => selectedDisplayCards.some(i => i.type === "SACCO" || i.membershipRequired),
@@ -195,13 +197,11 @@ export default function InstitutionsPage() {
   // Handlers
   // ─────────────────────────────────────────────────────────────────────────────
   function toggleInstitution(id: string) {
-    setSelectedIds(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    );
+    setSelectedId(prev => (prev === id ? null : id));
   }
 
   function handleProceedFromSelect() {
-    if (selectedIds.length === 0) return;
+    if (!selectedId) return;
     
     // Validate that institutions requiring product selection have a product selected
     const unselectedProductInsts = selectedDisplayCards.filter(
@@ -282,7 +282,7 @@ export default function InstitutionsPage() {
 
   function reset() {
     setStep("select");
-    setSelectedIds([]);
+    setSelectedId(null);
     setResults([]);
     setSaccoIntake({ isSaccoMember: false, saccoMembershipMonths: 0, saccoName: "" });
     setBankIntake({ hasCrbFlag: null });
@@ -304,8 +304,8 @@ export default function InstitutionsPage() {
         </h1>
         <p className="text-sm" style={{ color: "var(--color-text-secondary)", marginTop: 4 }}>
           {ny
-            ? "Sankhani malo omwe mukufuna kuyang'anira kuti mukuyenera ngongole kapena ai."
-            : "Select institutions to check your loan eligibility and compare terms side-by-side."}
+            ? "Sankhani malo amodzi kuti muyang'ane mwayi wanu wa ngongole." 
+            : "Select one institution to check your loan eligibility and compare terms."}
         </p>
       </div>
 
@@ -354,12 +354,12 @@ export default function InstitutionsPage() {
       {step === "select" && profileComplete && (
         <div>
           <h2 className="text-h3" style={{ marginBottom: "var(--space-md)" }}>
-            {ny ? "Sankhani malo omwe mukufuna" : "Choose institutions to check"}
+            {ny ? "Sankhani malo omwe mukufuna" : "Choose one institution to check"}
           </h2>
           <p className="text-sm" style={{ color: "var(--color-text-secondary)", marginBottom: "var(--space-lg)" }}>
             {ny
-              ? "Sankhani malo omwe mukufuna kuyang'anira. Mutha kusankha malo ambiri."
-              : "Select one or more institutions. You can check multiple at once."}
+              ? "Sankhani malo amodzi okha kuti muyang'ane."
+              : "Select one institution at a time. Only one can be checked."}
           </p>
 
           <div className={styles.institutionGrid}>
@@ -367,7 +367,7 @@ export default function InstitutionsPage() {
               <InstitutionCard
                 key={inst.id}
                 institution={inst}
-                selected={selectedIds.includes(inst.id)}
+                selected={selectedId === inst.id}
                 selectedProductId={selectedProducts[inst.id]}
                 onToggle={() => toggleInstitution(inst.id)}
                 onSelectProduct={(productId) => setSelectedProducts(p => ({ ...p, [inst.id]: productId }))}
@@ -379,14 +379,14 @@ export default function InstitutionsPage() {
           <div className={styles.actionRow} style={{ marginTop: "var(--space-xl)" }}>
             <button
               className="btn btn-primary btn-lg"
-              disabled={selectedIds.length === 0}
+              disabled={!selectedId}
               onClick={handleProceedFromSelect}
             >
-              {ny ? "Pita →" : `Check Eligibility for ${selectedIds.length} institution${selectedIds.length !== 1 ? "s" : ""} →`}
+              {ny ? "Pita →" : "Check Eligibility →"}
             </button>
-            {selectedIds.length === 0 && (
+            {!selectedId && (
               <span className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-                {ny ? "Sankhani malo oyamba" : "Select at least one institution to continue"}
+                {ny ? "Sankhani malo oyamba" : "Select one institution to continue"}
               </span>
             )}
           </div>
