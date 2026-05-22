@@ -1,24 +1,6 @@
 /* Admin Panel Layout Styles */
 /* CSS variables are defined in globals.css */
 
-:root[data-theme='light'] {
-  --ap-bg: #f4f7fb;
-  --ap-sidebar-bg: #ffffff;
-  --ap-sidebar-border: rgba(0, 0, 0, 0.1);
-  --ap-surface: #ffffff;
-  --ap-surface-hover: rgba(0, 0, 0, 0.04);
-  --ap-border: rgba(0, 0, 0, 0.1);
-  --ap-text: #0f172a;
-  --ap-text-muted: #64748b;
-  --ap-text-secondary: #475569;
-  --ap-accent: #6d28d9;
-  --ap-accent-light: #7c3aed;
-  --ap-success: #16a34a;
-  --ap-warning: #d97706;
-  --ap-danger: #dc2626;
-  --ap-info: #0284c7;
-}
-
 :global(*) {
   box-sizing: border-box;
 }
