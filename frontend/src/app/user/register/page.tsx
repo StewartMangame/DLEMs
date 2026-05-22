@@ -100,8 +100,7 @@ export default function RegisterPage() {
         return;
       }
 
-      // Transition to OTP verification step
-      setStep("otp");
+      setStep("otp");  // Step 1 done, show OTP input
     } catch {
       setError("Network error — could not reach the server. Please check your connection.");
     } finally {
