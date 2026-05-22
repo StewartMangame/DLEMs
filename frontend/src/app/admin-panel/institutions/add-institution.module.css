@@ -1,0 +1,712 @@
+/* ============================================================
+   Add Institution Form Styles
+   ============================================================ */
+
+.container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ────────────────────────────────────────────────────────
+   HEADER & ACTIONS
+   ──────────────────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.headerContent {
+  flex: 1;
+  min-width: 300px;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--ap-text);
+  margin: 0 0 0.5rem;
+}
+
+.subtitle {
+  font-size: 0.95rem;
+  color: var(--ap-text-muted);
+  margin: 0;
+}
+
+.headerActions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* ────────────────────────────────────────────────────────
+   ALERTS
+   ──────────────────────────────────────────────────────── */
+
+.errorAlert {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 10px;
+  padding: 1rem;
+  color: #fca5a5;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.infoBox {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 8px;
+  padding: 0.875rem 1rem;
+  margin-bottom: 1.5rem;
+  color: #7dd3fc;
+  font-size: 0.9rem;
+}
+
+.infoBox svg {
+  flex-shrink: 0;
+}
+
+/* ────────────────────────────────────────────────────────
+   FORM
+   ──────────────────────────────────────────────────────── */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ────────────────────────────────────────────────────────
+   SECTIONS
+   ──────────────────────────────────────────────────────── */
+
+.section {
+  border: 1px solid var(--ap-border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--ap-surface);
+  transition: background 0.15s;
+}
+
+.sectionHeader {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.025);
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.sectionHeader:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sectionTitle {
+  text-align: left;
+  flex: 1;
+}
+
+.sectionHeading {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--ap-text);
+  margin: 0 0 0.25rem;
+}
+
+.sectionDesc {
+  font-size: 0.85rem;
+  color: var(--ap-text-muted);
+  margin: 0;
+}
+
+.sectionContent {
+  padding: 1.5rem;
+  border-top: 1px solid var(--ap-border);
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 1000px;
+  }
+}
+
+/* ────────────────────────────────────────────────────────
+   GRID LAYOUTS
+   ──────────────────────────────────────────────────────── */
+
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.grid4 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+
+  .grid4 {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+}
+
+/* ────────────────────────────────────────────────────────
+   FORM GROUPS & LABELS
+   ──────────────────────────────────────────────────────── */
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ap-text);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.required {
+  color: var(--ap-danger);
+  font-weight: 700;
+}
+
+.optional {
+  font-size: 0.8rem;
+  color: var(--ap-text-muted);
+  font-weight: 400;
+}
+
+/* ────────────────────────────────────────────────────────
+   INPUTS
+   ──────────────────────────────────────────────────────── */
+
+.input,
+.textarea {
+  background: var(--ap-input-bg);
+  border: 1px solid var(--ap-border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: var(--ap-text);
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+  outline: none;
+}
+
+.input:hover,
+.textarea:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.input:focus,
+.textarea:focus {
+  border-color: var(--ap-accent);
+  background: rgba(124, 58, 237, 0.05);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+.inputError {
+  border-color: var(--ap-danger);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.inputError:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
+}
+
+/* ────────────────────────────────────────────────────────
+   TOGGLE SWITCH
+   ──────────────────────────────────────────────────────── */
+
+.toggleContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.toggleCheckbox {
+  display: none;
+}
+
+.toggleLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggleKnob {
+  position: relative;
+  width: 48px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  transition: background 0.3s;
+  display: block;
+}
+
+.toggleKnob::after {
+  content: '';
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  background: var(--ap-text);
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: left 0.3s;
+}
+
+.toggleCheckbox:checked + .toggleLabel .toggleKnob {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+}
+
+.toggleCheckbox:checked + .toggleLabel .toggleKnob::after {
+  left: 22px;
+}
+
+.toggleText {
+  font-size: 0.9rem;
+  color: var(--ap-text);
+  font-weight: 500;
+}
+
+/* ────────────────────────────────────────────────────────
+   CHECKBOXES
+   ──────────────────────────────────────────────────────── */
+
+.checkboxGroup {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--ap-border);
+  border-radius: 4px;
+  cursor: pointer;
+  background: var(--ap-input-bg);
+  accent-color: var(--ap-accent);
+  flex-shrink: 0;
+  transition: border-color 0.15s;
+}
+
+.checkbox:hover {
+  border-color: var(--ap-accent);
+}
+
+.checkboxLabel span {
+  font-size: 0.95rem;
+  color: var(--ap-text);
+  font-weight: 500;
+}
+
+/* ────────────────────────────────────────────────────────
+   LOGO UPLOAD
+   ──────────────────────────────────────────────────────── */
+
+.logoUploadContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.uploadBox {
+  border: 2px dashed var(--ap-border);
+  border-radius: 10px;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.015);
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.uploadBox:hover {
+  border-color: var(--ap-accent);
+  background: rgba(124, 58, 237, 0.03);
+}
+
+.uploadBox svg {
+  color: var(--ap-accent-light);
+  opacity: 0.8;
+}
+
+.uploadBox span {
+  display: block;
+  font-size: 0.95rem;
+  color: var(--ap-text);
+  font-weight: 500;
+}
+
+.uploadSubtext {
+  font-size: 0.8rem;
+  color: var(--ap-text-muted);
+  font-weight: 400;
+}
+
+.fileInput {
+  display: none;
+}
+
+.logoPreview {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--ap-border);
+}
+
+.logoPreview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.removeLogo {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(239, 68, 68, 0.9);
+  border: none;
+  border-radius: 4px;
+  color: white;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.removeLogo:hover {
+  background: var(--ap-danger);
+}
+
+/* ────────────────────────────────────────────────────────
+   MULTIPLIER TABLE
+   ──────────────────────────────────────────────────────── */
+
+.multiplierTable {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ap-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.tableHeader {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--ap-border);
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--ap-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--ap-border);
+  align-items: center;
+}
+
+.tableRow:last-child {
+  border-bottom: none;
+}
+
+.tableRow:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.tableCol1 {
+  font-size: 0.9rem;
+  color: var(--ap-text);
+  font-weight: 500;
+}
+
+.tableCol2 {
+  display: flex;
+  align-items: center;
+}
+
+.multiplierInput {
+  position: relative;
+  flex: 1;
+  max-width: 120px;
+}
+
+.multiplierUnit {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ap-text-muted);
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.multiplierInput input {
+  padding-right: 2.5rem;
+}
+
+/* ────────────────────────────────────────────────────────
+   TOOLTIPS
+   ──────────────────────────────────────────────────────── */
+
+.tooltipContainer {
+  position: relative;
+  display: inline-flex;
+}
+
+.tooltipTrigger {
+  background: none;
+  border: none;
+  color: var(--ap-accent-light);
+  cursor: help;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  transition: opacity 0.15s;
+  opacity: 0.8;
+}
+
+.tooltipTrigger:hover {
+  opacity: 1;
+}
+
+.tooltipContent {
+  position: absolute;
+  top: -8px;
+  left: 100%;
+  margin-left: 0.5rem;
+  background: rgba(0, 0, 0, 0.9);
+  color: #fff;
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  animation: fadeIn 0.15s;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ────────────────────────────────────────────────────────
+   ERROR TEXT
+   ──────────────────────────────────────────────────────── */
+
+.errorText {
+  font-size: 0.8rem;
+  color: var(--ap-danger);
+  font-weight: 500;
+}
+
+/* ────────────────────────────────────────────────────────
+   BUTTONS
+   ──────────────────────────────────────────────────────── */
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--ap-border);
+}
+
+.btnSave,
+.btnCancel {
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.875rem 1.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btnSave {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: white;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+}
+
+.btnSave:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.4);
+}
+
+.btnSave:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btnCancel {
+  background: transparent;
+  color: var(--ap-text-secondary);
+  border: 1px solid var(--ap-btn-outline);
+}
+
+.btnCancel:hover:not(:disabled) {
+  background: var(--ap-surface-hover);
+  color: var(--ap-text);
+}
+
+.btnSave:disabled,
+.btnCancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ────────────────────────────────────────────────────────
+   RESPONSIVE
+   ──────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .headerActions {
+    width: 100%;
+  }
+
+  .headerActions button {
+    flex: 1;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .sectionContent {
+    padding: 1rem;
+  }
+
+  .checkboxGroup {
+    grid-template-columns: 1fr;
+  }
+
+  .footer {
+    flex-direction: column-reverse;
+  }
+
+  .footer button {
+    width: 100%;
+  }
+
+  .multiplierTable {
+    border-radius: 0;
+  }
+
+  .tableHeader,
+  .tableRow {
+    gap: 0.5rem;
+    padding: 0.75rem 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0.75rem;
+  }
+
+  .title {
+    font-size: 1.25rem;
+  }
+
+  .grid2,
+  .grid4 {
+    grid-template-columns: 1fr;
+  }
+
+  .btnSave,
+  .btnCancel {
+    font-size: 0.875rem;
+    padding: 0.75rem 1.5rem;
+  }
+}
