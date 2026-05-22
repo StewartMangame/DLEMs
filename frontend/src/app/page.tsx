@@ -194,12 +194,9 @@ export default function LandingPage() {
               <span>DLEM</span>
             </div>
             <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-              Digital Loan Eligibility & Management System · Malawi · Prototype 2024
+              Digital Loan Eligibility & Management System · Malawi · Prototype 2026
             </p>
-            <div className={styles.footerLinks}>
-              <Link href="/user/login">Sign In</Link>
-              <Link href="/user/register">Register</Link>
-            </div>
+            
           </div>
         </div>
       </footer>

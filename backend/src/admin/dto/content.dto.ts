@@ -31,6 +31,6 @@ export class UpdateContentDto {
   chichewa?: string;
 
   @IsOptional()
-  @IsEnum(['placeholder', 'translated', 'reviewed'])
+  @IsEnum(['placeholder', 'translated', 'needs_review'])
   status?: ContentStatus;
 }

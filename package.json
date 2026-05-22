@@ -7,8 +7,7 @@
     "backend"
   ],
   "scripts": {
-    "dev": "npm run stop-dev && start cmd /c \"npm run dev:backend\" && npm run dev:frontend",
-    "stop-dev": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/stop-dev.ps1",
+    "dev": "concurrently -k -n backend,frontend \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:frontend": "npm run dev --workspace=frontend",
     "dev:backend": "npm run start:dev --workspace=backend",
     "build": "npm run build --workspace=frontend && npm run build --workspace=backend",
@@ -16,5 +15,8 @@
   },
   "dependencies": {
     "lucide-react": "^1.16.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }

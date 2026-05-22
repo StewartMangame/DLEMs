@@ -2,31 +2,20 @@ import {
   Injectable,
   UnauthorizedException,
   BadRequestException,
-  InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import * as nodemailer from 'nodemailer';
-import { ConfigService } from '@nestjs/config';
 import { User } from '../entities/user.entity';
 import { Otp } from '../entities/otp.entity';
 
 @Injectable()
 export class AuthService {
-  private get transporter(): nodemailer.Transporter {
-    return nodemailer.createTransport({
-      host: this.configService.get<string>('SMTP_HOST') || 'smtp.gmail.com',
-      port: this.configService.get<number>('SMTP_PORT') || 587,
-      secure: false,
-      auth: {
-        user: this.configService.get<string>('SMTP_USER') || '',
-        pass: this.configService.get<string>('SMTP_PASS') || '',
-      },
-    });
-  }
+  private transporter: nodemailer.Transporter;
 
   constructor(
     @InjectRepository(User)
@@ -35,7 +24,54 @@ export class AuthService {
     private otpRepository: Repository<Otp>,
     private jwtService: JwtService,
     private configService: ConfigService,
-  ) {}
+  ) {
+    const smtpPort = Number(this.configService.get<string>('SMTP_PORT') || 587);
+
+    this.transporter = nodemailer.createTransport({
+      host: this.configService.get<string>('SMTP_HOST') || 'smtp.gmail.com',
+      port: smtpPort,
+      secure: smtpPort === 465,
+      auth: {
+        user: this.configService.get<string>('SMTP_USER') || '',
+        pass: this.configService.get<string>('SMTP_PASS') || '',
+      },
+    });
+  }
+
+  private async sendEmail(options: {
+    to: string;
+    subject: string;
+    html: string;
+    fallbackText: string;
+  }) {
+    const from =
+      this.configService.get<string>('SMTP_FROM') || '"DLEM" <noreply@dlem.mw>';
+
+    try {
+      await this.transporter.sendMail({
+        from,
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+      });
+      console.log(
+        `\n[EMAIL SENT] ${options.subject} sent successfully to ${options.to}.`,
+      );
+    } catch (smtpError: any) {
+      console.warn(
+        `\n[SMTP WARNING] Failed to send "${options.subject}" to ${options.to}: ${smtpError.message}`,
+      );
+      console.log(
+        `\n\n-------------------------------------------------------------`,
+      );
+      console.log(`[MOCK EMAIL SENT TO ${options.to}]`);
+      console.log(`Subject: ${options.subject}`);
+      console.log(`Body: ${options.fallbackText}`);
+      console.log(
+        `-------------------------------------------------------------\n\n`,
+      );
+    }
+  }
 
   async getUserById(id: number) {
     return this.userRepository.findOne({ where: { id } });
@@ -69,23 +105,44 @@ export class AuthService {
       where: [
         { email: registerDto.email },
         { nationalId: registerDto.nationalId },
-        { employeeNumber: registerDto.employeeNumber }
+        { employeeNumber: registerDto.employeeNumber },
       ],
     });
 
     if (existing) {
       if (existing.email === registerDto.email && !existing.isEmailVerified) {
-        // User exists but is unverified. Resend OTP and return.
-        // We also update their other details just in case they fixed a typo.
+        // Before updating, ensure new nationalId or employeeNumber aren't taken by OTHER users
+        const conflict = await this.userRepository.findOne({
+          where: [
+            { nationalId: registerDto.nationalId },
+            { employeeNumber: registerDto.employeeNumber },
+          ],
+        });
+        if (conflict && conflict.id !== existing.id) {
+          if (conflict.nationalId === registerDto.nationalId) {
+            throw new BadRequestException('National ID is already registered by another account');
+          }
+          if (conflict.employeeNumber === registerDto.employeeNumber) {
+            throw new BadRequestException('Employee Number is already registered by another account');
+          }
+        }
+
+        // User exists but is unverified. Verify them and log them in since OTP is disabled.
         existing.fullName = registerDto.fullName;
         existing.nationalId = registerDto.nationalId;
         existing.employeeNumber = registerDto.employeeNumber;
         existing.phone = registerDto.phone;
         existing.passwordHash = await bcrypt.hash(registerDto.password, 10);
+        existing.isEmailVerified = true;
         await this.userRepository.save(existing);
 
-        const otpDelivery = await this.generateAndSendOtp(existing.email);
-        return this.otpResponse('OTP sent successfully to email', otpDelivery);
+        const payload = { sub: existing.id, role: existing.role };
+        const { passwordHash, ...safeUser } = existing;
+        return {
+          access_token: this.jwtService.sign(payload),
+          role: existing.role,
+          user: safeUser,
+        };
       }
 
       if (existing.email === registerDto.email) {
@@ -107,12 +164,16 @@ export class AuthService {
     user.phone = registerDto.phone;
     user.bank = registerDto.bank || null;
     user.role = 'customer';
-    user.isEmailVerified = false;
+    user.isEmailVerified = true;
     await this.userRepository.save(user);
 
-    const otpDelivery = await this.generateAndSendOtp(user.email);
-
-    return this.otpResponse('OTP sent successfully to email', otpDelivery);
+    const payload = { sub: user.id, role: user.role };
+    const { passwordHash, ...safeUser } = user;
+    return {
+      access_token: this.jwtService.sign(payload),
+      role: user.role,
+      user: safeUser,
+    };
   }
 
   async generateAndSendOtp(email: string) {
@@ -131,71 +192,16 @@ export class AuthService {
     });
     await this.otpRepository.save(otp);
 
-    const smtpUser = this.configService.get<string>('SMTP_USER') || '';
-    const smtpPass = this.configService.get<string>('SMTP_PASS') || '';
-    const smtpConfigured =
-      smtpUser.trim() !== '' &&
-      smtpPass.trim() !== '' &&
-      smtpUser !== 'your_email@gmail.com' &&
-      smtpPass !== 'your_app_password_here';
-
-    // Send Email
-    try {
-      const info = await this.transporter.sendMail({
-        from: this.configService.get<string>('SMTP_FROM') || '"DLEM" <noreply@dlem.mw>',
-        to: email,
-        subject: 'DLEM - Verify your account',
-        text: `Your DLEM verification code is ${code}. This code will expire in 10 minutes.`,
-        html: `
-          <h2>Account Verification</h2>
-          <p>Your verification code is: <strong>${code}</strong></p>
-          <p>This code will expire in 10 minutes.</p>
-        `,
-      });
-
-      if (info.rejected?.length) {
-        throw new Error(`Recipient rejected: ${info.rejected.join(', ')}`);
-      }
-
-      console.log(
-        `\n[EMAIL SENT] OTP code sent successfully to ${email} via SMTP.`,
-      );
-      console.log(
-        `[EMAIL DELIVERY] messageId=${info.messageId}; accepted=${info.accepted?.join(', ') || 'none'}; rejected=${info.rejected?.join(', ') || 'none'}; response=${info.response || 'n/a'}`,
-      );
-
-      return {
-        code,
-        sent: true,
-        messageId: info.messageId,
-        accepted: info.accepted || [],
-        rejected: info.rejected || [],
-      };
-    } catch (smtpError: any) {
-      console.warn(
-        `\n[SMTP WARNING] Failed to send email via SMTP: ${smtpError.message}`,
-      );
-
-      if (smtpConfigured) {
-        throw new InternalServerErrorException(
-          'Could not send verification email. Please check the email address and try again.',
-        );
-      }
-
-      console.log(`\n\n-------------------------------------------------------------`);
-      console.log(`[MOCK EMAIL SENT TO ${email}]`);
-      console.log(`Subject: DLEM - Verify your account`);
-      console.log(`Body: Your verification code is: ${code}`);
-      console.log(`-------------------------------------------------------------\n\n`);
-
-      return {
-        code,
-        sent: false,
-        error: smtpError.message,
-        accepted: [],
-        rejected: [email],
-      };
-    }
+    await this.sendEmail({
+      to: email,
+      subject: 'DLEM - Verify your account',
+      html: `
+        <h2>Account Verification</h2>
+        <p>Your verification code is: <strong>${code}</strong></p>
+        <p>This code will expire in 10 minutes.</p>
+      `,
+      fallbackText: `Your verification code is: ${code}`,
+    });
   }
 
   async verifyOtp(verifyDto: { email: string; otp: string }) {
@@ -241,34 +247,18 @@ export class AuthService {
       throw new BadRequestException('User is already verified');
     }
 
-    const otpDelivery = await this.generateAndSendOtp(email);
-    return this.otpResponse('OTP resent successfully', otpDelivery);
-  }
-
-  private otpResponse(message: string, delivery: any) {
-    const response: any = { message };
-    const devOtpEnabled = this.configService.get<string>('SHOW_DEV_OTP')?.toLowerCase() === 'true';
-    const showDevOtp = !delivery.sent || devOtpEnabled;
-
-    if (showDevOtp) {
-      response.devOtp = delivery.code;
-      response.emailDelivery = {
-        sent: delivery.sent,
-        accepted: delivery.accepted,
-        rejected: delivery.rejected,
-        messageId: delivery.messageId,
-        error: delivery.error,
-      };
-    }
-
-    return response;
+    await this.generateAndSendOtp(email);
+    return { message: 'OTP resent successfully' };
   }
 
   async forgotPassword(email: string) {
     const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
       // Return a success message even if the user doesn't exist to prevent email enumeration
-      return { message: 'If that email address is in our database, we will send you an email to reset your password.' };
+      return {
+        message:
+          'If that email address is in our database, we will send you an email to reset your password.',
+      };
     }
 
     const resetToken = crypto.randomBytes(32).toString('hex');
@@ -284,15 +274,24 @@ export class AuthService {
     user.resetPasswordExpires = passwordResetExpires;
     await this.userRepository.save(user);
 
-    // Mock sending email
     const resetUrl = `http://localhost:3000/reset-password?token=${resetToken}`;
-    console.log(`\n\n-------------------------------------------------------------`);
-    console.log(`[MOCK EMAIL SENT TO ${user.email}]`);
-    console.log(`Subject: Password Reset Request`);
-    console.log(`Body: You requested a password reset. Please go to this link to reset your password:\n${resetUrl}`);
-    console.log(`-------------------------------------------------------------\n\n`);
 
-    return { message: 'If that email address is in our database, we will send you an email to reset your password.' };
+    await this.sendEmail({
+      to: user.email,
+      subject: 'DLEM - Password reset request',
+      html: `
+        <h2>Password Reset</h2>
+        <p>You requested a password reset.</p>
+        <p><a href="${resetUrl}">Reset your password</a></p>
+        <p>This link will expire in 10 minutes.</p>
+      `,
+      fallbackText: `You requested a password reset. Use this link to reset your password:\n${resetUrl}`,
+    });
+
+    return {
+      message:
+        'If that email address is in our database, we will send you an email to reset your password.',
+    };
   }
 
   async resetPassword(token: string, newPassword: string) {
