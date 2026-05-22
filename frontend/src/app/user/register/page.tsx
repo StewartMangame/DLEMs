@@ -100,8 +100,8 @@ export default function RegisterPage() {
         return;
       }
 
-      // Bypass OTP for now as requested
-      router.push("/user/dashboard");
+      // Transition to OTP verification step
+      setStep("otp");
     } catch {
       setError("Network error — could not reach the server. Please check your connection.");
     } finally {
