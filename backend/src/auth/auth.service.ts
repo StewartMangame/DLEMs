@@ -127,22 +127,19 @@ export class AuthService {
           }
         }
 
-        // User exists but is unverified. Verify them and log them in since OTP is disabled.
+        // User exists but is unverified. Update details and send a fresh OTP.
         existing.fullName = registerDto.fullName;
         existing.nationalId = registerDto.nationalId;
         existing.employeeNumber = registerDto.employeeNumber;
         existing.phone = registerDto.phone;
         existing.passwordHash = await bcrypt.hash(registerDto.password, 10);
-        existing.isEmailVerified = true;
+        existing.isEmailVerified = false;
         await this.userRepository.save(existing);
 
-        const payload = { sub: existing.id, role: existing.role };
-        const { passwordHash, ...safeUser } = existing;
-        return {
-          access_token: this.jwtService.sign(payload),
-          role: existing.role,
-          user: safeUser,
-        };
+        // Send OTP to the email — the front-end will handle verification in the next step
+        await this.generateAndSendOtp(registerDto.email);
+
+        return { message: 'Account details updated. Please verify your email.' };
       }
 
       if (existing.email === registerDto.email) {
@@ -164,16 +161,13 @@ export class AuthService {
     user.phone = registerDto.phone;
     user.bank = registerDto.bank || null;
     user.role = 'customer';
-    user.isEmailVerified = true;
+    user.isEmailVerified = false;
     await this.userRepository.save(user);
 
-    const payload = { sub: user.id, role: user.role };
-    const { passwordHash, ...safeUser } = user;
-    return {
-      access_token: this.jwtService.sign(payload),
-      role: user.role,
-      user: safeUser,
-    };
+    // Send OTP to the email — the front-end will handle verification in the next step
+    await this.generateAndSendOtp(registerDto.email);
+
+    return { message: 'Account created successfully. Please verify your email.' };
   }
 
   async generateAndSendOtp(email: string) {

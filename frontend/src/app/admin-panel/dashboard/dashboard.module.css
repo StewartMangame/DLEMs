@@ -1,20 +1,32 @@
 /* ── Shared admin page styles ── */
-.page { display: flex; flex-direction: column; gap: 2rem; }
-
-.pageHeader { margin-bottom: 0.5rem; }
 .pageTitle {
-  font-size: 1.75rem; font-weight: 800; color: var(--ap-text);
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--ap-text);
   margin: 0 0 0.375rem;
 }
-.pageSub { font-size: 0.875rem; color: var(--ap-text-muted); margin: 0; }
+.pageSub {
+  font-size: 1.1rem;
+  color: var(--ap-text-muted);
+  margin: 0;
+  font-weight: 500;
+}
 
-.section { display: flex; flex-direction: column; gap: 1rem; }
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
 .sectionTitle {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 1rem; font-weight: 700; color: var(--ap-text-secondary);
-  text-transform: uppercase; letter-spacing: 0.06em; margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--ap-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0;
 }
 .sectionTitleIcon {
   color: var(--ap-accent-light);
@@ -38,9 +50,9 @@
   display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.875rem;
 }
 .statIcon { color: var(--ap-accent-light); flex-shrink: 0; }
-.statLabel { font-size: 0.8rem; color: var(--ap-text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
-.statValue { font-size: 2rem; font-weight: 800; line-height: 1; margin-bottom: 0.25rem; }
-.statSub { font-size: 0.75rem; color: var(--ap-text-muted); }
+.statLabel { font-size: 0.9rem; color: var(--ap-text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.statValue { font-size: 2.25rem; font-weight: 800; line-height: 1; margin-bottom: 0.25rem; }
+.statSub { font-size: 0.875rem; color: var(--ap-text-muted); }
 
 .topInstList {
   background: var(--ap-surface);
@@ -56,11 +68,11 @@
 }
 .topInstRow:last-child { border-bottom: none; }
 .topInstRow:hover { background: var(--ap-surface-hover); }
-.topInstRank { font-size: 1.25rem; font-weight: 800; color: var(--ap-accent-light); width: 2rem; }
-.topInstName { flex: 1; font-weight: 600; color: var(--ap-text); }
-.topInstCount { font-size: 0.85rem; color: var(--ap-text-muted); }
+.topInstRank { font-size: 1.5rem; font-weight: 800; color: var(--ap-accent-light); width: 2rem; }
+.topInstName { flex: 1; font-size: 1.1rem; font-weight: 600; color: var(--ap-text); }
+.topInstCount { font-size: 1rem; color: var(--ap-text-muted); }
 
-.emptyNote { padding: 2rem; text-align: center; color: var(--ap-text-muted); font-size: 0.875rem; }
+.emptyNote { padding: 2rem; text-align: center; color: var(--ap-text-muted); font-size: 1rem; }
 
 .quickLinks {
   display: grid;
@@ -75,8 +87,8 @@
   padding: 0.875rem 1.25rem;
   text-decoration: none;
   color: var(--ap-text);
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 1rem;
+  font-weight: 600;
   transition: background 0.15s, border-color 0.15s, transform 0.15s;
 }
 .quickLinkLabel { flex: 1; }
