@@ -112,7 +112,7 @@ const SEED_INSTITUTIONS = [
     },
   },
   {
-    name: 'Malawi Savings SACCO',
+    name: 'Malawi Police SACCO',
     type: 'SACCO',
     criteria: {
       interestRate: 18,
@@ -129,7 +129,7 @@ const SEED_INSTITUTIONS = [
       requiresGuarantor: false,
       requiresPayslip: false,
       notes:
-        'Exclusive to registered SACCO members. Best interest rate in the market at 18% p.a. Members can access up to 10× their net salary. Non-members not eligible.',
+        'Exclusive to registered police SACCO members. Best interest rate in the market at 18% p.a. Members can access up to 10× their net salary. Non-members not eligible.',
     },
   },
 ];
@@ -155,6 +155,12 @@ export class InstitutionsService {
    * If institutions already exist the seed is skipped entirely.
    */
   async seedDefaultInstitutions() {
+    const existingSavingsSacco = await this.instRepo.findOne({ where: { name: 'Malawi Savings SACCO' } });
+    if (existingSavingsSacco) {
+      existingSavingsSacco.name = 'Malawi Police SACCO';
+      await this.instRepo.save(existingSavingsSacco);
+    }
+
     const count = await this.instRepo.count();
     if (count > 0) return;
 
