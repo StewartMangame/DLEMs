@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { ModalCloseButton } from "../icons";
 import styles from "./institutions.module.css";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -223,7 +224,7 @@ function AddInstitutionModal({ onClose, onSaved }: { onClose: () => void; onSave
       <div className={styles.modal}>
         <div className={styles.modalHeader}>
           <h2>Add New Institution</h2>
-          <button className={styles.modalClose} onClick={onClose}>✕</button>
+          <ModalCloseButton className={styles.modalClose} onClose={onClose} />
         </div>
         <div className={styles.modalBody}>
           {error && <div className={styles.formError}>{error}</div>}

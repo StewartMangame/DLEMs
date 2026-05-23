@@ -1,5 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { AlertTriangle } from "lucide-react";
+import { ModalCloseButton } from "../icons";
 import styles from "../institutions/institutions.module.css";
 
 export default function AdminAccountsPage() {
@@ -138,7 +140,7 @@ function AddAdminModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
       <div className={styles.modal}>
         <div className={styles.modalHeader}>
           <h2>Add Admin Account</h2>
-          <button className={styles.modalClose} onClick={onClose}>✕</button>
+          <ModalCloseButton className={styles.modalClose} onClose={onClose} />
         </div>
         <div className={styles.modalBody}>
           {error && <div className={styles.formError}>{error}</div>}
@@ -153,8 +155,9 @@ function AddAdminModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
               </select></label>
               <label>Temporary Password *<input type="password" value={form.password} onChange={e => set("password", e.target.value)} /></label>
             </div>
-            <div style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.25)", borderRadius: "8px", padding: "0.75rem 1rem", fontSize: "0.8rem", color: "#fcd34d", marginTop: "0.5rem" }}>
-              ⚠ The admin will be prompted to change their password on first login.
+            <div style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.25)", borderRadius: "8px", padding: "0.75rem 1rem", fontSize: "0.8rem", color: "#fcd34d", marginTop: "0.5rem" }}>
+              <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: "2px" }} aria-hidden />
+              <span>The admin will be prompted to change their password on first login.</span>
             </div>
           </div>
         </div>

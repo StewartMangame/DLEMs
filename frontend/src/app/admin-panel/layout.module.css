@@ -81,9 +81,8 @@
 }
 
 .logoIcon {
-  font-size: 2rem;
   color: var(--ap-accent-light);
-  line-height: 1;
+  flex-shrink: 0;
 }
 
 .logoText {
@@ -133,9 +132,8 @@
 }
 
 .navIcon {
-  font-size: 1rem;
-  width: 20px;
-  text-align: center;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
 }
 
@@ -188,6 +186,10 @@
 
 .logoutBtn {
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
@@ -223,12 +225,12 @@
   color: var(--ap-text);
 }
 
-/* Mobile header */
-.mobileHeader {
-  display: none;
+/* Top bar */
+.topBar {
+  display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1rem 1.5rem;
+  padding: 0.875rem 2.5rem;
   background: var(--ap-sidebar-bg);
   border-bottom: 1px solid var(--ap-sidebar-border);
   position: sticky;
@@ -236,7 +238,22 @@
   z-index: 50;
 }
 
+.topBarTitle {
+  display: none;
+  font-weight: 700;
+  color: var(--ap-text);
+  flex: 1;
+}
+
+.topBarActions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .menuBtn {
+  display: none;
   background: none;
   border: none;
   color: var(--ap-text);
@@ -245,9 +262,29 @@
   padding: 0.25rem;
 }
 
-.mobileTitle {
-  font-weight: 700;
-  color: var(--ap-text);
+.themeToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--ap-border);
+  background: var(--ap-surface);
+  color: var(--ap-text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.themeToggle:hover {
+  background: var(--ap-surface-hover);
+  color: var(--ap-accent-light);
+  border-color: rgba(124, 58, 237, 0.35);
+}
+
+.themeIcon {
+  width: 20px;
+  height: 20px;
 }
 
 /* Responsive */
@@ -264,8 +301,14 @@
   .mainWrapper {
     margin-left: 0;
   }
-  .mobileHeader {
-    display: flex;
+  .menuBtn {
+    display: block;
+  }
+  .topBarTitle {
+    display: block;
+  }
+  .topBar {
+    padding: 1rem 1.5rem;
   }
   .main {
     padding: 1.5rem;

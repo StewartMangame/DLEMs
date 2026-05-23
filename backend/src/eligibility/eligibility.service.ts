@@ -10,6 +10,33 @@ import {
   InstitutionEligibilityResult,
 } from '../lib/eligibilityEngine';
 
+function toNumber(value: unknown, fallback = 0): number {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : fallback;
+}
+
+function toEmploymentTypes(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map(String).filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return parsed.map(String).filter(Boolean);
+      }
+    } catch {
+      return value
+        .split(',')
+        .map((type) => type.trim())
+        .filter(Boolean);
+    }
+  }
+
+  return [];
+}
+
 @Injectable()
 export class EligibilityService {
   constructor(
@@ -52,26 +79,32 @@ export class EligibilityService {
         institutionName: inst.name,
         institutionType: inst.type,
         criteria: {
-          interestRate: inst.criteria.interestRate,
-          maxDtiRatio: inst.criteria.maxDtiRatio,
-          minNetSalary: inst.criteria.minNetSalary,
-          minRepaymentMonths: inst.criteria.minRepaymentMonths,
-          maxRepaymentMonths: inst.criteria.maxRepaymentMonths,
-          processingFeePercent: inst.criteria.processingFeePercent,
-          civilServantMultiplier: inst.criteria.civilServantMultiplier,
-          privateMultiplier: inst.criteria.privateMultiplier,
-          selfEmployedMultiplier: inst.criteria.selfEmployedMultiplier,
-          saccoMemberMultiplier: inst.criteria.saccoMemberMultiplier,
-          eligibleEmploymentTypes: inst.criteria.eligibleEmploymentTypes ?? [],
+          interestRate: toNumber(inst.criteria.interestRate),
+          maxDtiRatio: toNumber(inst.criteria.maxDtiRatio, 0.4),
+          minNetSalary: toNumber(inst.criteria.minNetSalary),
+          minRepaymentMonths: toNumber(inst.criteria.minRepaymentMonths, 1),
+          maxRepaymentMonths: toNumber(inst.criteria.maxRepaymentMonths, 60),
+          processingFeePercent: toNumber(inst.criteria.processingFeePercent),
+          civilServantMultiplier: toNumber(
+            inst.criteria.civilServantMultiplier,
+          ),
+          privateMultiplier: toNumber(inst.criteria.privateMultiplier),
+          selfEmployedMultiplier: toNumber(
+            inst.criteria.selfEmployedMultiplier,
+          ),
+          saccoMemberMultiplier: toNumber(inst.criteria.saccoMemberMultiplier),
+          eligibleEmploymentTypes: toEmploymentTypes(
+            inst.criteria.eligibleEmploymentTypes,
+          ),
           requiresGuarantor: inst.criteria.requiresGuarantor,
           requiresPayslip: inst.criteria.requiresPayslip,
           notes: inst.criteria.notes ?? '',
         },
-        monthlyNetSalary,
-        existingMonthlyRepayments,
+        monthlyNetSalary: toNumber(monthlyNetSalary),
+        existingMonthlyRepayments: toNumber(existingMonthlyRepayments),
         employmentCategory,
-        requestedAmount,
-        requestedTermMonths,
+        requestedAmount: toNumber(requestedAmount),
+        requestedTermMonths: toNumber(requestedTermMonths, 1),
       }));
 
     return rankInstitutions(checkParams);

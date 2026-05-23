@@ -38,8 +38,7 @@ export class AuthController {
   async register(
     @Body() body: RegisterDto,
   ) {
-    const result = await this.authService.register(body);
-    return result; // Does not set cookie, just returns message that OTP was sent
+    return this.authService.register(body);
   }
 
   @Post('verify-otp')

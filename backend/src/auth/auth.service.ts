@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import * as nodemailer from 'nodemailer';
@@ -22,16 +23,54 @@ export class AuthService {
     @InjectRepository(Otp)
     private otpRepository: Repository<Otp>,
     private jwtService: JwtService,
+    private configService: ConfigService,
   ) {
+    const smtpPort = Number(this.configService.get<string>('SMTP_PORT') || 587);
+
     this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '587', 10),
-      secure: false,
+      host: this.configService.get<string>('SMTP_HOST') || 'smtp.gmail.com',
+      port: smtpPort,
+      secure: smtpPort === 465,
       auth: {
-        user: process.env.SMTP_USER || '',
-        pass: process.env.SMTP_PASS || '',
+        user: this.configService.get<string>('SMTP_USER') || '',
+        pass: this.configService.get<string>('SMTP_PASS') || '',
       },
     });
+  }
+
+  private async sendEmail(options: {
+    to: string;
+    subject: string;
+    html: string;
+    fallbackText: string;
+  }) {
+    const from =
+      this.configService.get<string>('SMTP_FROM') || '"DLEM" <noreply@dlem.mw>';
+
+    try {
+      await this.transporter.sendMail({
+        from,
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+      });
+      console.log(
+        `\n[EMAIL SENT] ${options.subject} sent successfully to ${options.to}.`,
+      );
+    } catch (smtpError: any) {
+      console.warn(
+        `\n[SMTP WARNING] Failed to send "${options.subject}" to ${options.to}: ${smtpError.message}`,
+      );
+      console.log(
+        `\n\n-------------------------------------------------------------`,
+      );
+      console.log(`[MOCK EMAIL SENT TO ${options.to}]`);
+      console.log(`Subject: ${options.subject}`);
+      console.log(`Body: ${options.fallbackText}`);
+      console.log(
+        `-------------------------------------------------------------\n\n`,
+      );
+    }
   }
 
   async getUserById(id: number) {
@@ -66,23 +105,41 @@ export class AuthService {
       where: [
         { email: registerDto.email },
         { nationalId: registerDto.nationalId },
-        { employeeNumber: registerDto.employeeNumber }
+        { employeeNumber: registerDto.employeeNumber },
       ],
     });
 
     if (existing) {
       if (existing.email === registerDto.email && !existing.isEmailVerified) {
-        // User exists but is unverified. Resend OTP and return.
-        // We also update their other details just in case they fixed a typo.
+        // Before updating, ensure new nationalId or employeeNumber aren't taken by OTHER users
+        const conflict = await this.userRepository.findOne({
+          where: [
+            { nationalId: registerDto.nationalId },
+            { employeeNumber: registerDto.employeeNumber },
+          ],
+        });
+        if (conflict && conflict.id !== existing.id) {
+          if (conflict.nationalId === registerDto.nationalId) {
+            throw new BadRequestException('National ID is already registered by another account');
+          }
+          if (conflict.employeeNumber === registerDto.employeeNumber) {
+            throw new BadRequestException('Employee Number is already registered by another account');
+          }
+        }
+
+        // User exists but is unverified. Update details and send a fresh OTP.
         existing.fullName = registerDto.fullName;
         existing.nationalId = registerDto.nationalId;
         existing.employeeNumber = registerDto.employeeNumber;
         existing.phone = registerDto.phone;
         existing.passwordHash = await bcrypt.hash(registerDto.password, 10);
+        existing.isEmailVerified = false;
         await this.userRepository.save(existing);
 
-        await this.generateAndSendOtp(existing.email);
-        return { message: 'OTP sent successfully to email' };
+        // Send OTP to the email — the front-end will handle verification in the next step
+        await this.generateAndSendOtp(registerDto.email);
+
+        return { message: 'Account details updated. Please verify your email.' };
       }
 
       if (existing.email === registerDto.email) {
@@ -107,9 +164,10 @@ export class AuthService {
     user.isEmailVerified = false;
     await this.userRepository.save(user);
 
-    await this.generateAndSendOtp(user.email);
+    // Send OTP to the email — the front-end will handle verification in the next step
+    await this.generateAndSendOtp(registerDto.email);
 
-    return { message: 'OTP sent successfully to email' };
+    return { message: 'Account created successfully. Please verify your email.' };
   }
 
   async generateAndSendOtp(email: string) {
@@ -128,27 +186,16 @@ export class AuthService {
     });
     await this.otpRepository.save(otp);
 
-    // Send Email
-    try {
-      await this.transporter.sendMail({
-        from: process.env.SMTP_FROM || '"DLEM" <noreply@dlem.mw>',
-        to: email,
-        subject: 'DLEM - Verify your account',
-        html: `
-          <h2>Account Verification</h2>
-          <p>Your verification code is: <strong>${code}</strong></p>
-          <p>This code will expire in 10 minutes.</p>
-        `,
-      });
-      console.log(`\n[EMAIL SENT] OTP code sent successfully to ${email} via SMTP.`);
-    } catch (smtpError: any) {
-      console.warn(`\n[SMTP WARNING] Failed to send email via SMTP: ${smtpError.message}`);
-      console.log(`\n\n-------------------------------------------------------------`);
-      console.log(`[MOCK EMAIL SENT TO ${email}]`);
-      console.log(`Subject: DLEM - Verify your account`);
-      console.log(`Body: Your verification code is: ${code}`);
-      console.log(`-------------------------------------------------------------\n\n`);
-    }
+    await this.sendEmail({
+      to: email,
+      subject: 'DLEM - Verify your account',
+      html: `
+        <h2>Account Verification</h2>
+        <p>Your verification code is: <strong>${code}</strong></p>
+        <p>This code will expire in 10 minutes.</p>
+      `,
+      fallbackText: `Your verification code is: ${code}`,
+    });
   }
 
   async verifyOtp(verifyDto: { email: string; otp: string }) {
@@ -202,7 +249,10 @@ export class AuthService {
     const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
       // Return a success message even if the user doesn't exist to prevent email enumeration
-      return { message: 'If that email address is in our database, we will send you an email to reset your password.' };
+      return {
+        message:
+          'If that email address is in our database, we will send you an email to reset your password.',
+      };
     }
 
     const resetToken = crypto.randomBytes(32).toString('hex');
@@ -218,15 +268,24 @@ export class AuthService {
     user.resetPasswordExpires = passwordResetExpires;
     await this.userRepository.save(user);
 
-    // Mock sending email
     const resetUrl = `http://localhost:3000/reset-password?token=${resetToken}`;
-    console.log(`\n\n-------------------------------------------------------------`);
-    console.log(`[MOCK EMAIL SENT TO ${user.email}]`);
-    console.log(`Subject: Password Reset Request`);
-    console.log(`Body: You requested a password reset. Please go to this link to reset your password:\n${resetUrl}`);
-    console.log(`-------------------------------------------------------------\n\n`);
 
-    return { message: 'If that email address is in our database, we will send you an email to reset your password.' };
+    await this.sendEmail({
+      to: user.email,
+      subject: 'DLEM - Password reset request',
+      html: `
+        <h2>Password Reset</h2>
+        <p>You requested a password reset.</p>
+        <p><a href="${resetUrl}">Reset your password</a></p>
+        <p>This link will expire in 10 minutes.</p>
+      `,
+      fallbackText: `You requested a password reset. Use this link to reset your password:\n${resetUrl}`,
+    });
+
+    return {
+      message:
+        'If that email address is in our database, we will send you an email to reset your password.',
+    };
   }
 
   async resetPassword(token: string, newPassword: string) {

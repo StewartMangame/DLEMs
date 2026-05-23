@@ -1,4 +1,11 @@
-import { IsString, IsOptional, IsDateString, IsEnum, MinLength, IsNumber } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsDateString,
+  IsEnum,
+  MinLength,
+  IsNumber,
+} from 'class-validator';
 
 type AnnouncementStatus = 'draft' | 'active' | 'expired';
 

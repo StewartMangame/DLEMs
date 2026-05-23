@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import styles from "../../institutions.module.css";
 
 export default function InstitutionChangelogPage() {
@@ -30,7 +31,10 @@ export default function InstitutionChangelogPage() {
       <div className={styles.pageHeader}>
         <div>
           <div style={{ fontSize: "0.8rem", color: "var(--ap-text-muted)", marginBottom: "0.5rem" }}>
-            <Link href="/admin-panel/institutions" style={{ color: "var(--ap-accent-light)", textDecoration: "none" }}>← Institutions</Link>
+            <Link href="/admin-panel/institutions" style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", color: "var(--ap-accent-light)", textDecoration: "none" }}>
+              <ArrowLeft size={14} aria-hidden />
+              Institutions
+            </Link>
             {" / "}
             <Link href={`/admin-panel/institutions/${id}`} style={{ color: "var(--ap-accent-light)", textDecoration: "none" }}>{instName}</Link>
           </div>
