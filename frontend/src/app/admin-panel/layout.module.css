@@ -1,16 +1,6 @@
 /* Admin Panel Layout Styles */
 /* CSS variables are defined in globals.css */
 
-:global(*) {
-  box-sizing: border-box;
-}
-:global(*::before) {
-  box-sizing: border-box;
-}
-:global(*::after) {
-  box-sizing: border-box;
-}
-
 .loadScreen {
   min-height: 100vh;
   display: flex;
@@ -273,7 +263,10 @@
   background: var(--ap-surface);
   color: var(--ap-text-secondary);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
 }
 
 .themeToggle:hover {
