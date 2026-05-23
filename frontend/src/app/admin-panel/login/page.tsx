@@ -1,46 +1,46 @@
-"use client";
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import styles from "./login.module.css";
+'use client';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import styles from './login.module.css';
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch("/api/admin-panel/auth/me", { credentials: "include" })
-      .then(res => {
-        if (res.ok) router.replace("/admin-panel/dashboard");
-      })
-      .catch(() => {});
-  }, [router]);
+    // Clear any stale JWT session when user visits login page
+    fetch('/api/admin-panel/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+    }).catch(() => {});
+  }, []);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setError("");
+    setError('');
     setLoading(true);
 
     try {
-      const res = await fetch("/api/admin-panel/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/admin-panel/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
-        credentials: "include",
+        credentials: 'include',
       });
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.message || "Invalid credentials");
+        setError(data.message || 'Invalid credentials');
         return;
       }
 
-      router.push("/admin-panel/dashboard");
+      router.push('/admin-panel/dashboard');
     } catch {
-      setError("Network error. Please try again.");
+      setError('Network error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -71,7 +71,7 @@ export default function AdminLoginPage() {
               autoComplete="email"
               required
               value={email}
-              onChange={event => setEmail(event.target.value)}
+              onChange={(event) => setEmail(event.target.value)}
               placeholder="admin@dlem.mw"
             />
           </div>
@@ -83,7 +83,7 @@ export default function AdminLoginPage() {
               autoComplete="current-password"
               required
               value={password}
-              onChange={event => setPassword(event.target.value)}
+              onChange={(event) => setPassword(event.target.value)}
               placeholder="Password"
             />
           </div>
@@ -91,7 +91,7 @@ export default function AdminLoginPage() {
           {error && <div className={styles.error}>{error}</div>}
 
           <button type="submit" className={styles.btn} disabled={loading}>
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
 

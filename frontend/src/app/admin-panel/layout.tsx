@@ -120,14 +120,20 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
             <button
               type="button"
               onClick={toggleTheme}
-              className={styles.themeToggle}
+              className="btn btn-ghost"
               aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-              title={theme === "dark" ? "Light mode" : "Dark mode"}
+              style={{ padding: "8px 16px", minWidth: "140px", display: 'flex', alignItems: 'center', gap: '8px' }}
             >
               {theme === "dark" ? (
-                <Sun className={styles.themeIcon} aria-hidden />
+                <>
+                  <Sun size={18} aria-hidden />
+                  Light mode
+                </>
               ) : (
-                <Moon className={styles.themeIcon} aria-hidden />
+                <>
+                  <Moon size={18} aria-hidden />
+                  Dark mode
+                </>
               )}
             </button>
           </div>

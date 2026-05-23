@@ -25,20 +25,20 @@ export default function EligibilityMonitorPage() {
         </div>
       </div>
 
-      {/* Volume stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem", marginBottom: "2rem" }}>
-        {[
-          { label: "Today", value: stats.today },
-          { label: "This Week", value: stats.thisWeek },
-          { label: "This Month", value: stats.thisMonth },
-          { label: "All Time", value: stats.allTime },
-        ].map(s => (
-          <div key={s.label} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", padding: "1.25rem 1.5rem" }}>
-            <div style={{ fontSize: "0.75rem", color: "var(--ap-text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.5rem" }}>{s.label}</div>
-            <div style={{ fontSize: "2rem", fontWeight: 800, color: "var(--ap-text)" }}>{Number(s.value || 0).toLocaleString()}</div>
-          </div>
-        ))}
-      </div>
+       {/* Volume stats */}
+       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1.25rem", marginBottom: "2rem" }}>
+         {[
+           { label: "Today", value: stats.today },
+           { label: "This Week", value: stats.thisWeek },
+           { label: "This Month", value: stats.thisMonth },
+           { label: "All Time", value: stats.allTime },
+         ].map(s => (
+           <div key={s.label} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", padding: "1.5rem 1.75rem" }}>
+             <div style={{ fontSize: "0.875rem", color: "var(--ap-text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.5rem" }}>{s.label}</div>
+             <div style={{ fontSize: "2.25rem", fontWeight: 800, color: "var(--ap-text)" }}>{Number(s.value || 0).toLocaleString()}</div>
+           </div>
+         ))}
+       </div>
 
       {/* By institution */}
       <h2 style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--ap-text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "1rem" }}>

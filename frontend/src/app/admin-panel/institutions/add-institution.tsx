@@ -1,11 +1,21 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { ChevronUp, ChevronDown, Info, Upload, X } from 'lucide-react';
+import {
+  Info,
+  Upload,
+  X,
+  Building2,
+  DollarSign,
+  Users,
+  Clock,
+  CheckCircle2,
+} from 'lucide-react';
 import styles from './add-institution.module.css';
 
 interface FormData {
   name: string;
+  type?: string;
   description: string;
   isActive: boolean;
   logo: File | null;
@@ -92,9 +102,8 @@ export default function AddInstitution() {
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [expandedSections, setExpandedSections] = useState({
-    basic: true,
-    parameters: true,
-    salary: true,
+    general: true,
+    loan: true,
     multipliers: true,
     repayment: true,
     conditions: true,
@@ -307,543 +316,545 @@ export default function AddInstitution() {
 
   return (
     <div className={styles.container}>
-      {/* Header */}
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <h1 className={styles.title}>Add New Institution</h1>
-          <p className={styles.subtitle}>
-            Create a new financial institution profile with eligibility criteria
-          </p>
+      {/* Page Header */}
+      <div className={styles.pageHeader}>
+        <div className={styles.headerInfo}>
+          <div className={styles.headerIcon}>
+            <Building2 size={32} />
+          </div>
+          <div>
+            <h1 className={styles.pageTitle}>Add New Financial Institution</h1>
+            <p className={styles.pageSubtitle}>
+              Create a new institution profile with loan criteria and
+              eligibility requirements
+            </p>
+          </div>
         </div>
         <div className={styles.headerActions}>
           <button
             onClick={handleCancel}
-            className={styles.btnCancel}
+            className={styles.btnSecondary}
             disabled={isSubmitting}
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
-            className={styles.btnSave}
+            className={styles.btnPrimary}
             disabled={isSubmitting}
           >
-            {isSubmitting ? 'Saving...' : 'Save Institution'}
+            {isSubmitting ? 'Creating...' : 'Create Institution'}
           </button>
         </div>
       </div>
 
       {/* Error Alert */}
       {errors.submit && (
-        <div className={styles.errorAlert}>
+        <div className={styles.alertError}>
           <span>{errors.submit}</span>
         </div>
       )}
 
       <form className={styles.form} onSubmit={handleSubmit}>
-        {/* SECTION 1: Basic Information */}
-        <Section
-          title="Basic Information"
-          description="Institution name, logo, and status"
-          expanded={expandedSections.basic}
-          onToggle={() => toggleSection('basic')}
-        >
-          <div className={styles.grid2}>
-            <div className={styles.formGroup}>
-              <label htmlFor="name" className={styles.label}>
-                Institution Name <span className={styles.required}>*</span>
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="e.g., FDH Bank"
-                className={`${styles.input} ${errors.name ? styles.inputError : ''}`}
-              />
-              {errors.name && (
-                <span className={styles.errorText}>{errors.name}</span>
-              )}
+        {/* ──────────────────────────────────────────────────────
+            SECTION 1: GENERAL INFORMATION
+            ────────────────────────────────────────────────────── */}
+        <div className={styles.card}>
+          <div className={styles.cardHeader}>
+            <div className={styles.cardHeaderContent}>
+              <h2 className={styles.cardTitle}>General Information</h2>
+              <p className={styles.cardDescription}>
+                Institution name, type, status and logo
+              </p>
+            </div>
+          </div>
+          <div className={styles.cardContent}>
+            <div className={styles.gridTwo}>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  Institution Name <span className={styles.required}>*</span>
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  placeholder="e.g., FDH Bank"
+                  className={`${styles.input} ${errors.name ? styles.inputError : ''}`}
+                />
+                {errors.name && (
+                  <span className={styles.errorText}>{errors.name}</span>
+                )}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  Institution Type <span className={styles.required}>*</span>
+                </label>
+                <select
+                  name="type"
+                  onChange={handleInputChange}
+                  className={styles.input}
+                >
+                  <option value="bank">Commercial Bank</option>
+                  <option value="sacco">SACCO</option>
+                  <option value="microfinance">Microfinance</option>
+                </select>
+              </div>
+            </div>
+
+            <div className={styles.gridTwo}>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Status</label>
+                <div className={styles.switchContainer}>
+                  <input
+                    type="checkbox"
+                    id="isActive"
+                    name="isActive"
+                    checked={formData.isActive}
+                    onChange={handleInputChange}
+                    className={styles.switchInput}
+                  />
+                  <label htmlFor="isActive" className={styles.switchLabel}>
+                    <span className={styles.switchToggle}></span>
+                    <span className={styles.switchText}>
+                      {formData.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  Institution Logo{' '}
+                  <span className={styles.optional}>(optional)</span>
+                </label>
+                <div className={styles.logoContainer}>
+                  {formData.logoPreview ? (
+                    <div className={styles.logoPreview}>
+                      <img src={formData.logoPreview} alt="Institution logo" />
+                      <button
+                        type="button"
+                        onClick={removeLogo}
+                        className={styles.removeLogo}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      className={styles.uploadZone}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload size={24} />
+                      <span>Click to upload</span>
+                      <span className={styles.uploadHint}>
+                        PNG, JPG, GIF (max 5MB)
+                      </span>
+                    </div>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    className={styles.fileInput}
+                  />
+                  {errors.logo && (
+                    <span className={styles.errorText}>{errors.logo}</span>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className={styles.formGroup}>
               <label className={styles.label}>
-                Status
-                <Tooltip text="Toggle to activate or deactivate this institution" />
+                Description <span className={styles.optional}>(optional)</span>
               </label>
-              <div className={styles.toggleContainer}>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                placeholder="Brief description of this institution and its loan products..."
+                rows={3}
+                className={styles.textarea}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* ──────────────────────────────────────────────────────
+            SECTION 2: LOAN CRITERIA
+            ────────────────────────────────────────────────────── */}
+        <div className={styles.card}>
+          <div className={styles.cardHeader}>
+            <div className={styles.cardHeaderContent}>
+              <div className={styles.iconBadge}>
+                <DollarSign size={18} />
+              </div>
+              <div>
+                <h2 className={styles.cardTitle}>Loan Criteria</h2>
+                <p className={styles.cardDescription}>
+                  Interest, fees, minimum salary, and debt ratios
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className={styles.cardContent}>
+            <div className={styles.gridTwo}>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  Minimum Net Salary (MWK){' '}
+                  <span className={styles.required}>*</span>
+                </label>
+                <input
+                  type="number"
+                  name="minNetMonthlySalary"
+                  value={formData.minNetMonthlySalary}
+                  onChange={handleInputChange}
+                  step="1000"
+                  min="0"
+                  placeholder="50000"
+                  className={`${styles.input} ${errors.minNetMonthlySalary ? styles.inputError : ''}`}
+                />
+                {errors.minNetMonthlySalary && (
+                  <span className={styles.errorText}>
+                    {errors.minNetMonthlySalary}
+                  </span>
+                )}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  Debt-to-Income Cap (%){' '}
+                  <span className={styles.required}>*</span>
+                </label>
+                <input
+                  type="number"
+                  name="maxDebtToIncomeRatio"
+                  value={formData.maxDebtToIncomeRatio}
+                  onChange={handleInputChange}
+                  step="1"
+                  min="0"
+                  max="100"
+                  placeholder="30"
+                  className={`${styles.input} ${errors.maxDebtToIncomeRatio ? styles.inputError : ''}`}
+                />
+                {errors.maxDebtToIncomeRatio && (
+                  <span className={styles.errorText}>
+                    {errors.maxDebtToIncomeRatio}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className={styles.gridTwo}>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  Interest Rate (% p.a.){' '}
+                  <span className={styles.required}>*</span>
+                </label>
+                <input
+                  type="number"
+                  name="interestRate"
+                  value={formData.interestRate}
+                  onChange={handleInputChange}
+                  step="0.1"
+                  min="0"
+                  placeholder="15"
+                  className={`${styles.input} ${errors.interestRate ? styles.inputError : ''}`}
+                />
+                {errors.interestRate && (
+                  <span className={styles.errorText}>
+                    {errors.interestRate}
+                  </span>
+                )}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  Processing Fee (%){' '}
+                  <span className={styles.optional}>(optional)</span>
+                </label>
+                <input
+                  type="number"
+                  name="processingFee"
+                  value={formData.processingFee}
+                  onChange={handleInputChange}
+                  step="0.1"
+                  min="0"
+                  placeholder="2"
+                  className={`${styles.input} ${errors.processingFee ? styles.inputError : ''}`}
+                />
+              </div>
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>
+                Eligible Employment Types{' '}
+                <span className={styles.required}>*</span>
+              </label>
+              <div className={styles.checkboxGrid}>
+                {EMPLOYMENT_TYPES.map((type) => (
+                  <label key={type.value} className={styles.checkboxLabel}>
+                    <input
+                      type="checkbox"
+                      checked={formData.eligibleEmploymentTypes.includes(
+                        type.value,
+                      )}
+                      onChange={() => handleEmploymentTypeChange(type.value)}
+                      className={styles.checkbox}
+                    />
+                    <span>{type.label}</span>
+                  </label>
+                ))}
+              </div>
+              {errors.eligibleEmploymentTypes && (
+                <span className={styles.errorText}>
+                  {errors.eligibleEmploymentTypes}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ──────────────────────────────────────────────────────
+            SECTION 3: SALARY MULTIPLIERS (PROMINENT)
+            ────────────────────────────────────────────────────── */}
+        <div className={styles.cardHighlight}>
+          <div className={styles.cardHeader}>
+            <div className={styles.cardHeaderContent}>
+              <div className={styles.iconBadgeHighlight}>
+                <Users size={18} />
+              </div>
+              <div>
+                <h2 className={styles.cardTitle}>Salary Multipliers</h2>
+                <p className={styles.cardDescription}>
+                  Maximum loan amount = Salary × Multiplier (e.g., 50,000 MK × 4
+                  = 200,000 MK max loan)
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className={styles.cardContent}>
+            <div className={styles.multiplierTableContainer}>
+              <table className={styles.multiplierTable}>
+                <thead>
+                  <tr>
+                    <th>Employment Type</th>
+                    <th>Multiplier</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {MULTIPLIER_FIELDS.map((field) => (
+                    <tr key={field.key}>
+                      <td className={styles.multiplierLabel}>{field.label}</td>
+                      <td className={styles.multiplierValue}>
+                        <div className={styles.multiplierInputGroup}>
+                          <input
+                            type="number"
+                            value={
+                              formData.multipliers[
+                                field.key as keyof typeof formData.multipliers
+                              ]
+                            }
+                            onChange={(e) =>
+                              handleMultiplierChange(
+                                field.key as keyof typeof formData.multipliers,
+                                parseFloat(e.target.value) || 0,
+                              )
+                            }
+                            step="0.5"
+                            min="0"
+                            className={styles.multiplierInput}
+                          />
+                          <span className={styles.multiplierUnit}>x</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {/* ──────────────────────────────────────────────────────
+            SECTION 4: REPAYMENT TERMS
+            ────────────────────────────────────────────────────── */}
+        <div className={styles.card}>
+          <div className={styles.cardHeader}>
+            <div className={styles.cardHeaderContent}>
+              <div className={styles.iconBadge}>
+                <Clock size={18} />
+              </div>
+              <div>
+                <h2 className={styles.cardTitle}>Repayment Terms</h2>
+                <p className={styles.cardDescription}>
+                  Minimum and maximum loan duration
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className={styles.cardContent}>
+            <div className={styles.gridTwo}>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  Minimum Repayment (months){' '}
+                  <span className={styles.required}>*</span>
+                </label>
+                <input
+                  type="number"
+                  name="minRepaymentTerm"
+                  value={formData.minRepaymentTerm}
+                  onChange={handleInputChange}
+                  step="1"
+                  min="1"
+                  placeholder="6"
+                  className={`${styles.input} ${errors.minRepaymentTerm ? styles.inputError : ''}`}
+                />
+                {errors.minRepaymentTerm && (
+                  <span className={styles.errorText}>
+                    {errors.minRepaymentTerm}
+                  </span>
+                )}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  Maximum Repayment (months){' '}
+                  <span className={styles.required}>*</span>
+                </label>
+                <input
+                  type="number"
+                  name="maxRepaymentTerm"
+                  value={formData.maxRepaymentTerm}
+                  onChange={handleInputChange}
+                  step="1"
+                  min="1"
+                  placeholder="60"
+                  className={`${styles.input} ${errors.maxRepaymentTerm ? styles.inputError : ''}`}
+                />
+                {errors.maxRepaymentTerm && (
+                  <span className={styles.errorText}>
+                    {errors.maxRepaymentTerm}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ──────────────────────────────────────────────────────
+            SECTION 5: REQUIREMENTS & CONDITIONS
+            ────────────────────────────────────────────────────── */}
+        <div className={styles.card}>
+          <div className={styles.cardHeader}>
+            <div className={styles.cardHeaderContent}>
+              <div className={styles.iconBadge}>
+                <CheckCircle2 size={18} />
+              </div>
+              <div>
+                <h2 className={styles.cardTitle}>Features & Requirements</h2>
+                <p className={styles.cardDescription}>
+                  Special conditions for eligibility
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className={styles.cardContent}>
+            <div className={styles.checkboxGrid}>
+              <label className={styles.checkboxLabel}>
                 <input
                   type="checkbox"
-                  id="isActive"
-                  name="isActive"
-                  checked={formData.isActive}
+                  name="requiresGuarantor"
+                  checked={formData.requiresGuarantor}
                   onChange={handleInputChange}
-                  className={styles.toggleCheckbox}
+                  className={styles.checkbox}
                 />
-                <label htmlFor="isActive" className={styles.toggleLabel}>
-                  <span className={styles.toggleKnob}></span>
-                  <span className={styles.toggleText}>
-                    {formData.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="description" className={styles.label}>
-              Short Description{' '}
-              <span className={styles.optional}>(optional)</span>
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              placeholder="Describe this institution and its loan offerings..."
-              rows={3}
-              className={styles.textarea}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
-              Institution Logo{' '}
-              <span className={styles.optional}>(optional)</span>
-            </label>
-            <div className={styles.logoUploadContainer}>
-              {formData.logoPreview ? (
-                <div className={styles.logoPreview}>
-                  <img src={formData.logoPreview} alt="Institution logo" />
-                  <button
-                    type="button"
-                    onClick={removeLogo}
-                    className={styles.removeLogo}
-                    title="Remove logo"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              ) : (
-                <div
-                  className={styles.uploadBox}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Upload size={32} />
-                  <span>Click to upload or drag and drop</span>
-                  <span className={styles.uploadSubtext}>
-                    PNG, JPG or GIF (max. 5MB)
-                  </span>
-                </div>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleLogoUpload}
-                className={styles.fileInput}
-              />
-              {errors.logo && (
-                <span className={styles.errorText}>{errors.logo}</span>
-              )}
-            </div>
-          </div>
-        </Section>
-
-        {/* SECTION 2: Loan Parameters */}
-        <Section
-          title="Loan Parameters"
-          description="Set interest rate, fees, and debt-to-income limits"
-          expanded={expandedSections.parameters}
-          onToggle={() => toggleSection('parameters')}
-        >
-          <div className={styles.grid4}>
-            <div className={styles.formGroup}>
-              <label htmlFor="interestRate" className={styles.label}>
-                Interest Rate (%)
-                <Tooltip text="Annual interest rate charged on loans" />
-                <span className={styles.required}>*</span>
+                <span>Requires Guarantor</span>
               </label>
-              <input
-                type="number"
-                id="interestRate"
-                name="interestRate"
-                value={formData.interestRate}
-                onChange={handleInputChange}
-                step="0.1"
-                min="0"
-                className={`${styles.input} ${errors.interestRate ? styles.inputError : ''}`}
-              />
-              {errors.interestRate && (
-                <span className={styles.errorText}>{errors.interestRate}</span>
-              )}
+
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  name="requiresPayslip"
+                  checked={formData.requiresPayslip}
+                  onChange={handleInputChange}
+                  className={styles.checkbox}
+                />
+                <span>Requires Payslip</span>
+              </label>
+
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  name="requiresCollateral"
+                  checked={formData.requiresCollateral}
+                  onChange={handleInputChange}
+                  className={styles.checkbox}
+                />
+                <span>Requires Collateral</span>
+              </label>
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="processingFee" className={styles.label}>
-                Processing Fee (%)
-                <Tooltip text="One-time fee charged when loan is approved" />
-                <span className={styles.required}>*</span>
+              <label className={styles.label}>
+                Additional Notes{' '}
+                <span className={styles.optional}>(optional)</span>
               </label>
-              <input
-                type="number"
-                id="processingFee"
-                name="processingFee"
-                value={formData.processingFee}
+              <textarea
+                name="additionalNotes"
+                value={formData.additionalNotes}
                 onChange={handleInputChange}
-                step="0.1"
-                min="0"
-                className={`${styles.input} ${errors.processingFee ? styles.inputError : ''}`}
-              />
-              {errors.processingFee && (
-                <span className={styles.errorText}>{errors.processingFee}</span>
-              )}
-            </div>
-
-            <div className={styles.formGroup}>
-              <label htmlFor="insuranceFee" className={styles.label}>
-                Insurance Fee (%)
-                <Tooltip text="Optional loan protection insurance fee" />
-              </label>
-              <input
-                type="number"
-                id="insuranceFee"
-                name="insuranceFee"
-                value={formData.insuranceFee}
-                onChange={handleInputChange}
-                step="0.1"
-                min="0"
-                className={styles.input}
+                placeholder="Any special conditions, notes, or requirements shown to users..."
+                rows={4}
+                className={styles.textarea}
               />
             </div>
-
-            <div className={styles.formGroup}>
-              <label htmlFor="maxDebtToIncomeRatio" className={styles.label}>
-                Max DTI Ratio (%)
-                <Tooltip text="Maximum debt-to-income ratio. 30% means monthly debt payments cannot exceed 30% of monthly income" />
-                <span className={styles.required}>*</span>
-              </label>
-              <input
-                type="number"
-                id="maxDebtToIncomeRatio"
-                name="maxDebtToIncomeRatio"
-                value={formData.maxDebtToIncomeRatio}
-                onChange={handleInputChange}
-                step="1"
-                min="0"
-                max="100"
-                className={`${styles.input} ${errors.maxDebtToIncomeRatio ? styles.inputError : ''}`}
-              />
-              {errors.maxDebtToIncomeRatio && (
-                <span className={styles.errorText}>
-                  {errors.maxDebtToIncomeRatio}
-                </span>
-              )}
-            </div>
           </div>
-        </Section>
-
-        {/* SECTION 3: Salary & Income Requirements */}
-        <Section
-          title="Salary & Income Requirements"
-          description="Set minimum salary and eligible employment types"
-          expanded={expandedSections.salary}
-          onToggle={() => toggleSection('salary')}
-        >
-          <div className={styles.formGroup}>
-            <label htmlFor="minNetMonthlySalary" className={styles.label}>
-              Minimum Net Monthly Salary (MK)
-              <Tooltip text="Minimum monthly take-home salary required to qualify" />
-              <span className={styles.required}>*</span>
-            </label>
-            <input
-              type="number"
-              id="minNetMonthlySalary"
-              name="minNetMonthlySalary"
-              value={formData.minNetMonthlySalary}
-              onChange={handleInputChange}
-              step="1000"
-              min="0"
-              className={`${styles.input} ${errors.minNetMonthlySalary ? styles.inputError : ''}`}
-            />
-            {errors.minNetMonthlySalary && (
-              <span className={styles.errorText}>
-                {errors.minNetMonthlySalary}
-              </span>
-            )}
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>
-              Eligible Employment Types{' '}
-              <span className={styles.required}>*</span>
-              <Tooltip text="Select which employment types can qualify for loans at this institution" />
-            </label>
-            <div className={styles.checkboxGroup}>
-              {EMPLOYMENT_TYPES.map((type) => (
-                <label key={type.value} className={styles.checkboxLabel}>
-                  <input
-                    type="checkbox"
-                    checked={formData.eligibleEmploymentTypes.includes(
-                      type.value,
-                    )}
-                    onChange={() => handleEmploymentTypeChange(type.value)}
-                    className={styles.checkbox}
-                  />
-                  <span>{type.label}</span>
-                </label>
-              ))}
-            </div>
-            {errors.eligibleEmploymentTypes && (
-              <span className={styles.errorText}>
-                {errors.eligibleEmploymentTypes}
-              </span>
-            )}
-          </div>
-        </Section>
-
-        {/* SECTION 4: Salary Multipliers */}
-        <Section
-          title="Salary Multipliers"
-          description="Define how much applicants can borrow based on their salary"
-          expanded={expandedSections.multipliers}
-          onToggle={() => toggleSection('multipliers')}
-          info="Multipliers determine maximum loan amount. E.g., 4x multiplier on 50,000 MK salary = 200,000 MK max loan"
-        >
-          <div className={styles.multiplierTable}>
-            <div className={styles.tableHeader}>
-              <div className={styles.tableCol1}>Employment Type</div>
-              <div className={styles.tableCol2}>Multiplier</div>
-            </div>
-            {MULTIPLIER_FIELDS.map((field) => (
-              <div key={field.key} className={styles.tableRow}>
-                <div className={styles.tableCol1}>{field.label}</div>
-                <div className={styles.tableCol2}>
-                  <div className={styles.multiplierInput}>
-                    <input
-                      type="number"
-                      value={
-                        formData.multipliers[
-                          field.key as keyof typeof formData.multipliers
-                        ]
-                      }
-                      onChange={(e) =>
-                        handleMultiplierChange(
-                          field.key as keyof typeof formData.multipliers,
-                          parseFloat(e.target.value) || 0,
-                        )
-                      }
-                      step="0.5"
-                      min="0"
-                      className={styles.input}
-                    />
-                    <span className={styles.multiplierUnit}>x</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Section>
-
-        {/* SECTION 5: Repayment Terms */}
-        <Section
-          title="Repayment Terms"
-          description="Set minimum and maximum loan repayment periods"
-          expanded={expandedSections.repayment}
-          onToggle={() => toggleSection('repayment')}
-        >
-          <div className={styles.grid2}>
-            <div className={styles.formGroup}>
-              <label htmlFor="minRepaymentTerm" className={styles.label}>
-                Minimum Repayment Term (Months)
-                <Tooltip text="Shortest loan period allowed (e.g., 6 months)" />
-                <span className={styles.required}>*</span>
-              </label>
-              <input
-                type="number"
-                id="minRepaymentTerm"
-                name="minRepaymentTerm"
-                value={formData.minRepaymentTerm}
-                onChange={handleInputChange}
-                step="1"
-                min="1"
-                className={`${styles.input} ${errors.minRepaymentTerm ? styles.inputError : ''}`}
-              />
-              {errors.minRepaymentTerm && (
-                <span className={styles.errorText}>
-                  {errors.minRepaymentTerm}
-                </span>
-              )}
-            </div>
-
-            <div className={styles.formGroup}>
-              <label htmlFor="maxRepaymentTerm" className={styles.label}>
-                Maximum Repayment Term (Months)
-                <Tooltip text="Longest loan period allowed (e.g., 60 months)" />
-                <span className={styles.required}>*</span>
-              </label>
-              <input
-                type="number"
-                id="maxRepaymentTerm"
-                name="maxRepaymentTerm"
-                value={formData.maxRepaymentTerm}
-                onChange={handleInputChange}
-                step="1"
-                min="1"
-                className={`${styles.input} ${errors.maxRepaymentTerm ? styles.inputError : ''}`}
-              />
-              {errors.maxRepaymentTerm && (
-                <span className={styles.errorText}>
-                  {errors.maxRepaymentTerm}
-                </span>
-              )}
-            </div>
-          </div>
-        </Section>
-
-        {/* SECTION 6: Additional Conditions */}
-        <Section
-          title="Additional Conditions"
-          description="Set special requirements for loan eligibility"
-          expanded={expandedSections.conditions}
-          onToggle={() => toggleSection('conditions')}
-        >
-          <div className={styles.checkboxGroup}>
-            <label className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                name="requiresGuarantor"
-                checked={formData.requiresGuarantor}
-                onChange={handleInputChange}
-                className={styles.checkbox}
-              />
-              <span>Requires Guarantor</span>
-              <Tooltip text="Applicant must provide a personal or business guarantor" />
-            </label>
-
-            <label className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                name="requiresPayslip"
-                checked={formData.requiresPayslip}
-                onChange={handleInputChange}
-                className={styles.checkbox}
-              />
-              <span>Requires Payslip</span>
-              <Tooltip text="Applicant must provide recent payslips for income verification" />
-            </label>
-
-            <label className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                name="requiresCollateral"
-                checked={formData.requiresCollateral}
-                onChange={handleInputChange}
-                className={styles.checkbox}
-              />
-              <span>Requires Collateral</span>
-              <Tooltip text="Applicant must pledge collateral (property, vehicle, etc.)" />
-            </label>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="additionalNotes" className={styles.label}>
-              Additional Notes / Special Conditions{' '}
-              <span className={styles.optional}>(optional)</span>
-            </label>
-            <textarea
-              id="additionalNotes"
-              name="additionalNotes"
-              value={formData.additionalNotes}
-              onChange={handleInputChange}
-              placeholder="Any additional eligibility criteria, special terms, or notes for admins..."
-              rows={4}
-              className={styles.textarea}
-            />
-          </div>
-        </Section>
+        </div>
 
         {/* Footer Actions */}
-        <div className={styles.footer}>
+        <div className={styles.footerActions}>
           <button
             type="button"
             onClick={handleCancel}
-            className={styles.btnCancel}
+            className={styles.btnSecondary}
             disabled={isSubmitting}
           >
             Cancel
           </button>
           <button
             type="submit"
-            className={styles.btnSave}
+            className={styles.btnPrimary}
             disabled={isSubmitting}
           >
-            {isSubmitting ? 'Saving...' : 'Save Institution'}
+            {isSubmitting ? 'Creating...' : 'Create Institution'}
           </button>
         </div>
       </form>
     </div>
   );
 }
-
-// Helper Components
-
-function Section({
-  title,
-  description,
-  expanded,
-  onToggle,
-  info,
-  children,
-}: {
-  title: string;
-  description: string;
-  expanded: boolean;
-  onToggle: () => void;
-  info?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className={styles.section}>
-      <button type="button" onClick={onToggle} className={styles.sectionHeader}>
-        <div className={styles.sectionTitle}>
-          <h2 className={styles.sectionHeading}>{title}</h2>
-          <p className={styles.sectionDesc}>{description}</p>
-        </div>
-        {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-      </button>
-
-      {info && (
-        <div className={styles.infoBox}>
-          <Info size={16} />
-          <span>{info}</span>
-        </div>
-      )}
-
-      {expanded && <div className={styles.sectionContent}>{children}</div>}
-    </div>
-  );
-}
-
+// Helper: Tooltip Component
 function Tooltip({ text }: { text: string }) {
-  const [showTooltip, setShowTooltip] = useState(false);
-
+  const [show, setShow] = useState(false);
   return (
     <div className={styles.tooltipContainer}>
       <button
         type="button"
         className={styles.tooltipTrigger}
-        onMouseEnter={() => setShowTooltip(true)}
-        onMouseLeave={() => setShowTooltip(false)}
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
         onClick={(e) => {
           e.preventDefault();
-          setShowTooltip(!showTooltip);
+          setShow(!show);
         }}
       >
         <Info size={14} />
       </button>
-      {showTooltip && <div className={styles.tooltipContent}>{text}</div>}
+      {show && <div className={styles.tooltip}>{text}</div>}
     </div>
   );
 }

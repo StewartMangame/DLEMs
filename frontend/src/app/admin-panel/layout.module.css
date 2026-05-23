@@ -7,10 +7,11 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
+  gap: 1.5rem;
   background: var(--ap-bg);
   color: var(--ap-text-muted);
-  font-size: 0.9rem;
+  font-size: 1.1rem;
+  font-weight: 600;
 }
 
 .loadSpinner {
@@ -76,8 +77,8 @@
 }
 
 .logoText {
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 1.5rem;
+  font-weight: 900;
   color: var(--ap-text);
   letter-spacing: 0.01em;
 }
@@ -100,12 +101,12 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.65rem 0.875rem;
+  padding: 0.75rem 1rem;
   border-radius: 10px;
   text-decoration: none;
   color: var(--ap-text-secondary);
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 1rem;
+  font-weight: 600;
   transition:
     background 0.15s,
     color 0.15s;
