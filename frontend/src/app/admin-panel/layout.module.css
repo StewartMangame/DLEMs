@@ -1,4 +1,5 @@
 /* Admin Panel Layout Styles */
+/* CSS variables are defined in globals.css */
 
 .loadScreen {
   min-height: 100vh;
@@ -6,34 +7,42 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
+  gap: 1.5rem;
   background: var(--ap-bg);
   color: var(--ap-text-muted);
-  font-size: 0.9rem;
+  font-size: 1.1rem;
+  font-weight: 600;
 }
 
 .loadSpinner {
   width: 36px;
   height: 36px;
-  border: 3px solid rgba(124,58,237,0.3);
+  border: 3px solid rgba(124, 58, 237, 0.3);
   border-top-color: var(--ap-accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 .layout {
   display: flex;
   min-height: 100vh;
   background: var(--ap-bg);
-  font-family: 'Inter', -apple-system, sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    sans-serif;
 }
 
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0, 0, 0, 0.6);
   z-index: 99;
   display: none;
 }
@@ -68,8 +77,8 @@
 }
 
 .logoText {
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 1.5rem;
+  font-weight: 900;
   color: var(--ap-text);
   letter-spacing: 0.01em;
 }
@@ -92,13 +101,15 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.65rem 0.875rem;
+  padding: 0.75rem 1rem;
   border-radius: 10px;
   text-decoration: none;
   color: var(--ap-text-secondary);
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: background 0.15s, color 0.15s;
+  font-size: 1rem;
+  font-weight: 600;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .navItem:hover {
@@ -157,7 +168,7 @@
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 20px;
-  background: rgba(124,58,237,0.2);
+  background: rgba(124, 58, 237, 0.2);
   color: var(--ap-accent-light);
   margin-top: 3px;
   letter-spacing: 0.05em;
@@ -171,19 +182,21 @@
   justify-content: center;
   gap: 0.5rem;
   background: transparent;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   padding: 0.5rem;
   color: var(--ap-text-muted);
   font-size: 0.8125rem;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .logoutBtn:hover {
-  background: rgba(239,68,68,0.1);
+  background: rgba(239, 68, 68, 0.1);
   color: #fca5a5;
-  border-color: rgba(239,68,68,0.3);
+  border-color: rgba(239, 68, 68, 0.3);
 }
 
 /* Main content area */
@@ -251,7 +264,10 @@
   background: var(--ap-surface);
   color: var(--ap-text-secondary);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
 }
 
 .themeToggle:hover {

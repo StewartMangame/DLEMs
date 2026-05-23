@@ -3,8 +3,18 @@
   display: flex; justify-content: space-between; align-items: flex-start;
   margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap;
 }
-.pageTitle { font-size: 1.75rem; font-weight: 800; color: var(--ap-text); margin: 0 0 0.25rem; }
-.pageSub { font-size: 0.875rem; color: var(--ap-text-muted); margin: 0; }
+.pageTitle { 
+  font-size: 2rem; 
+  font-weight: 900; 
+  color: var(--ap-text); 
+  margin: 0 0 0.25rem; 
+}
+.pageSub { 
+  font-size: 1.1rem; 
+  color: var(--ap-text-muted); 
+  margin: 0; 
+  font-weight: 500;
+}
 
 .addBtn {
   background: linear-gradient(135deg, #7c3aed, #a855f7);
@@ -130,10 +140,45 @@
 }
 
 .formSection h3 {
-  font-size: 0.85rem; font-weight: 700; color: var(--ap-text-muted);
-  text-transform: uppercase; letter-spacing: 0.06em;
-  margin: 0 0 0.875rem; padding-bottom: 0.5rem;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--ap-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 1rem;
+  padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--ap-border);
+}
+.formSection label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--ap-text-secondary);
+  font-weight: 600;
+}
+.formSection label input,
+.formSection label select,
+.formSection label textarea,
+.formSection textarea {
+  background: var(--ap-input-bg);
+  border: 1px solid var(--ap-border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: var(--ap-text);
+  font-size: 0.9rem;
+  transition: border-color 0.15s, background 0.15s;
+  width: 100%;
+}
+.formSection label input:focus,
+.formSection label select:focus,
+.formSection label textarea:focus,
+.formSection textarea:focus {
+  border-color: var(--ap-accent);
+}
+.formSection label select option {
+  background: var(--ap-option-bg);
+  color: var(--ap-text);
 }
 .formSection label {
   display: flex; flex-direction: column; gap: 0.375rem;
