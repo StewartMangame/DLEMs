@@ -10,6 +10,8 @@ import {
   Query,
   UseGuards,
   Req,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminPanelService } from './admin-panel.service';
@@ -26,6 +28,10 @@ import {
   UpdateAnnouncementDto,
 } from './dto/announcement.dto';
 import { CreateAdminDto, UpdateAdminDto } from './dto/admin-user.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import * as multer from 'multer';
+
+import { File } from 'multer';
 
 const Guard = () => UseGuards(AuthGuard('admin-jwt'));
 
@@ -62,8 +68,27 @@ export class AdminPanelController {
   }
 
   @Post('institutions')
-  createInstitution(@Req() req: any, @Body() body: CreateInstitutionDto) {
-    return this.svc.createInstitution(req.user, body);
+  @UseInterceptors(FileInterceptor('logo', { storage: multer.memoryStorage() }))
+  createInstitution(
+    @Req() req: any,
+    @Body() body: CreateInstitutionDto,
+    @UploadedFile() file?: File,
+  ) {
+    // If eligibleEmploymentTypes was sent as a JSON string (multipart/form-data), parse it.
+    if (
+      body &&
+      (body as any).eligibleEmploymentTypes &&
+      typeof (body as any).eligibleEmploymentTypes === 'string'
+    ) {
+      try {
+        (body as any).eligibleEmploymentTypes = JSON.parse(
+          (body as any).eligibleEmploymentTypes,
+        );
+      } catch (e) {
+        // ignore parse errors; validation will catch wrong types
+      }
+    }
+    return this.svc.createInstitution(req.user, body, file);
   }
 
   @Put('institutions/:id')
