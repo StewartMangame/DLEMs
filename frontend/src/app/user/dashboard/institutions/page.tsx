@@ -11,7 +11,6 @@ import {
   fetchSaccoBranches,
 } from "@/lib/api";
 import {
-  AlertTriangle,
   Building2,
   CheckCircle2,
   ChevronLeft,
@@ -27,8 +26,8 @@ type Institution = {
   type: "COMMERCIAL_BANK" | "MICROFINANCE" | "SACCO_CATEGORY";
   has_branches: boolean;
   description: string;
-  status: "ACTIVE" | "PENDING_VERIFICATION";
-  pending_verification_note: string | null;
+  logoUrl: string | null;
+  status: "ACTIVE" | "COMING_SOON";
 };
 
 type Branch = {
@@ -96,7 +95,7 @@ const currency = (value: number | null | undefined) =>
     : `MK ${Math.round(value).toLocaleString()}`;
 
 function logoFor(institution: Institution) {
-  return LOGOS[institution.name];
+  return institution.logoUrl || LOGOS[institution.name];
 }
 
 function resultColor(result: EligibilityResult["result"]) {
@@ -320,11 +319,6 @@ export default function InstitutionsPage() {
                   <div className={styles.cardName}>{institution.name}</div>
                   <div className="badge badge-neutral text-xs">{institution.type}</div>
                   <p className={styles.cardDesc}>{institution.description}</p>
-                  {institution.status === "PENDING_VERIFICATION" && (
-                    <div className="alert alert-warning" style={{ marginTop: 12 }}>
-                      <AlertTriangle size={16} /> {institution.pending_verification_note}
-                    </div>
-                  )}
                   {announcements
                     .filter((announcement) => announcement.institution_id === institution.id)
                     .map((announcement) => (

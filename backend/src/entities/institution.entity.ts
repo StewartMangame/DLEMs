@@ -16,7 +16,6 @@ import { LoanApplication } from './loan-application.entity';
 export type InstitutionStatus =
   | 'active'
   | 'inactive'
-  | 'pending_verification'
   | 'coming_soon';
 
 @Entity()

@@ -6,6 +6,7 @@ import {
   Patch,
   Delete,
   Body,
+  BadRequestException,
   Param,
   Query,
   UseGuards,
@@ -34,6 +35,28 @@ import * as multer from 'multer';
 import { File } from 'multer';
 
 const Guard = () => UseGuards(AuthGuard('admin-jwt'));
+
+const LOGO_UPLOAD_OPTIONS = {
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024 },
+  fileFilter: (_req: any, file: File, cb: multer.FileFilterCallback) => {
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/svg+xml'];
+    const allowedExtensions = /\.(jpe?g|png|svg)$/i;
+    if (
+      allowedMimeTypes.includes(file.mimetype) &&
+      allowedExtensions.test(file.originalname)
+    ) {
+      cb(null, true);
+      return;
+    }
+    cb(
+      new BadRequestException(
+        'Please upload a valid image file (JPG, PNG, or SVG).',
+      ) as any,
+      false,
+    );
+  },
+};
 
 @Controller(['admin-panel', 'admin'])
 @UseGuards(AuthGuard('admin-jwt'))
@@ -68,7 +91,7 @@ export class AdminPanelController {
   }
 
   @Post('institutions')
-  @UseInterceptors(FileInterceptor('logo', { storage: multer.memoryStorage() }))
+  @UseInterceptors(FileInterceptor('logo', LOGO_UPLOAD_OPTIONS))
   createInstitution(
     @Req() req: any,
     @Body() body: CreateInstitutionDto,
@@ -92,12 +115,45 @@ export class AdminPanelController {
   }
 
   @Put('institutions/:id')
+  @UseInterceptors(FileInterceptor('logo', LOGO_UPLOAD_OPTIONS))
   updateInstitution(
     @Req() req: any,
     @Param('id') id: string,
-    @Body() body: UpdateInstitutionDto,
+    @Body() body: any,
+    @UploadedFile() file?: File,
   ) {
-    return this.svc.updateInstitution(req.user, +id, body);
+    if (
+      body &&
+      (body as any).eligibleEmploymentTypes &&
+      typeof (body as any).eligibleEmploymentTypes === 'string'
+    ) {
+      try {
+        (body as any).eligibleEmploymentTypes = JSON.parse(
+          (body as any).eligibleEmploymentTypes,
+        );
+      } catch (e) {
+        // ignore parse errors; validation will catch wrong types
+      }
+    }
+    if (body && typeof body.criteria === 'string') {
+      try {
+        body.criteria = JSON.parse(body.criteria);
+      } catch (e) {
+        // leave as-is; service will ignore invalid criteria objects
+      }
+    }
+    for (const key of [
+      'isInterestRateFixed',
+      'requiresCrbCheck',
+      'collateralAccepted',
+      'reminderAvailable',
+      'digitalApplicationAvailable',
+      'removeLogo',
+    ]) {
+      if (body[key] === 'true') body[key] = true;
+      if (body[key] === 'false') body[key] = false;
+    }
+    return this.svc.updateInstitution(req.user, +id, body, file);
   }
 
   @Patch('institutions/:id/status')

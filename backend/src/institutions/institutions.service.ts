@@ -1,41 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Institution } from '../entities/institution.entity';
 import { InstitutionCriteria } from '../entities/institution-criteria.entity';
 import { LoanProduct } from '../entities/loan-product.entity';
 import { Sacco } from '../entities/sacco.entity';
+import { User } from '../entities/user.entity';
+import { Loan } from '../entities/loan.entity';
+import { FinancialProfile } from '../entities/financial-profile.entity';
+import { LoanApplication } from '../entities/loan-application.entity';
 
 // ─── Real Malawian lending institution seed data ─────────────────────────────
 const SEED_INSTITUTIONS = [
-  {
-    name: 'National Bank of Malawi',
-    type: 'bank',
-    hasBranches: true,
-    status: 'active' as const,
-    criteria: {
-      interestRate: 25,
-      maxDtiRatio: 0.4,
-      minNetSalary: 80_000,
-      minRepaymentMonths: 3,
-      maxRepaymentMonths: 60,
-      processingFeePercent: 1.5,
-      civilServantMultiplier: 12,
-      privateMultiplier: 6,
-      selfEmployedMultiplier: 4,
-      saccoMemberMultiplier: 8,
-      eligibleEmploymentTypes: [
-        'civil_servant',
-        'private_sector',
-        'self_employed',
-        'sacco_member',
-      ],
-      requiresGuarantor: false,
-      requiresPayslip: true,
-      notes:
-        'Civil servants benefit from salary deduction at source via IFMIS/GOVPAY, allowing up to 12× net salary. Payslip mandatory for all categories.',
-    },
-  },
   {
     name: 'FDH Bank',
     type: 'bank',
@@ -62,33 +38,6 @@ const SEED_INSTITUTIONS = [
       requiresPayslip: true,
       notes:
         'Open to all employment categories. Lower minimum salary threshold than peers. Self-employed applicants require 12 months of bank statements.',
-    },
-  },
-  {
-    name: 'Standard Bank Malawi',
-    type: 'bank',
-    hasBranches: true,
-    status: 'active' as const,
-    criteria: {
-      interestRate: 24,
-      maxDtiRatio: 0.35,
-      minNetSalary: 100_000,
-      minRepaymentMonths: 6,
-      maxRepaymentMonths: 60,
-      processingFeePercent: 1.0,
-      civilServantMultiplier: 12,
-      privateMultiplier: 8,
-      selfEmployedMultiplier: 3,
-      saccoMemberMultiplier: 6,
-      eligibleEmploymentTypes: [
-        'civil_servant',
-        'private_sector',
-        'self_employed',
-      ],
-      requiresGuarantor: true,
-      requiresPayslip: true,
-      notes:
-        'Best interest rate among commercial banks. Higher minimum salary and guarantor required. Self-employed must provide certified business accounts.',
     },
   },
   {
@@ -186,16 +135,13 @@ export class InstitutionsService {
   ) {}
 
   /**
-   * Returns only ACTIVE and PENDING_VERIFICATION institutions.
+   * Returns only ACTIVE institutions.
    * INACTIVE records are never returned — filter applied at the query level.
    * Relations are eager-loaded so criteria fields are immediately available.
    */
   async getActiveInstitutions() {
     const institutions = await this.instRepo.find({
-      where: [
-        { status: 'active', isActive: true },
-        { status: 'pending_verification', isActive: true },
-      ],
+      where: { status: 'active', isActive: true },
       order: { name: 'ASC' },
     });
 
@@ -205,11 +151,8 @@ export class InstitutionsService {
       type: normalizeInstitutionType(institution.type),
       has_branches: institution.hasBranches,
       description: institution.description ?? '',
+      logoUrl: institution.logoUrl ?? null,
       status: normalizeVisibleStatus(institution.status),
-      pending_verification_note:
-        institution.status === 'pending_verification'
-          ? 'This institution is pending verification. Please confirm current terms before applying.'
-          : null,
     }));
   }
 
@@ -268,10 +211,7 @@ export class InstitutionsService {
    */
   async getInstitutionCriteria(id: number) {
     const institution = await this.instRepo.findOne({
-      where: [
-        { id, isActive: true, status: 'active' },
-        { id, isActive: true, status: 'pending_verification' },
-      ],
+      where: { id, isActive: true, status: 'active' },
       relations: ['criteria'],
     });
 
@@ -346,6 +286,14 @@ export class InstitutionsService {
       collateral_accepted: institution.collateralAccepted ?? false,
       turnaround_time: institution.turnaroundTime ?? 'Varies',
       crb_check_required: institution.requiresCrbCheck ?? false,
+      eligible_borrower_categories:
+        institution.criteria.eligibleEmploymentTypes ??
+        institution.eligibleEmploymentTypes ??
+        [],
+      eligibleEmploymentTypes:
+        institution.criteria.eligibleEmploymentTypes ??
+        institution.eligibleEmploymentTypes ??
+        [],
     };
   }
 
@@ -359,6 +307,8 @@ export class InstitutionsService {
    * If institutions already exist the seed is skipped entirely.
    */
   async seedDefaultInstitutions() {
+    await this.removeRetiredInstitutions();
+
     const existingSavingsSacco = await this.instRepo.findOne({
       where: { name: 'Malawi Savings SACCO' },
     });
@@ -387,6 +337,50 @@ export class InstitutionsService {
       await this.criteriaRepo.save(crit);
     }
   }
+
+  private async removeRetiredInstitutions() {
+    const retiredNames = ['National Bank of Malawi', 'Standard Bank Malawi'];
+    for (const name of retiredNames) {
+      const institution = await this.instRepo.findOne({
+        where: { name },
+        relations: ['criteria'],
+      });
+      if (!institution) continue;
+
+      await this.instRepo.manager
+        .getRepository(User)
+        .update({ institutionId: institution.id }, { institutionId: null });
+      await this.instRepo.manager
+        .getRepository(FinancialProfile)
+        .update(
+          { salaryInstitutionId: institution.id },
+          { salaryInstitutionId: null },
+        );
+      const applications = await this.instRepo.manager
+        .getRepository(LoanApplication)
+        .find({ where: { institutionId: institution.id }, select: ['id'] });
+      const applicationIds = applications.map((application) => application.id);
+      if (applicationIds.length > 0) {
+        await this.instRepo.manager
+          .getRepository(Loan)
+          .update({ applicationId: In(applicationIds) }, { applicationId: null });
+      }
+      await this.instRepo.manager
+        .getRepository(LoanApplication)
+        .delete({ institutionId: institution.id });
+      await this.instRepo.manager
+        .getRepository(Loan)
+        .update(
+          { providerInstitutionId: institution.id },
+          { providerInstitutionId: null },
+        );
+      await this.productRepo.delete({ institutionId: institution.id });
+      if (institution.criteria) {
+        await this.criteriaRepo.delete({ institutionId: institution.id });
+      }
+      await this.instRepo.delete(institution.id);
+    }
+  }
 }
 
 function normalizeInstitutionType(type: string) {
@@ -397,7 +391,7 @@ function normalizeInstitutionType(type: string) {
 }
 
 function normalizeVisibleStatus(status: string) {
-  return status === 'pending_verification' ? 'PENDING_VERIFICATION' : 'ACTIVE';
+  return status === 'coming_soon' ? 'COMING_SOON' : 'ACTIVE';
 }
 
 function normalizeBranchStatus(status: string) {

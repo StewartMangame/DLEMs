@@ -77,7 +77,7 @@ export class EligibilityService {
     // Load only the selected institutions (active) with their criteria
     const whereClause: FindOptionsWhere<Institution> = {
       id: In(selectedIds),
-      status: In(['active', 'pending_verification']) as any,
+      status: 'active' as any,
       isActive: true,
     };
     const institutions = await this.instRepo.find({

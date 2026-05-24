@@ -108,10 +108,9 @@ export class AdminPanelService {
       .limit(3)
       .getRawMany();
 
-    const [activeInstitutions, pendingVerification] = await Promise.all([
-      this.instRepo.count({ where: { isActive: true } }),
-      this.instRepo.count({ where: { status: 'pending_verification' } }),
-    ]);
+    const activeInstitutions = await this.instRepo.count({
+      where: { isActive: true },
+    });
 
     return {
       totalUsers,
@@ -121,7 +120,6 @@ export class AdminPanelService {
       checksThisMonth,
       topInstitutions,
       activeInstitutions,
-      pendingVerification,
     };
   }
 
@@ -155,7 +153,7 @@ export class AdminPanelService {
     this.requireSuper(admin);
     const inst = this.instRepo.create({
       name: data.name,
-      type: data.type,
+      type: this.resolveInstitutionType(data),
       status:
         typeof data.status === 'string'
           ? data.status.toLowerCase()
@@ -172,20 +170,7 @@ export class AdminPanelService {
       eligibleEmploymentTypes: data.eligibleEmploymentTypes ?? [],
     });
     // If an image file was uploaded, persist it to public/uploads and set logoUrl
-    if (file && file.buffer) {
-      try {
-        const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
-        await fs.promises.mkdir(uploadsDir, { recursive: true });
-        const safeName = `${Date.now()}_${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-        const dest = path.join(uploadsDir, safeName);
-        await fs.promises.writeFile(dest, file.buffer);
-        inst.logoUrl = `/uploads/${safeName}`;
-      } catch (e) {
-        // Log error but continue without failing creation
-
-        console.error('Failed to save uploaded logo:', e);
-      }
-    }
+    inst.logoUrl = await this.saveLogo(file);
     await this.instRepo.save(inst);
     const crit = this.criteriaRepo.create({
       institutionId: inst.id,
@@ -201,6 +186,7 @@ export class AdminPanelService {
       saccoMemberMultiplier: data.saccoMemberMultiplier ?? 6,
       requiresGuarantor: data.requiresGuarantor ?? false,
       requiresPayslip: data.requiresPayslip ?? true,
+      eligibleEmploymentTypes: data.eligibleEmploymentTypes ?? [],
       notes: data.notes,
     });
     await this.criteriaRepo.save(crit);
@@ -212,12 +198,16 @@ export class AdminPanelService {
     return { success: true, institution: inst };
   }
 
-  async updateInstitution(admin: any, id: number, data: any) {
+  async updateInstitution(admin: any, id: number, data: any, file?: File) {
     const inst = await this.instRepo.findOne({
       where: { id },
       relations: ['criteria'],
     });
     if (!inst) throw new NotFoundException('Institution not found');
+
+    if (data.type === 'other') {
+      data.type = this.resolveInstitutionType(data);
+    }
 
     const changes: string[] = [];
     const fields = [
@@ -258,9 +248,19 @@ export class AdminPanelService {
 
     if (data.eligibleEmploymentTypes !== undefined) {
       inst.eligibleEmploymentTypes = data.eligibleEmploymentTypes;
+      if (inst.criteria) {
+        inst.criteria.eligibleEmploymentTypes = data.eligibleEmploymentTypes;
+      }
     }
 
-    if (data.status === 'inactive') inst.isActive = false;
+    if (data.removeLogo === true || data.removeLogo === 'true') {
+      inst.logoUrl = null;
+    } else if (file) {
+      inst.logoUrl = await this.saveLogo(file);
+    }
+
+    if (data.status === 'inactive' || data.status === 'coming_soon')
+      inst.isActive = false;
     else if (data.status === 'active') inst.isActive = true;
 
     await this.instRepo.save(inst);
@@ -301,9 +301,34 @@ export class AdminPanelService {
         }
       }
       await this.criteriaRepo.save(crit);
+    } else if (inst.criteria && data.eligibleEmploymentTypes !== undefined) {
+      await this.criteriaRepo.save(inst.criteria);
     }
 
     return { success: true, changes };
+  }
+
+  private resolveInstitutionType(data: any) {
+    if (data.type === 'other' && typeof data.customInstitutionType === 'string') {
+      const customType = data.customInstitutionType.trim();
+      if (customType) return customType;
+    }
+    return data.type;
+  }
+
+  private async saveLogo(file?: File) {
+    if (!file?.buffer) return undefined;
+    try {
+      const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+      await fs.promises.mkdir(uploadsDir, { recursive: true });
+      const safeName = `${Date.now()}_${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+      const dest = path.join(uploadsDir, safeName);
+      await fs.promises.writeFile(dest, file.buffer);
+      return `/uploads/${safeName}`;
+    } catch (e) {
+      console.error('Failed to save uploaded logo:', e);
+      return undefined;
+    }
   }
 
   async verifyInstitution(admin: any, id: number, reviewDueDate?: Date) {

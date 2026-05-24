@@ -7,12 +7,12 @@ import styles from './institutions.module.css';
 const STATUS_COLORS: Record<string, string> = {
   active: 'var(--ap-success)',
   inactive: '#475569',
-  pending_verification: 'var(--ap-warning)',
+  coming_soon: 'var(--ap-warning)',
 };
 const STATUS_LABELS: Record<string, string> = {
   active: 'Active',
   inactive: 'Inactive',
-  pending_verification: 'Pending Verification',
+  coming_soon: 'Coming Soon',
 };
 
 export default function InstitutionsPage() {
@@ -46,25 +46,11 @@ export default function InstitutionsPage() {
     const statusMap: Record<string, string> = {
       deactivate: 'inactive',
       activate: 'active',
-      flag: 'pending_verification',
     };
     await fetch(`/api/admin-panel/institutions/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: statusMap[action] }),
-    });
-    load();
-  }
-
-  async function verify(id: number) {
-    const days = prompt('Set next review due (days from today):', '180');
-    const reviewDueDate = days
-      ? new Date(Date.now() + Number(days) * 86400000).toISOString()
-      : undefined;
-    await fetch(`/api/admin-panel/institutions/${id}/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reviewDueDate }),
     });
     load();
   }
@@ -212,22 +198,6 @@ export default function InstitutionsPage() {
                           Deactivate
                         </button>
                       )}
-                      {inst.status !== 'pending_verification' && (
-                        <button
-                          className={`${styles.actionBtn} ${styles.warning}`}
-                          onClick={() => quickAction(inst.id, 'flag')}
-                        >
-                          Flag
-                        </button>
-                      )}
-                      {inst.status === 'pending_verification' && (
-                        <button
-                          className={`${styles.actionBtn} ${styles.success}`}
-                          onClick={() => verify(inst.id)}
-                        >
-                          Verify
-                        </button>
-                      )}
                     </div>
                   </td>
                 </tr>
@@ -272,6 +242,7 @@ function AddInstitutionModal({
   const [form, setForm] = useState({
     name: '',
     type: 'bank',
+    customInstitutionType: '',
     status: 'active',
     description: '',
     isInterestRateFixed: true,
@@ -293,6 +264,7 @@ function AddInstitutionModal({
     requiresGuarantor: false,
     requiresPayslip: true,
     notes: '',
+    eligibleEmploymentTypes: [] as string[],
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -302,6 +274,14 @@ function AddInstitutionModal({
   async function save() {
     if (!form.name.trim()) {
       setError('Institution name is required');
+      return;
+    }
+    if (form.type === 'other' && !form.customInstitutionType.trim()) {
+      setError('Please specify the institution type.');
+      return;
+    }
+    if (form.eligibleEmploymentTypes.length === 0) {
+      setError('Please select at least one eligible borrower category.');
       return;
     }
     setSaving(true);
@@ -355,8 +335,20 @@ function AddInstitutionModal({
                   <option value="bank">Commercial Bank</option>
                   <option value="microfinance">Microfinance</option>
                   <option value="sacco">SACCO</option>
+                  <option value="other">Other</option>
                 </select>
               </label>
+              {form.type === 'other' && (
+                <label>
+                  Please specify institution type
+                  <input
+                    value={form.customInstitutionType}
+                    onChange={(e) =>
+                      set('customInstitutionType', e.target.value)
+                    }
+                  />
+                </label>
+              )}
               <label>
                 Status
                 <select
@@ -365,9 +357,7 @@ function AddInstitutionModal({
                 >
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
-                  <option value="pending_verification">
-                    Pending Verification
-                  </option>
+                  <option value="coming_soon">Coming Soon</option>
                 </select>
               </label>
               <label>
@@ -391,6 +381,30 @@ function AddInstitutionModal({
 
           <div className={styles.formSection}>
             <h3>Loan Criteria</h3>
+            <div className={styles.checkboxGrid} style={{ marginBottom: '0.875rem' }}>
+              {[
+                ['civil_servant', 'Civil Servant'],
+                ['private_sector', 'Private Sector Employee'],
+                ['self_employed', 'Self Employed'],
+                ['sacco_member', 'SACCO Member'],
+              ].map(([value, label]) => (
+                <label key={value} className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={form.eligibleEmploymentTypes.includes(value)}
+                    onChange={() =>
+                      set(
+                        'eligibleEmploymentTypes',
+                        form.eligibleEmploymentTypes.includes(value)
+                          ? form.eligibleEmploymentTypes.filter((item) => item !== value)
+                          : [...form.eligibleEmploymentTypes, value],
+                      )
+                    }
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
             <div className={styles.formGrid}>
               <label>
                 Min Net Salary (MWK)

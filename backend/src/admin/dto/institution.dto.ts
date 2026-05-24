@@ -15,7 +15,7 @@ import { Type } from 'class-transformer';
 import { Transform } from 'class-transformer';
 
 type InstitutionType = 'bank' | 'sacco' | 'microfinance' | 'other';
-type InstitutionStatus = 'active' | 'inactive' | 'pending_verification';
+type InstitutionStatus = 'active' | 'inactive' | 'coming_soon';
 
 function normalizeInstitutionType(value: unknown): InstitutionType | unknown {
   if (typeof value !== 'string') return value;
@@ -38,12 +38,8 @@ function normalizeInstitutionType(value: unknown): InstitutionType | unknown {
 function normalizeInstitutionStatus(value: unknown): InstitutionStatus | unknown {
   if (typeof value !== 'string') return value;
   const normalized = value.trim().toLowerCase();
-  if (
-    normalized === 'pending verification' ||
-    normalized === 'pending-verification'
-  ) {
-    return 'pending_verification';
-  }
+  if (normalized === 'coming soon' || normalized === 'coming-soon')
+    return 'coming_soon';
   return normalized;
 }
 
@@ -129,7 +125,11 @@ export class CreateInstitutionDto {
   type: InstitutionType;
 
   @IsOptional()
-  @IsEnum(['active', 'inactive', 'pending_verification'])
+  @IsString()
+  customInstitutionType?: string;
+
+  @IsOptional()
+  @IsEnum(['active', 'inactive', 'coming_soon'])
   @Transform(({ value }) => normalizeInstitutionStatus(value))
   status?: InstitutionStatus;
 
@@ -249,7 +249,11 @@ export class UpdateInstitutionDto {
   type?: InstitutionType;
 
   @IsOptional()
-  @IsEnum(['active', 'inactive', 'pending_verification'])
+  @IsString()
+  customInstitutionType?: string;
+
+  @IsOptional()
+  @IsEnum(['active', 'inactive', 'coming_soon'])
   @Transform(({ value }) => normalizeInstitutionStatus(value))
   status?: InstitutionStatus;
 

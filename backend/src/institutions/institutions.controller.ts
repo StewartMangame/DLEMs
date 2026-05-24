@@ -7,7 +7,7 @@ export class InstitutionsController {
 
   /**
    * GET /api/institutions
-   * Public — returns all active and pending_verification institutions for the user selection screen.
+   * Public — returns all active institutions for the user selection screen.
    * INACTIVE records are excluded at the database query level.
    */
   @Get()
