@@ -10,12 +10,13 @@ import {
   Users,
   Clock,
   CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 import styles from './add-institution.module.css';
 
 interface FormData {
   name: string;
-  type?: string;
+  type: string;
   description: string;
   isActive: boolean;
   logo: File | null;
@@ -47,12 +48,21 @@ interface FormData {
   requiresGuarantor: boolean;
   requiresPayslip: boolean;
   requiresCollateral: boolean;
+  requiresCRBCheck: boolean;
+  requiresRepaymentReminders: boolean;
   additionalNotes: string;
 }
 
 interface FormErrors {
   [key: string]: string;
 }
+
+const INSTITUTION_TYPES = [
+  { value: 'bank', label: 'Commercial Bank' },
+  { value: 'sacco', label: 'SACCO' },
+  { value: 'microfinance', label: 'Microfinance Institution' },
+  { value: 'other', label: 'Other' },
+];
 
 const EMPLOYMENT_TYPES = [
   { value: 'civil_servant', label: 'Civil Servant' },
@@ -71,6 +81,7 @@ const MULTIPLIER_FIELDS = [
 export default function AddInstitution() {
   const [formData, setFormData] = useState<FormData>({
     name: '',
+    type: 'bank',
     description: '',
     isActive: true,
     logo: null,
@@ -97,6 +108,8 @@ export default function AddInstitution() {
     requiresGuarantor: false,
     requiresPayslip: true,
     requiresCollateral: false,
+    requiresCRBCheck: false,
+    requiresRepaymentReminders: true,
     additionalNotes: '',
   });
 
@@ -242,6 +255,7 @@ export default function AddInstitution() {
 
       // Basic info
       formPayload.append('name', formData.name);
+      formPayload.append('type', formData.type);
       formPayload.append('description', formData.description);
       formPayload.append('isActive', String(formData.isActive));
       if (formData.logo) {
@@ -283,6 +297,11 @@ export default function AddInstitution() {
       formPayload.append(
         'requiresCollateral',
         String(formData.requiresCollateral),
+      );
+      formPayload.append('requiresCRBCheck', String(formData.requiresCRBCheck));
+      formPayload.append(
+        'requiresRepaymentReminders',
+        String(formData.requiresRepaymentReminders),
       );
       formPayload.append('additionalNotes', formData.additionalNotes);
 
@@ -393,13 +412,19 @@ export default function AddInstitution() {
                 </label>
                 <select
                   name="type"
+                  value={formData.type}
                   onChange={handleInputChange}
-                  className={styles.input}
+                  className={`${styles.input} ${errors.type ? styles.inputError : ''}`}
                 >
-                  <option value="bank">Commercial Bank</option>
-                  <option value="sacco">SACCO</option>
-                  <option value="microfinance">Microfinance</option>
+                  {INSTITUTION_TYPES.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
                 </select>
+                {errors.type && (
+                  <span className={styles.errorText}>{errors.type}</span>
+                )}
               </div>
             </div>
 

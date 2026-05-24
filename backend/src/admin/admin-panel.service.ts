@@ -3,6 +3,8 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
+import * as fs from 'fs';
+import * as path from 'path';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   Repository,
@@ -12,6 +14,7 @@ import {
   Like,
 } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
+import { File } from 'multer';
 import { AdminUser } from '../entities/admin-user.entity';
 import { AdminActivityLog } from '../entities/admin-activity-log.entity';
 import { Institution } from '../entities/institution.entity';
@@ -148,7 +151,7 @@ export class AdminPanelService {
     return { institution: inst, products };
   }
 
-  async createInstitution(admin: any, data: any) {
+  async createInstitution(admin: any, data: any, file?: File) {
     this.requireSuper(admin);
     const inst = this.instRepo.create({
       name: data.name,
@@ -163,7 +166,23 @@ export class AdminPanelService {
       reminderAvailable: data.reminderAvailable ?? false,
       digitalApplicationAvailable: data.digitalApplicationAvailable ?? false,
       requiredDocuments: data.requiredDocuments ?? [],
+      eligibleEmploymentTypes: data.eligibleEmploymentTypes ?? [],
     });
+    // If an image file was uploaded, persist it to public/uploads and set logoUrl
+    if (file && file.buffer) {
+      try {
+        const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+        await fs.promises.mkdir(uploadsDir, { recursive: true });
+        const safeName = `${Date.now()}_${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+        const dest = path.join(uploadsDir, safeName);
+        await fs.promises.writeFile(dest, file.buffer);
+        inst.logoUrl = `/uploads/${safeName}`;
+      } catch (e) {
+        // Log error but continue without failing creation
+        // eslint-disable-next-line no-console
+        console.error('Failed to save uploaded logo:', e);
+      }
+    }
     await this.instRepo.save(inst);
     const crit = this.criteriaRepo.create({
       institutionId: inst.id,
@@ -204,6 +223,7 @@ export class AdminPanelService {
       'status',
       'description',
       'turnaroundTime',
+      'eligibleEmploymentTypes',
       'requiresCrbCheck',
       'collateralAccepted',
       'reminderAvailable',
@@ -229,6 +249,10 @@ export class AdminPanelService {
 
     if (data.requiredDocuments !== undefined) {
       inst.requiredDocuments = data.requiredDocuments;
+    }
+
+    if (data.eligibleEmploymentTypes !== undefined) {
+      inst.eligibleEmploymentTypes = data.eligibleEmploymentTypes;
     }
 
     if (data.status === 'inactive') inst.isActive = false;

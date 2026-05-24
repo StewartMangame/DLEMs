@@ -38,6 +38,10 @@ export class Institution {
   @Column({ nullable: true })
   logoUrl: string;
 
+  /** Which employment types this institution accepts for eligibility */
+  @Column({ type: 'simple-json', nullable: true })
+  eligibleEmploymentTypes: string[];
+
   /** Whether the interest rate is published/fixed (true) or user-entered (false) */
   @Column({ default: true })
   isInterestRateFixed: boolean;
