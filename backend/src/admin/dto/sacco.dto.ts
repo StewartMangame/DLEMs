@@ -1,6 +1,6 @@
 import { IsString, IsOptional, IsEnum, MinLength } from 'class-validator';
 
-type SaccoStatus = 'active' | 'inactive';
+type SaccoStatus = 'active' | 'inactive' | 'coming_soon';
 
 export class CreateSaccoDto {
   @IsString()
@@ -16,8 +16,8 @@ export class CreateSaccoDto {
   description?: string;
 
   @IsOptional()
-  @IsEnum(['active', 'inactive'], {
-    message: 'Status must be active or inactive',
+  @IsEnum(['active', 'inactive', 'coming_soon'], {
+    message: 'Status must be active, inactive, or coming_soon',
   })
   status?: SaccoStatus;
 }
@@ -37,6 +37,6 @@ export class UpdateSaccoDto {
   description?: string;
 
   @IsOptional()
-  @IsEnum(['active', 'inactive'])
+  @IsEnum(['active', 'inactive', 'coming_soon'])
   status?: SaccoStatus;
 }

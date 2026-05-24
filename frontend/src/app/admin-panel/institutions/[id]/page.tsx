@@ -1,8 +1,8 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, CheckCircle2, XCircle, X } from 'lucide-react';
+import { ArrowLeft, Building2, CheckCircle2, Upload, XCircle, X } from 'lucide-react';
 import { ModalCloseButton } from '../../icons';
 import styles from '../../institutions/institutions.module.css';
 
@@ -15,6 +15,9 @@ export default function EditInstitutionPage() {
   const [docs, setDocs] = useState<string[]>([]);
   const [newDoc, setNewDoc] = useState('');
   const [products, setProducts] = useState<any[]>([]);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState('');
+  const [removeLogo, setRemoveLogo] = useState(false);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{
     type: 'success' | 'error';
@@ -24,15 +27,19 @@ export default function EditInstitutionPage() {
     'general',
   );
   const [showAddProduct, setShowAddProduct] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(() => {
     fetch(`/api/admin-panel/institutions/${id}`)
       .then((r) => r.json())
       .then((d) => {
+        const knownTypes = ['bank', 'microfinance', 'sacco'];
+        const isKnownType = knownTypes.includes(d.institution.type);
         setData(d.institution);
         setForm({
           name: d.institution.name,
-          type: d.institution.type,
+          type: isKnownType ? d.institution.type : 'other',
+          customInstitutionType: isKnownType ? '' : d.institution.type,
           status: d.institution.status,
           description: d.institution.description || '',
           turnaroundTime: d.institution.turnaroundTime || '',
@@ -45,7 +52,11 @@ export default function EditInstitutionPage() {
           reviewDueDate: d.institution.reviewDueDate
             ? d.institution.reviewDueDate.split('T')[0]
             : '',
+          eligibleEmploymentTypes: d.institution.eligibleEmploymentTypes || [],
         });
+        setLogoPreview(d.institution.logoUrl || '');
+        setLogoFile(null);
+        setRemoveLogo(false);
         setDocs(d.institution.requiredDocuments || []);
         if (d.institution.criteria) {
           const c = d.institution.criteria;
@@ -75,18 +86,52 @@ export default function EditInstitutionPage() {
   }, [load]);
 
   async function save() {
+    if (form.type === 'other' && !form.customInstitutionType?.trim()) {
+      setFeedback({ type: 'error', text: 'Please specify the institution type.' });
+      return;
+    }
+    if (!form.eligibleEmploymentTypes?.length) {
+      setFeedback({
+        type: 'error',
+        text: 'Please select at least one eligible borrower category.',
+      });
+      return;
+    }
     setSaving(true);
     setFeedback(null);
     const body = { ...form, requiredDocuments: docs, criteria: criteriaForm };
+    if (!body.reviewDueDate) delete body.reviewDueDate;
+    const hasLogoChange = !!logoFile || removeLogo;
+    const requestInit: RequestInit = { method: 'PUT' };
+    if (hasLogoChange) {
+      const payload = new FormData();
+      Object.entries(body).forEach(([key, value]) => {
+        if (value === undefined || value === null) return;
+        payload.append(
+          key,
+          typeof value === 'object' ? JSON.stringify(value) : String(value),
+        );
+      });
+      if (logoFile) payload.append('logo', logoFile);
+      if (removeLogo) payload.append('removeLogo', 'true');
+      requestInit.body = payload;
+    } else {
+      requestInit.headers = { 'Content-Type': 'application/json' };
+      requestInit.body = JSON.stringify(body);
+    }
     const res = await fetch(`/api/admin-panel/institutions/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      ...requestInit,
     });
     setSaving(false);
     if (res.ok)
       setFeedback({ type: 'success', text: 'Changes saved successfully' });
-    else setFeedback({ type: 'error', text: 'Failed to save changes' });
+    else {
+      const problem = await res.json().catch(() => null);
+      const message = Array.isArray(problem?.message)
+        ? problem.message.join(', ')
+        : problem?.message || 'Failed to save changes';
+      setFeedback({ type: 'error', text: message });
+    }
   }
 
   function addDoc() {
@@ -97,6 +142,39 @@ export default function EditInstitutionPage() {
   }
   function removeDoc(i: number) {
     setDocs((d) => d.filter((_, idx) => idx !== i));
+  }
+
+  function handleLogoUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/svg+xml'];
+    const allowedExtension = /\.(jpe?g|png|svg)$/i.test(file.name);
+    if (!allowedTypes.includes(file.type) || !allowedExtension) {
+      setFeedback({
+        type: 'error',
+        text: 'Please upload a valid image file (JPG, PNG, or SVG).',
+      });
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setFeedback({ type: 'error', text: 'File size must not exceed 2MB.' });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setLogoFile(file);
+      setLogoPreview(reader.result as string);
+      setRemoveLogo(false);
+      setFeedback(null);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearLogo() {
+    setLogoFile(null);
+    setLogoPreview('');
+    setRemoveLogo(true);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
   if (!data)
@@ -253,14 +331,36 @@ export default function EditInstitutionPage() {
                     <select
                       value={form.type || ''}
                       onChange={(e) =>
-                        setForm((f: any) => ({ ...f, type: e.target.value }))
+                        setForm((f: any) => ({
+                          ...f,
+                          type: e.target.value,
+                          customInstitutionType:
+                            e.target.value === 'other'
+                              ? f.customInstitutionType || ''
+                              : '',
+                        }))
                       }
                     >
                       <option value="bank">Commercial Bank</option>
                       <option value="microfinance">Microfinance</option>
                       <option value="sacco">SACCO</option>
+                      <option value="other">Other</option>
                     </select>
                   </label>
+                  {form.type === 'other' && (
+                    <label>
+                      Please specify institution type
+                      <input
+                        value={form.customInstitutionType || ''}
+                        onChange={(e) =>
+                          setForm((f: any) => ({
+                            ...f,
+                            customInstitutionType: e.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                  )}
                   <label>
                     Status
                     <select
@@ -271,9 +371,7 @@ export default function EditInstitutionPage() {
                     >
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>
-                      <option value="pending_verification">
-                        Pending Verification
-                      </option>
+                      <option value="coming_soon">Coming Soon</option>
                     </select>
                   </label>
                   <label>
@@ -301,6 +399,42 @@ export default function EditInstitutionPage() {
                       }
                     />
                   </label>
+                </div>
+                <div className={styles.formSection}>
+                  <h3>Logo</h3>
+                  <div className={styles.logoEditRow}>
+                    <div className={styles.logoEditPreview}>
+                      {logoPreview ? (
+                        <img src={logoPreview} alt={`${form.name} logo`} />
+                      ) : (
+                        <Building2 size={24} />
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      className={styles.actionBtn}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload size={14} aria-hidden />
+                      Replace
+                    </button>
+                    {logoPreview && (
+                      <button
+                        type="button"
+                        className={`${styles.actionBtn} ${styles.danger}`}
+                        onClick={clearLogo}
+                      >
+                        Remove
+                      </button>
+                    )}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".jpg,.jpeg,.png,.svg,image/jpeg,image/png,image/svg+xml"
+                      onChange={handleLogoUpload}
+                      style={{ display: 'none' }}
+                    />
+                  </div>
                 </div>
                 <label
                   style={{
@@ -370,6 +504,37 @@ export default function EditInstitutionPage() {
           {tab === 'criteria' && (
             <div className={styles.formSection}>
               <h3>Eligibility Criteria</h3>
+              <div
+                className={styles.checkboxGrid}
+                style={{ marginBottom: '0.875rem' }}
+              >
+                {[
+                  ['civil_servant', 'Civil Servant'],
+                  ['private_sector', 'Private Sector Employee'],
+                  ['self_employed', 'Self Employed'],
+                  ['sacco_member', 'SACCO Member'],
+                ].map(([value, label]) => (
+                  <label key={value} className={styles.checkboxLabel}>
+                    <input
+                      type="checkbox"
+                      checked={(form.eligibleEmploymentTypes || []).includes(value)}
+                      onChange={() =>
+                        setForm((f: any) => ({
+                          ...f,
+                          eligibleEmploymentTypes: (
+                            f.eligibleEmploymentTypes || []
+                          ).includes(value)
+                            ? (f.eligibleEmploymentTypes || []).filter(
+                                (item: string) => item !== value,
+                              )
+                            : [...(f.eligibleEmploymentTypes || []), value],
+                        }))
+                      }
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
               <div className={styles.formGrid}>
                 {(
                   [

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import styles from "./page.module.css";
 import { useLanguage } from "@/lib/LanguageContext";
-import type { CompareResult } from "@/lib/eligibilityEngine";
+import { checkEligibility } from "@/lib/api";
 
 interface FinancialProfile {
   monthlyNetSalary?: number;
@@ -12,7 +12,7 @@ interface FinancialProfile {
 }
 
 interface Institution {
-  id: number;
+  id: string;
   name: string;
   type: string;
   logoUrl?: string;
@@ -20,6 +20,15 @@ interface Institution {
     interestRate: number;
     maxRepaymentMonths: number;
   } | null;
+}
+
+interface ApiEligibilityResult {
+  institution_id: string;
+  institution_name: string;
+  result: "LIKELY_ELIGIBLE" | "BORDERLINE" | "NOT_ELIGIBLE" | "NOT_YET_ELIGIBLE";
+  reason: string;
+  max_loan_amount: number | null;
+  available_monthly_repayment: number | null;
 }
 
 async function readJsonResponse<T>(res: Response): Promise<T> {
@@ -59,9 +68,10 @@ export default function EligibilityPage() {
   const { t } = useLanguage();
   const [profile, setProfile] = useState<FinancialProfile | null>(null);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [selectedInstitutionIds, setSelectedInstitutionIds] = useState<string[]>([]);
   const [loanAmount, setLoanAmount] = useState(500000);
   const [duration, setDuration] = useState(24);
-  const [result, setResult] = useState<CompareResult | null>(null);
+  const [result, setResult] = useState<ApiEligibilityResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [checked, setChecked] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,13 +86,12 @@ export default function EligibilityPage() {
         setError(err instanceof Error ? err.message : "Failed to load profile.");
       });
 
-    fetch("/api/eligibility/institutions")
+    fetch("/api/institutions", { cache: "no-store" })
       .then(res => readJsonResponse<Institution[] | { institutions?: Institution[] }>(res))
       .then(data => {
-        let list = Array.isArray(data) ? data : (data.institutions || []);
-        // Only allow the 3 active institutions
-        const allowed = ["FDH Bank", "Malawi Police SACCO", "FINCA Malawi"];
-        setInstitutions(list.filter((i: Institution) => allowed.includes(i.name)));
+        const list = Array.isArray(data) ? data : (data.institutions || []);
+        setInstitutions(list);
+        setSelectedInstitutionIds(list.map(inst => inst.id));
       })
       .catch(err => {
         setError(err instanceof Error ? err.message : "Failed to load institutions.");
@@ -90,27 +99,25 @@ export default function EligibilityPage() {
   }, []);
 
   const runCheck = async () => {
-    if (!profile) return;
+    if (!profile || selectedInstitutionIds.length === 0) return;
     setLoading(true);
     setError(null);
 
     const payload = {
-      monthlyNetSalary: profile.monthlyNetSalary || 0,
-      existingMonthlyRepayments: profile.existingLoanAmount || 0,
-      employmentCategory: profile.employmentCategory || "private_sector",
-      requestedAmount: loanAmount,
-      requestedTermMonths: duration,
-      institutionIds: institutions.map(i => i.id),
+      monthly_net_income: profile.monthlyNetSalary || 0,
+      employment_category: profile.employmentCategory?.toUpperCase?.() || "PRIVATE_SECTOR",
+      length_of_service_months: 0,
+      existing_monthly_obligations: profile.existingLoanAmount || 0,
+      sacco_membership_months: null,
+      has_crb_flag: false,
+      is_business_owner: null,
+      group_size: null,
+      has_finca_account: null,
     };
 
     try {
-      const res = await fetch("/api/eligibility/compare", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await readJsonResponse<CompareResult>(res);
-      setResult(data);
+      const data = await checkEligibility(payload, selectedInstitutionIds);
+      setResult(Array.isArray(data) ? data : []);
       setChecked(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Comparison failed.");
@@ -150,7 +157,7 @@ export default function EligibilityPage() {
         >
           {t("eligibility.parameters")}
         </h2>
-        <div className="grid-2">
+<div className="grid-2">
           <div className="form-group">
             <label className="form-label" htmlFor="loanAmount">
               {t("eligibility.amount")}
@@ -186,10 +193,38 @@ export default function EligibilityPage() {
             <div className="form-help">{t("eligibility.periodHelp")}</div>
           </div>
         </div>
+
+        <div className="form-group" style={{ marginTop: "var(--space-md)" }}>
+          <label className="form-label" htmlFor="institution-selection">
+            {t("eligibility.selectInstitution", { default: "Select Institutions" })}
+          </label>
+          <p className="text-sm" style={{ color: "var(--color-text-secondary)", marginBottom: "var(--space-sm)" }}>
+            {t("eligibility.compareAllLendersInfo")}
+          </p>
+          <div className="checkbox-group" id="institution-selection" style={{ display: "grid", gap: "0.75rem" }}>
+            {institutions.map(inst => (
+              <label key={inst.id} className="checkbox-label" style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                <input
+                  type="checkbox"
+                  checked={selectedInstitutionIds.includes(inst.id)}
+                  onChange={() => {
+                    setSelectedInstitutionIds(prev =>
+                      prev.includes(inst.id)
+                        ? prev.filter(id => id !== inst.id)
+                        : [...prev, inst.id]
+                    );
+                  }}
+                />
+                <span>{inst.name}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
         <button
           className="btn btn-primary btn-lg"
           onClick={runCheck}
-          disabled={!profile || loading}
+          disabled={!profile || loading || selectedInstitutionIds.length === 0}
           style={{ marginTop: "var(--space-lg)", width: "100%" }}
         >
           {loading ? (
@@ -202,7 +237,7 @@ export default function EligibilityPage() {
         </button>
       </div>
 
-      {checked && result && (
+      {checked && (
         <div className={`${styles.results} animate-fadeInUp`}>
           <div
             className={styles.profileSummaryRow}
@@ -213,215 +248,71 @@ export default function EligibilityPage() {
               style={{ color: "var(--color-text-secondary)" }}
             >
               {t("eligibility.summarySalary")}{" "}
-              <strong>MK {result.profileSummary.salary.toLocaleString()}</strong>{" "}
+              <strong>MK {(profile?.monthlyNetSalary || 0).toLocaleString()}</strong>{" "}
               {t("eligibility.summaryDeductions")}{" "}
               <strong>
-                MK {result.profileSummary.existingRepayments.toLocaleString()}
+                MK {(profile?.existingLoanAmount || 0).toLocaleString()}
               </strong>
               .
             </div>
           </div>
 
-          <h3
-            className="text-h2"
-            style={{ marginBottom: "1rem", color: "var(--color-success)" }}
-          >
-            {t("eligibility.topMatches")}
-          </h3>
-
-          {result.ranked.length === 0 ? (
-            <div
-              className="card"
-              style={{
-                padding: "3rem",
-                textAlign: "center",
-                color: "var(--color-text-muted)",
-              }}
-            >
-              {t("eligibility.noMatches")}
-            </div>
-          ) : (
-            <div className={styles.bankGrid}>
-              {result.ranked.map(inst => (
-                <div
-                  key={inst.institutionId}
-                  className={`card ${styles.bankCard} ${
-                    inst.rank === 1 ? styles.topRanked : ""
-                  }`}
-                >
-                  {inst.rank === 1 && (
-                    <div
-                      className="badge badge-success"
-                      style={{ position: "absolute", top: -10, right: 20 }}
-                    >
-                      {t("eligibility.bestMatch")}
-                    </div>
-                  )}
-                  <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "0.5rem" }}>
-                    {lenderLogo(inst.institutionName, institutions) && (
-                      <span className={styles.resultLogoWrapper}>
-                        <img
-                          src={lenderLogo(inst.institutionName, institutions)}
-                          alt={inst.institutionName}
-                          className={styles.resultLogo}
-                        />
-                      </span>
-                    )}
-                    <h3
-                      style={{
-                        fontWeight: 700,
-                        fontSize: "1.2rem",
-                        margin: 0,
-                      }}
-                    >
-                      {inst.rank}. {inst.institutionName}
-                    </h3>
-                  </div>
-                  <div
-                    className="text-sm text-muted"
-                    style={{ marginBottom: "1rem" }}
-                  >
-                    {inst.institutionType}
-                  </div>
-
-                  <div
-                    className="grid-2"
-                    style={{ gap: "1rem", marginBottom: "1.5rem" }}
-                  >
-                    <div>
-                      <div className="text-xs text-muted">
-                        {t("eligibility.interestRate")}
-                      </div>
-                      <div style={{ fontWeight: 600 }}>
-                        {inst.interestRate}% p.a.
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-muted">
-                        {t("eligibility.processingFee")}
-                      </div>
-                      <div style={{ fontWeight: 600 }}>
-                        {inst.processingFeePercent}% (MK{" "}
-                        {inst.processingFee.toLocaleString()})
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-muted">
-                        {t("eligibility.monthlyPayment")}
-                      </div>
-                      <div
-                        style={{
-                          fontWeight: 800,
-                          color: "var(--color-primary)",
-                        }}
-                      >
-                        MK {inst.estimatedMonthlyInstallment.toLocaleString()}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-muted">
-                        {t("eligibility.maxCapacity")}
-                      </div>
-                      <div style={{ fontWeight: 600 }}>
-                        MK {inst.maxLoanAmount.toLocaleString()}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div
-                    className="text-sm"
-                    style={{
-                      color: "var(--color-text-secondary)",
-                      marginBottom: "1.5rem",
-                      minHeight: "3rem",
-                    }}
-                  >
-                    {inst.notes}
-                  </div>
-
-                  <div
-                    style={{
-                      padding: "0.8rem",
-                      background: "rgba(0, 200, 150, 0.1)",
-                      borderRadius: "var(--radius-md)",
-                      textAlign: "center",
-                      color: "var(--color-success)",
-                      fontSize: "0.9rem",
-                      fontWeight: 500,
-                    }}
-                  >
-                    <span style={{ display: "block", marginBottom: "4px" }}>
-                      {t("eligibility.prequalified")}
-                    </span>
-                    {t("eligibility.visitBranch", {
-                      institution: inst.institutionName,
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {result.ineligible.length > 0 && (
-            <>
-              <h3
-                className="text-h3"
+          {result.length > 0 ? (
+            result.map(inst => (
+              <div
+                key={inst.institution_id}
+                className="card"
                 style={{
-                  marginTop: "3rem",
-                  marginBottom: "1rem",
-                  color: "var(--color-text-muted)",
+                  padding: "1.5rem",
+                  borderLeft: `4px solid ${
+                    inst.result === "LIKELY_ELIGIBLE"
+                      ? "var(--color-success)"
+                      : inst.result === "NOT_ELIGIBLE"
+                        ? "var(--color-danger)"
+                        : "var(--color-warning)"
+                  }`,
                 }}
               >
-                {t("eligibility.otherInstitutions")}
-              </h3>
-              <div className="grid-2" style={{ gap: "1rem" }}>
-                {result.ineligible.map(inst => (
-                  <div
-                    key={inst.institutionId}
-                    className="card"
-                    style={{
-                      opacity: 0.7,
-                      borderLeft: "4px solid var(--color-danger)",
-                      padding: "1.5rem",
-                    }}
-                  >
-                    <div className={styles.ineligibleHeader}>
-                      {lenderLogo(inst.institutionName, institutions) && (
-                        <span className={styles.ineligibleLogoWrapper}>
-                          <img
-                            src={lenderLogo(inst.institutionName, institutions)}
-                            alt={inst.institutionName}
-                            className={styles.ineligibleLogo}
-                          />
-                        </span>
-                      )}
-                      <h4 style={{ fontWeight: 600 }}>{inst.institutionName}</h4>
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "0.5rem" }}>
+                  {lenderLogo(inst.institution_name, institutions) && (
+                    <span className={styles.resultLogoWrapper}>
+                      <img
+                        src={lenderLogo(inst.institution_name, institutions)}
+                        alt={inst.institution_name}
+                        className={styles.resultLogo}
+                      />
+                    </span>
+                  )}
+                  <h3 style={{ fontWeight: 700, fontSize: "1.2rem", margin: 0 }}>
+                    {inst.institution_name}
+                  </h3>
+                </div>
+                <div className="badge badge-neutral text-xs" style={{ marginBottom: "1rem" }}>
+                  {inst.result.replaceAll("_", " ")}
+                </div>
+                <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+                  {inst.reason}
+                </p>
+                <div className="grid-2" style={{ gap: "1rem", marginTop: "1rem" }}>
+                  <div>
+                    <div className="text-xs text-muted">Available repayment</div>
+                    <div style={{ fontWeight: 800, color: "var(--color-primary)" }}>
+                      {inst.available_monthly_repayment ? `MK ${inst.available_monthly_repayment.toLocaleString()}` : "-"}
                     </div>
-                    <div
-                      className="text-sm"
-                      style={{
-                        color: "var(--color-danger)",
-                        marginTop: "0.5rem",
-                      }}
-                    >
-                      {inst.ineligibilityReason}
-                    </div>
-                    {inst.maxLoanAmount > 0 && (
-                      <div
-                        className="text-xs"
-                        style={{
-                          marginTop: "0.5rem",
-                          color: "var(--color-text-secondary)",
-                        }}
-                      >
-                        {t("eligibility.maxCapacity")}: MK{" "}
-                        {inst.maxLoanAmount.toLocaleString()}
-                      </div>
-                    )}
                   </div>
-                ))}
+                  <div>
+                    <div className="text-xs text-muted">{t("eligibility.maxCapacity")}</div>
+                    <div style={{ fontWeight: 600 }}>
+                      {inst.max_loan_amount ? `MK ${inst.max_loan_amount.toLocaleString()}` : "-"}
+                    </div>
+                  </div>
+                </div>
               </div>
-            </>
+            ))
+          ) : (
+            <div className="card" style={{ padding: "3rem", textAlign: "center", color: "var(--color-text-muted)" }}>
+              {t("eligibility.noMatches")}
+            </div>
           )}
         </div>
       )}

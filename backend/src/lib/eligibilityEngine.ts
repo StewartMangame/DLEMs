@@ -44,6 +44,13 @@ export interface InstitutionEligibilityResult {
   notes: string;
   rank?: number;
   dtiIfApproved: number;
+  loanTypeResults?: {
+    loanType: {
+      label: string;
+      minAmountMWK: number;
+    };
+    maxAffordableMWK: number;
+  }[];
 }
 
 export interface CompareResult {

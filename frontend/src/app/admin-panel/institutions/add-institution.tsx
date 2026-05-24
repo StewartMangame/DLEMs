@@ -17,6 +17,7 @@ import styles from './add-institution.module.css';
 interface FormData {
   name: string;
   type: string;
+  customInstitutionType: string;
   description: string;
   isActive: boolean;
   logo: File | null;
@@ -66,8 +67,8 @@ const INSTITUTION_TYPES = [
 
 const EMPLOYMENT_TYPES = [
   { value: 'civil_servant', label: 'Civil Servant' },
-  { value: 'private_sector', label: 'Private Sector' },
-  { value: 'self_employed', label: 'Self-Employed' },
+  { value: 'private_sector', label: 'Private Sector Employee' },
+  { value: 'self_employed', label: 'Self Employed' },
   { value: 'sacco_member', label: 'SACCO Member' },
 ];
 
@@ -82,6 +83,7 @@ export default function AddInstitution() {
   const [formData, setFormData] = useState<FormData>({
     name: '',
     type: 'bank',
+    customInstitutionType: '',
     description: '',
     isActive: true,
     logo: null,
@@ -93,7 +95,7 @@ export default function AddInstitution() {
     maxDebtToIncomeRatio: 30,
 
     minNetMonthlySalary: 50000,
-    eligibleEmploymentTypes: ['civil_servant', 'private_sector'],
+    eligibleEmploymentTypes: [],
 
     multipliers: {
       civilServant: 4,
@@ -147,6 +149,9 @@ export default function AddInstitution() {
           : type === 'number'
             ? parseFloat(value) || 0
             : value,
+      ...(name === 'type' && value !== 'other'
+        ? { customInstitutionType: '' }
+        : {}),
     }));
 
     if (errors[name]) {
@@ -179,15 +184,20 @@ export default function AddInstitution() {
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (!file.type.startsWith('image/')) {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/svg+xml'];
+      const allowedExtension = /\.(jpe?g|png|svg)$/i.test(file.name);
+      if (!allowedTypes.includes(file.type) || !allowedExtension) {
         setErrors((prev) => ({
           ...prev,
-          logo: 'Please upload a valid image file',
+          logo: 'Please upload a valid image file (JPG, PNG, or SVG).',
         }));
         return;
       }
-      if (file.size > 5 * 1024 * 1024) {
-        setErrors((prev) => ({ ...prev, logo: 'Image must be less than 5MB' }));
+      if (file.size > 2 * 1024 * 1024) {
+        setErrors((prev) => ({
+          ...prev,
+          logo: 'File size must not exceed 2MB.',
+        }));
         return;
       }
 
@@ -219,6 +229,8 @@ export default function AddInstitution() {
     const newErrors: FormErrors = {};
 
     if (!formData.name.trim()) newErrors.name = 'Institution name is required';
+    if (formData.type === 'other' && !formData.customInstitutionType.trim())
+      newErrors.customInstitutionType = 'Please specify the institution type.';
     if (formData.interestRate < 0)
       newErrors.interestRate = 'Interest rate cannot be negative';
     if (formData.processingFee < 0)
@@ -233,7 +245,8 @@ export default function AddInstitution() {
     if (formData.minNetMonthlySalary < 0)
       newErrors.minNetMonthlySalary = 'Minimum salary cannot be negative';
     if (formData.eligibleEmploymentTypes.length === 0)
-      newErrors.eligibleEmploymentTypes = 'Select at least one employment type';
+      newErrors.eligibleEmploymentTypes =
+        'Please select at least one eligible borrower category.';
     if (formData.minRepaymentTerm <= 0)
       newErrors.minRepaymentTerm = 'Minimum term must be greater than 0';
     if (formData.maxRepaymentTerm <= formData.minRepaymentTerm)
@@ -256,6 +269,13 @@ export default function AddInstitution() {
       // Basic info
       formPayload.append('name', formData.name);
       formPayload.append('type', formData.type);
+      if (formData.type === 'other') {
+        formPayload.append(
+          'customInstitutionType',
+          formData.customInstitutionType.trim(),
+        );
+      }
+      formPayload.append('status', formData.isActive ? 'active' : 'inactive');
       formPayload.append('description', formData.description);
       formPayload.append('isActive', String(formData.isActive));
       if (formData.logo) {
@@ -266,14 +286,11 @@ export default function AddInstitution() {
       formPayload.append('interestRate', String(formData.interestRate));
       formPayload.append('processingFee', String(formData.processingFee));
       formPayload.append('insuranceFee', String(formData.insuranceFee));
-      formPayload.append(
-        'maxDebtToIncomeRatio',
-        String(formData.maxDebtToIncomeRatio),
-      );
+      formPayload.append('maxDtiRatio', String(formData.maxDebtToIncomeRatio / 100));
 
       // Salary & income
       formPayload.append(
-        'minNetMonthlySalary',
+        'minNetSalary',
         String(formData.minNetMonthlySalary),
       );
       formPayload.append(
@@ -281,12 +298,14 @@ export default function AddInstitution() {
         JSON.stringify(formData.eligibleEmploymentTypes),
       );
 
-      // Multipliers
-      formPayload.append('multipliers', JSON.stringify(formData.multipliers));
+      formPayload.append('civilServantMultiplier', String(formData.multipliers.civilServant));
+      formPayload.append('privateMultiplier', String(formData.multipliers.privateSector));
+      formPayload.append('selfEmployedMultiplier', String(formData.multipliers.selfEmployed));
+      formPayload.append('saccoMemberMultiplier', String(formData.multipliers.saccoMember));
 
       // Repayment terms
-      formPayload.append('minRepaymentTerm', String(formData.minRepaymentTerm));
-      formPayload.append('maxRepaymentTerm', String(formData.maxRepaymentTerm));
+      formPayload.append('minRepaymentMonths', String(formData.minRepaymentTerm));
+      formPayload.append('maxRepaymentMonths', String(formData.maxRepaymentTerm));
 
       // Conditions
       formPayload.append(
@@ -295,15 +314,15 @@ export default function AddInstitution() {
       );
       formPayload.append('requiresPayslip', String(formData.requiresPayslip));
       formPayload.append(
-        'requiresCollateral',
+        'collateralAccepted',
         String(formData.requiresCollateral),
       );
-      formPayload.append('requiresCRBCheck', String(formData.requiresCRBCheck));
+      formPayload.append('requiresCrbCheck', String(formData.requiresCRBCheck));
       formPayload.append(
-        'requiresRepaymentReminders',
+        'reminderAvailable',
         String(formData.requiresRepaymentReminders),
       );
-      formPayload.append('additionalNotes', formData.additionalNotes);
+      formPayload.append('notes', formData.additionalNotes);
 
       const response = await fetch('/api/admin-panel/institutions', {
         method: 'POST',
@@ -408,6 +427,55 @@ export default function AddInstitution() {
 
               <div className={styles.formGroup}>
                 <label className={styles.label}>
+                  Institution Logo{' '}
+                  <span className={styles.optional}>(optional)</span>
+                </label>
+                <div className={styles.logoInline}>
+                  <button
+                    type="button"
+                    className={styles.uploadButton}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload size={16} />
+                    Upload Logo
+                  </button>
+                  <div className={styles.logoThumb}>
+                    {formData.logoPreview ? (
+                      <>
+                        <img src={formData.logoPreview} alt="Institution logo" />
+                        <button
+                          type="button"
+                          onClick={removeLogo}
+                          className={styles.removeLogo}
+                          aria-label="Remove logo"
+                        >
+                          <X size={14} />
+                        </button>
+                      </>
+                    ) : (
+                      <Building2 size={22} />
+                    )}
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.svg,image/jpeg,image/png,image/svg+xml"
+                    onChange={handleLogoUpload}
+                    className={styles.fileInput}
+                  />
+                </div>
+                <span className={styles.uploadHint}>
+                  JPG, PNG, or SVG. Maximum 2MB.
+                </span>
+                {errors.logo && (
+                  <span className={styles.errorText}>{errors.logo}</span>
+                )}
+              </div>
+            </div>
+
+            <div className={styles.gridTwo}>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
                   Institution Type <span className={styles.required}>*</span>
                 </label>
                 <select
@@ -425,10 +493,30 @@ export default function AddInstitution() {
                 {errors.type && (
                   <span className={styles.errorText}>{errors.type}</span>
                 )}
+                {formData.type === 'other' && (
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>
+                      Please specify institution type{' '}
+                      <span className={styles.required}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="customInstitutionType"
+                      value={formData.customInstitutionType}
+                      onChange={handleInputChange}
+                      className={`${styles.input} ${
+                        errors.customInstitutionType ? styles.inputError : ''
+                      }`}
+                    />
+                    {errors.customInstitutionType && (
+                      <span className={styles.errorText}>
+                        {errors.customInstitutionType}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
-            </div>
 
-            <div className={styles.gridTwo}>
               <div className={styles.formGroup}>
                 <label className={styles.label}>Status</label>
                 <div className={styles.switchContainer}>
@@ -446,48 +534,6 @@ export default function AddInstitution() {
                       {formData.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </label>
-                </div>
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.label}>
-                  Institution Logo{' '}
-                  <span className={styles.optional}>(optional)</span>
-                </label>
-                <div className={styles.logoContainer}>
-                  {formData.logoPreview ? (
-                    <div className={styles.logoPreview}>
-                      <img src={formData.logoPreview} alt="Institution logo" />
-                      <button
-                        type="button"
-                        onClick={removeLogo}
-                        className={styles.removeLogo}
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  ) : (
-                    <div
-                      className={styles.uploadZone}
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <Upload size={24} />
-                      <span>Click to upload</span>
-                      <span className={styles.uploadHint}>
-                        PNG, JPG, GIF (max 5MB)
-                      </span>
-                    </div>
-                  )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleLogoUpload}
-                    className={styles.fileInput}
-                  />
-                  {errors.logo && (
-                    <span className={styles.errorText}>{errors.logo}</span>
-                  )}
                 </div>
               </div>
             </div>
@@ -616,7 +662,7 @@ export default function AddInstitution() {
 
             <div className={styles.formGroup}>
               <label className={styles.label}>
-                Eligible Employment Types{' '}
+                Eligible Borrower Categories{' '}
                 <span className={styles.required}>*</span>
               </label>
               <div className={styles.checkboxGrid}>

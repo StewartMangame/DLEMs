@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-export type SaccoStatus = 'active' | 'inactive';
+export type SaccoStatus = 'active' | 'inactive' | 'coming_soon';
 
 @Entity('sacco')
 export class Sacco {

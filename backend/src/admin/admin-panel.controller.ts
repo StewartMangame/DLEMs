@@ -6,6 +6,7 @@ import {
   Patch,
   Delete,
   Body,
+  BadRequestException,
   Param,
   Query,
   UseGuards,
@@ -35,7 +36,29 @@ import { File } from 'multer';
 
 const Guard = () => UseGuards(AuthGuard('admin-jwt'));
 
-@Controller('admin-panel')
+const LOGO_UPLOAD_OPTIONS = {
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024 },
+  fileFilter: (_req: any, file: File, cb: multer.FileFilterCallback) => {
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/svg+xml'];
+    const allowedExtensions = /\.(jpe?g|png|svg)$/i;
+    if (
+      allowedMimeTypes.includes(file.mimetype) &&
+      allowedExtensions.test(file.originalname)
+    ) {
+      cb(null, true);
+      return;
+    }
+    cb(
+      new BadRequestException(
+        'Please upload a valid image file (JPG, PNG, or SVG).',
+      ) as any,
+      false,
+    );
+  },
+};
+
+@Controller(['admin-panel', 'admin'])
 @UseGuards(AuthGuard('admin-jwt'))
 export class AdminPanelController {
   constructor(private readonly svc: AdminPanelService) {}
@@ -68,7 +91,7 @@ export class AdminPanelController {
   }
 
   @Post('institutions')
-  @UseInterceptors(FileInterceptor('logo', { storage: multer.memoryStorage() }))
+  @UseInterceptors(FileInterceptor('logo', LOGO_UPLOAD_OPTIONS))
   createInstitution(
     @Req() req: any,
     @Body() body: CreateInstitutionDto,
@@ -92,12 +115,54 @@ export class AdminPanelController {
   }
 
   @Put('institutions/:id')
+  @UseInterceptors(FileInterceptor('logo', LOGO_UPLOAD_OPTIONS))
   updateInstitution(
     @Req() req: any,
     @Param('id') id: string,
-    @Body() body: UpdateInstitutionDto,
+    @Body() body: any,
+    @UploadedFile() file?: File,
   ) {
-    return this.svc.updateInstitution(req.user, +id, body);
+    if (
+      body &&
+      (body as any).eligibleEmploymentTypes &&
+      typeof (body as any).eligibleEmploymentTypes === 'string'
+    ) {
+      try {
+        (body as any).eligibleEmploymentTypes = JSON.parse(
+          (body as any).eligibleEmploymentTypes,
+        );
+      } catch (e) {
+        // ignore parse errors; validation will catch wrong types
+      }
+    }
+    if (body && typeof body.criteria === 'string') {
+      try {
+        body.criteria = JSON.parse(body.criteria);
+      } catch (e) {
+        // leave as-is; service will ignore invalid criteria objects
+      }
+    }
+    for (const key of [
+      'isInterestRateFixed',
+      'requiresCrbCheck',
+      'collateralAccepted',
+      'reminderAvailable',
+      'digitalApplicationAvailable',
+      'removeLogo',
+    ]) {
+      if (body[key] === 'true') body[key] = true;
+      if (body[key] === 'false') body[key] = false;
+    }
+    return this.svc.updateInstitution(req.user, +id, body, file);
+  }
+
+  @Patch('institutions/:id/status')
+  updateInstitutionStatus(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() body: { status: string },
+  ) {
+    return this.svc.updateInstitution(req.user, +id, { status: body.status });
   }
 
   @Post('institutions/:id/verify')
@@ -133,6 +198,15 @@ export class AdminPanelController {
     return this.svc.createProduct(req.user, +id, body);
   }
 
+  @Post('institutions/:id/branches')
+  createBranchOrProduct(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
+    return this.svc.createBranchOrProduct(req.user, +id, body);
+  }
+
   @Put('products/:id')
   updateProduct(
     @Req() req: any,
@@ -140,6 +214,26 @@ export class AdminPanelController {
     @Body() body: UpdateProductDto,
   ) {
     return this.svc.updateProduct(req.user, +id, body);
+  }
+
+  @Put('branches/:id')
+  updateBranchOrProduct(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
+    return this.svc.updateBranchOrProduct(req.user, +id, body);
+  }
+
+  @Patch('branches/:id/status')
+  updateBranchOrProductStatus(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() body: { status: string },
+  ) {
+    return this.svc.updateBranchOrProduct(req.user, +id, {
+      status: body.status,
+    });
   }
 
   // ── Section 2: SACCOs ──────────────────────────────────────────────────────
@@ -241,7 +335,11 @@ export class AdminPanelController {
     @Param('id') id: string,
     @Body() body: UpdateContentDto,
   ) {
-    return this.svc.updateContent(req.user, +id, body);
+    const numericId = Number(id);
+    if (Number.isFinite(numericId)) {
+      return this.svc.updateContent(req.user, numericId, body);
+    }
+    return this.svc.updateContentByKey(req.user, id, body);
   }
 
   // ── Section 8: Announcements ───────────────────────────────────────────────
@@ -266,6 +364,17 @@ export class AdminPanelController {
     @Body() body: UpdateAnnouncementDto,
   ) {
     return this.svc.updateAnnouncement(req.user, +id, body);
+  }
+
+  @Patch('announcements/:id/status')
+  updateAnnouncementStatus(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() body: { status: string },
+  ) {
+    return this.svc.updateAnnouncement(req.user, +id, {
+      status: body.status,
+    });
   }
 
   // ── Section 9: Admin Account Management ────────────────────────────────────

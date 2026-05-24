@@ -108,10 +108,9 @@ export class AdminPanelService {
       .limit(3)
       .getRawMany();
 
-    const [activeInstitutions, pendingVerification] = await Promise.all([
-      this.instRepo.count({ where: { isActive: true } }),
-      this.instRepo.count({ where: { status: 'pending_verification' } }),
-    ]);
+    const activeInstitutions = await this.instRepo.count({
+      where: { isActive: true },
+    });
 
     return {
       totalUsers,
@@ -121,7 +120,6 @@ export class AdminPanelService {
       checksThisMonth,
       topInstitutions,
       activeInstitutions,
-      pendingVerification,
     };
   }
 
@@ -155,8 +153,11 @@ export class AdminPanelService {
     this.requireSuper(admin);
     const inst = this.instRepo.create({
       name: data.name,
-      type: data.type,
-      status: data.status ?? 'active',
+      type: this.resolveInstitutionType(data),
+      status:
+        typeof data.status === 'string'
+          ? data.status.toLowerCase()
+          : 'active',
       isActive: data.status !== 'inactive',
       description: data.description,
       isInterestRateFixed: data.isInterestRateFixed ?? true,
@@ -169,20 +170,7 @@ export class AdminPanelService {
       eligibleEmploymentTypes: data.eligibleEmploymentTypes ?? [],
     });
     // If an image file was uploaded, persist it to public/uploads and set logoUrl
-    if (file && file.buffer) {
-      try {
-        const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
-        await fs.promises.mkdir(uploadsDir, { recursive: true });
-        const safeName = `${Date.now()}_${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-        const dest = path.join(uploadsDir, safeName);
-        await fs.promises.writeFile(dest, file.buffer);
-        inst.logoUrl = `/uploads/${safeName}`;
-      } catch (e) {
-        // Log error but continue without failing creation
-        // eslint-disable-next-line no-console
-        console.error('Failed to save uploaded logo:', e);
-      }
-    }
+    inst.logoUrl = await this.saveLogo(file);
     await this.instRepo.save(inst);
     const crit = this.criteriaRepo.create({
       institutionId: inst.id,
@@ -198,6 +186,7 @@ export class AdminPanelService {
       saccoMemberMultiplier: data.saccoMemberMultiplier ?? 6,
       requiresGuarantor: data.requiresGuarantor ?? false,
       requiresPayslip: data.requiresPayslip ?? true,
+      eligibleEmploymentTypes: data.eligibleEmploymentTypes ?? [],
       notes: data.notes,
     });
     await this.criteriaRepo.save(crit);
@@ -209,12 +198,16 @@ export class AdminPanelService {
     return { success: true, institution: inst };
   }
 
-  async updateInstitution(admin: any, id: number, data: any) {
+  async updateInstitution(admin: any, id: number, data: any, file?: File) {
     const inst = await this.instRepo.findOne({
       where: { id },
       relations: ['criteria'],
     });
     if (!inst) throw new NotFoundException('Institution not found');
+
+    if (data.type === 'other') {
+      data.type = this.resolveInstitutionType(data);
+    }
 
     const changes: string[] = [];
     const fields = [
@@ -229,6 +222,8 @@ export class AdminPanelService {
       'reminderAvailable',
       'digitalApplicationAvailable',
       'isInterestRateFixed',
+      'requiredDocuments',
+      'hasBranches',
       'reviewDueDate',
     ];
 
@@ -253,9 +248,19 @@ export class AdminPanelService {
 
     if (data.eligibleEmploymentTypes !== undefined) {
       inst.eligibleEmploymentTypes = data.eligibleEmploymentTypes;
+      if (inst.criteria) {
+        inst.criteria.eligibleEmploymentTypes = data.eligibleEmploymentTypes;
+      }
     }
 
-    if (data.status === 'inactive') inst.isActive = false;
+    if (data.removeLogo === true || data.removeLogo === 'true') {
+      inst.logoUrl = null;
+    } else if (file) {
+      inst.logoUrl = await this.saveLogo(file);
+    }
+
+    if (data.status === 'inactive' || data.status === 'coming_soon')
+      inst.isActive = false;
     else if (data.status === 'active') inst.isActive = true;
 
     await this.instRepo.save(inst);
@@ -296,9 +301,34 @@ export class AdminPanelService {
         }
       }
       await this.criteriaRepo.save(crit);
+    } else if (inst.criteria && data.eligibleEmploymentTypes !== undefined) {
+      await this.criteriaRepo.save(inst.criteria);
     }
 
     return { success: true, changes };
+  }
+
+  private resolveInstitutionType(data: any) {
+    if (data.type === 'other' && typeof data.customInstitutionType === 'string') {
+      const customType = data.customInstitutionType.trim();
+      if (customType) return customType;
+    }
+    return data.type;
+  }
+
+  private async saveLogo(file?: File) {
+    if (!file?.buffer) return undefined;
+    try {
+      const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+      await fs.promises.mkdir(uploadsDir, { recursive: true });
+      const safeName = `${Date.now()}_${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+      const dest = path.join(uploadsDir, safeName);
+      await fs.promises.writeFile(dest, file.buffer);
+      return `/uploads/${safeName}`;
+    } catch (e) {
+      console.error('Failed to save uploaded logo:', e);
+      return undefined;
+    }
   }
 
   async verifyInstitution(admin: any, id: number, reviewDueDate?: Date) {
@@ -353,6 +383,9 @@ export class AdminPanelService {
     data: Partial<LoanProduct>,
   ) {
     const product = this.productRepo.create({ ...data, institutionId });
+    if (typeof product.status === 'string') {
+      product.status = product.status.toLowerCase() as any;
+    }
     await this.productRepo.save(product);
     await this.log(admin.adminId, 'product.create', {
       entityType: 'LoanProduct',
@@ -362,14 +395,81 @@ export class AdminPanelService {
     return { success: true, product };
   }
 
+  async createBranchOrProduct(admin: any, institutionId: number, data: any) {
+    const institution = await this.instRepo.findOne({
+      where: { id: institutionId },
+    });
+    if (!institution) throw new NotFoundException('Institution not found');
+
+    if (institution.type === 'sacco') {
+      return this.createSacco(admin, {
+        name: data.branch_name ?? data.name,
+        status: data.status ?? 'active',
+        notes: data.description ?? data.notes,
+      });
+    }
+
+    return this.createProduct(admin, institutionId, {
+      name: data.product_name ?? data.name,
+      minAmount: data.min_amount ?? data.minAmount ?? 0,
+      maxAmount: data.max_amount ?? data.maxAmount ?? 0,
+      interestRate: data.interest_rate_value ?? data.interestRate ?? null,
+      repaymentPeriods: Array.isArray(data.repayment_periods)
+        ? data.repayment_periods.join(',')
+        : data.repaymentPeriods,
+      processingFeePercent:
+        data.processing_fee_percent ?? data.processingFeePercent ?? 0,
+      insuranceFeePercent:
+        data.insurance_fee_percent ?? data.insuranceFeePercent ?? 0,
+      conditions: data.description ?? data.conditions,
+      status: data.status ?? 'active',
+    });
+  }
+
   async updateProduct(admin: any, id: number, data: any) {
-    await this.productRepo.update(id, data);
+    const updateData = Object.fromEntries(
+      Object.entries(data).filter(([, value]) => value !== undefined),
+    );
+    await this.productRepo.update(id, updateData);
     await this.log(admin.adminId, 'product.update', {
       entityType: 'LoanProduct',
       entityId: String(id),
     });
     const product = await this.productRepo.findOne({ where: { id } });
     return { success: true, product };
+  }
+
+  async updateBranchOrProduct(admin: any, id: number, data: any) {
+    const product = await this.productRepo.findOne({ where: { id } });
+    if (product) {
+      return this.updateProduct(admin, id, {
+        name: data.product_name ?? data.name,
+        minAmount: data.min_amount ?? data.minAmount,
+        maxAmount: data.max_amount ?? data.maxAmount,
+        interestRate: data.interest_rate_value ?? data.interestRate,
+        repaymentPeriods: Array.isArray(data.repayment_periods)
+          ? data.repayment_periods.join(',')
+          : data.repaymentPeriods,
+        processingFeePercent:
+          data.processing_fee_percent ?? data.processingFeePercent,
+        insuranceFeePercent:
+          data.insurance_fee_percent ?? data.insuranceFeePercent,
+        conditions: data.description ?? data.conditions,
+        status:
+          typeof data.status === 'string'
+            ? data.status.toLowerCase()
+            : undefined,
+      });
+    }
+
+    const sacco = await this.saccoRepo.findOne({ where: { id } });
+    if (!sacco) throw new NotFoundException('Branch or product not found');
+    return this.updateSacco(admin, id, {
+      name: data.branch_name ?? data.name,
+      status:
+        typeof data.status === 'string' ? data.status.toLowerCase() : undefined,
+      notes: data.description ?? data.notes,
+    });
   }
 
   // ─── Section 3: User Management ────────────────────────────────────────────
@@ -381,7 +481,10 @@ export class AdminPanelService {
     this.requireSuper(admin);
     const sacco = this.saccoRepo.create({
       name: data.name,
-      status: data.status ?? 'active',
+      status:
+        typeof data.status === 'string'
+          ? (data.status.toLowerCase() as any)
+          : 'active',
       notes: data.notes,
     });
     await this.saccoRepo.save(sacco);
@@ -400,7 +503,10 @@ export class AdminPanelService {
 
     this.saccoRepo.merge(sacco, {
       name: data.name ?? sacco.name,
-      status: data.status ?? sacco.status,
+      status:
+        typeof data.status === 'string'
+          ? (data.status.toLowerCase() as any)
+          : sacco.status,
       notes: data.notes ?? sacco.notes,
     });
     await this.saccoRepo.save(sacco);
@@ -649,6 +755,24 @@ export class AdminPanelService {
     await this.log(admin.adminId, 'content.update', {
       entityType: 'ContentString',
       entityId: String(id),
+      description: `Updated content string: ${content.key}`,
+    });
+    return { success: true, content };
+  }
+
+  async updateContentByKey(
+    admin: any,
+    key: string,
+    data: Partial<ContentString>,
+  ) {
+    const content = await this.contentRepo.findOne({ where: { key } });
+    if (!content) throw new NotFoundException('Content string not found');
+
+    this.contentRepo.merge(content, data);
+    await this.contentRepo.save(content);
+    await this.log(admin.adminId, 'content.update', {
+      entityType: 'ContentString',
+      entityId: String(content.id),
       description: `Updated content string: ${content.key}`,
     });
     return { success: true, content };

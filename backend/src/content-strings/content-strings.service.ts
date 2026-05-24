@@ -11,6 +11,11 @@ export class ContentStringsService {
   ) {}
 
   async findAll() {
-    return this.contentRepo.find();
+    const strings = await this.contentRepo.find({ order: { key: 'ASC' } });
+    return strings.map((content) => ({
+      key: content.key,
+      english: content.english,
+      chichewa: content.chichewa ?? '',
+    }));
   }
 }

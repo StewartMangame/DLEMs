@@ -44,6 +44,7 @@ export default function RegisterPage() {
   const [otpError, setOtpError] = useState("");
   const [otpLoading, setOtpLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [devOtp, setDevOtp] = useState("");
 
   // Shared
   const [error, setError] = useState("");
@@ -90,7 +91,7 @@ export default function RegisterPage() {
           password: form.password,
         }),
       });
-      const data = await res.json();
+      const data = await readJson(res);
 
       if (!res.ok) {
         const msg: string = Array.isArray(data.message)
@@ -100,7 +101,9 @@ export default function RegisterPage() {
         return;
       }
 
-      setStep("otp");  // Step 1 done, show OTP input
+      setDevOtp(data.devOtp || "");
+      setStep("otp");
+      startResendCooldown();
     } catch {
       setError("Network error — could not reach the server. Please check your connection.");
     } finally {
@@ -141,7 +144,7 @@ export default function RegisterPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: form.email.trim().toLowerCase(), otp: code }),
       });
-      const data = await res.json();
+      const data = await readJson(res);
 
       if (!res.ok) {
         setOtpError(data.message || data.error || "Invalid or expired code. Please try again.");
@@ -171,11 +174,17 @@ export default function RegisterPage() {
     if (resendCooldown > 0) return;
     setOtpError("");
     try {
-      await fetch("/api/auth/resend-otp", {
+      const res = await fetch("/api/auth/resend-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: form.email.trim().toLowerCase() }),
       });
+      const data = await readJson(res);
+      if (!res.ok) {
+        setOtpError(data.message || data.error || "Could not resend code. Please try again.");
+        return;
+      }
+      setDevOtp(data.devOtp || "");
       startResendCooldown();
     } catch {
       setOtpError("Could not resend code. Please try again.");
@@ -407,6 +416,13 @@ export default function RegisterPage() {
               </div>
             )}
 
+            {devOtp && (
+              <div className="alert alert-info" role="status">
+                <span>i</span>
+                <div>Development code: <strong>{devOtp}</strong></div>
+              </div>
+            )}
+
             <form onSubmit={handleOtpSubmit} className={styles.form} noValidate>
               {/* 6-digit OTP boxes */}
               <div style={{
@@ -500,4 +516,15 @@ function stepDot(active: boolean): React.CSSProperties {
     transition: "all 0.3s",
     display: "inline-block",
   };
+}
+
+async function readJson(res: Response) {
+  const text = await res.text();
+  if (!text) return {};
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {};
+  }
 }

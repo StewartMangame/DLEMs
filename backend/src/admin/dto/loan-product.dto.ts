@@ -3,6 +3,7 @@ import {
   IsOptional,
   IsNumber,
   IsBoolean,
+  IsEnum,
   Min,
   Max,
   MinLength,
@@ -44,8 +45,29 @@ export class CreateProductDto {
   maxTermMonths?: number;
 
   @IsOptional()
+  @IsString()
+  repaymentPeriods?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  insuranceFeePercent?: number;
+
+  @IsOptional()
+  @IsString()
+  collateralRequirements?: string;
+
+  @IsOptional()
+  @IsString()
+  conditions?: string;
+
+  @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsEnum(['active', 'inactive', 'coming_soon'])
+  status?: 'active' | 'inactive' | 'coming_soon';
 }
 
 export class UpdateProductDto {
@@ -85,6 +107,27 @@ export class UpdateProductDto {
   maxTermMonths?: number;
 
   @IsOptional()
+  @IsString()
+  repaymentPeriods?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  insuranceFeePercent?: number;
+
+  @IsOptional()
+  @IsString()
+  collateralRequirements?: string;
+
+  @IsOptional()
+  @IsString()
+  conditions?: string;
+
+  @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsEnum(['active', 'inactive', 'coming_soon'])
+  status?: 'active' | 'inactive' | 'coming_soon';
 }

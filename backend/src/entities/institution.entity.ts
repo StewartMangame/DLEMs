@@ -13,7 +13,10 @@ import { Loan } from './loan.entity';
 import { FinancialProfile } from './financial-profile.entity';
 import { LoanApplication } from './loan-application.entity';
 
-export type InstitutionStatus = 'active' | 'inactive' | 'pending_verification';
+export type InstitutionStatus =
+  | 'active'
+  | 'inactive'
+  | 'coming_soon';
 
 @Entity()
 export class Institution {
@@ -60,6 +63,10 @@ export class Institution {
 
   @Column({ default: false })
   digitalApplicationAvailable: boolean;
+
+  /** Whether this institution type has configurable sub-entities (SACCO branches, FINCA products) */
+  @Column({ default: false })
+  hasBranches: boolean;
 
   /** JSON array of required document strings */
   @Column({ type: 'simple-json', nullable: true })
