@@ -129,6 +129,11 @@ export class CreateInstitutionDto {
   @IsString({ each: true })
   requiredDocuments?: string[];
 
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  eligibleEmploymentTypes?: string[];
+
   // Criteria fields (flattened on create)
   @IsOptional()
   @IsNumber()
@@ -250,6 +255,11 @@ export class UpdateInstitutionDto {
   @ValidateNested()
   @Type(() => InstitutionCriteriaDto)
   criteria?: InstitutionCriteriaDto;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  eligibleEmploymentTypes?: string[];
 }
 
 export class VerifyInstitutionDto {
