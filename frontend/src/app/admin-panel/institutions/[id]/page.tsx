@@ -78,6 +78,7 @@ export default function EditInstitutionPage() {
     setSaving(true);
     setFeedback(null);
     const body = { ...form, requiredDocuments: docs, criteria: criteriaForm };
+    if (!body.reviewDueDate) delete body.reviewDueDate;
     const res = await fetch(`/api/admin-panel/institutions/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -86,7 +87,13 @@ export default function EditInstitutionPage() {
     setSaving(false);
     if (res.ok)
       setFeedback({ type: 'success', text: 'Changes saved successfully' });
-    else setFeedback({ type: 'error', text: 'Failed to save changes' });
+    else {
+      const problem = await res.json().catch(() => null);
+      const message = Array.isArray(problem?.message)
+        ? problem.message.join(', ')
+        : problem?.message || 'Failed to save changes';
+      setFeedback({ type: 'error', text: message });
+    }
   }
 
   function addDoc() {

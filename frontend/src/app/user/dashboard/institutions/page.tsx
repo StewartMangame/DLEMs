@@ -1,1456 +1,812 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
-import Link from "next/link";
+
+import { useEffect, useMemo, useState } from "react";
 import styles from "./page.module.css";
-import { INSTITUTIONS } from "@/lib/institutions";
-import { runSaccoEligibility, calcLoanBreakdown } from "@/lib/institutions/saccoEligibilityEngine";
-import { runBankEligibility } from "@/lib/institutions/bankEligibilityEngine";
-import { runFincaEligibility } from "@/lib/institutions/fincaEligibilityEngine";
-import { useLanguage } from "@/lib/LanguageContext";
-import type {
-  InstitutionConfig,
-  SaccoIntakeData,
-  BankIntakeData,
-  FincaIntakeData,
-  EligibilityResult,
-  LoanTypeConfig,
-  EmploymentCategory,
-} from "@/lib/institutions/types";
-import { 
-  Building2, 
-  Handshake, 
-  CheckCircle2, 
-  AlertTriangle, 
-  Hourglass, 
-  XCircle, 
-  Calendar, 
-  Clock, 
-  Wallet, 
-  Calculator, 
-  Users, 
-  BarChart3, 
-  Info, 
-  Building,
+import {
+  checkEligibility,
+  fetchActiveAnnouncements,
+  fetchFincaProducts,
+  fetchInstitutionCriteria,
+  fetchInstitutions,
+  fetchSaccoBranches,
+} from "@/lib/api";
+import {
+  AlertTriangle,
+  Building2,
+  CheckCircle2,
+  ChevronLeft,
   ChevronRight,
-  ChevronLeft
+  RefreshCw,
 } from "lucide-react";
 
-// ─── Step IDs ──────────────────────────────────────────────────────────────────
 type Step = "select" | "intake" | "results";
 
-// ─── Helpers ────────────────────────────────────────────────────────────────────
-const STEP_LABELS: Record<Step, { en: string; ny: string }> = {
-  select : { en: "Select Institution",  ny: "Sankhani Malo"    },
-  intake : { en: "Additional Details",  ny: "Zambiri Zowonjeza" },
-  results: { en: "Eligibility Results", ny: "Zotsatira"        },
+type Institution = {
+  id: string;
+  name: string;
+  type: "COMMERCIAL_BANK" | "MICROFINANCE" | "SACCO_CATEGORY";
+  has_branches: boolean;
+  description: string;
+  status: "ACTIVE" | "PENDING_VERIFICATION";
+  pending_verification_note: string | null;
 };
+
+type Branch = {
+  id: string;
+  branch_name: string;
+  status: "ACTIVE" | "COMING_SOON";
+};
+
+type Product = {
+  id: string;
+  product_name: string;
+  description: string;
+  status: "ACTIVE" | "COMING_SOON";
+};
+
+type Criteria = {
+  id: string;
+  name: string;
+  min_income: number;
+  dti_cap_percent: number;
+  loan_products: {
+    product_name: string;
+    min_amount: number;
+    max_amount: number;
+    interest_rate_fixed: boolean;
+    interest_rate_value: number | null;
+    repayment_periods: number[];
+    processing_fee_percent: number;
+  }[];
+  required_documents: string[];
+  turnaround_time: string;
+  crb_check_required: boolean;
+};
+
+type EligibilityResult = {
+  institution_id: string;
+  institution_name: string;
+  result:
+    | "LIKELY_ELIGIBLE"
+    | "BORDERLINE"
+    | "NOT_ELIGIBLE"
+    | "NOT_YET_ELIGIBLE";
+  reason: string;
+  max_loan_amount: number | null;
+  available_monthly_repayment: number | null;
+  loan_products: { product_name: string; min_amount: number; max_amount: number }[];
+};
+
 const STEPS: Step[] = ["select", "intake", "results"];
-
-function mwk(n: number) {
-  return `MWK ${Math.round(n).toLocaleString()}`;
-}
-
-const LENDER_LOGOS: Record<string, string> = {
-  "FDH Bank": "/logos/fdh.png",
-  "Malawi Police SACCO": "/logos/sacco.png",
-  "FINCA Malawi": "/logos/finca.png",
-  "SACCO": "/logos/sacco.png",
+const STEP_LABELS: Record<Step, string> = {
+  select: "Select Institution",
+  intake: "Additional Details",
+  results: "Eligibility Results",
 };
 
-function institutionLogo(institution: Pick<InstitutionConfig, "name" | "logoUrl">) {
-  return institution.logoUrl || LENDER_LOGOS[institution.name];
+const LOGOS: Record<string, string> = {
+  "FDH Bank": "/logos/fdh.png",
+  "FINCA Malawi": "/logos/finca.png",
+  "Malawi Police SACCO": "/logos/sacco.png",
+};
+
+const currency = (value: number | null | undefined) =>
+  value === null || value === undefined
+    ? "-"
+    : `MK ${Math.round(value).toLocaleString()}`;
+
+function logoFor(institution: Institution) {
+  return LOGOS[institution.name];
 }
 
-// ─── Profile shape returned by /api/profile ────────────────────────────────────
-interface UserProfile {
-  monthlySalary?: number;
-  monthlyNetSalary?: number;
-  employmentCategory?: string;
-  employmentYears?: number;
-  existingLoanAmount?: number;
+function resultColor(result: EligibilityResult["result"]) {
+  if (result === "LIKELY_ELIGIBLE") return "var(--color-success)";
+  if (result === "NOT_ELIGIBLE") return "var(--color-danger)";
+  return "var(--color-warning)";
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Main page
-// ═══════════════════════════════════════════════════════════════════════════════
 export default function InstitutionsPage() {
-  const { language } = useLanguage();
-  const ny = language === "ny";
-
-  // ── Remote state ─────────────────────────────────────────────────────────────
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [profileLoading, setProfileLoading] = useState(true);
-
-  // ── UI state ─────────────────────────────────────────────────────────────────
+  const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [criteria, setCriteria] = useState<Record<string, Criteria>>({});
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [selectedId, setSelectedId] = useState<string>("");
+  const [selectedBranchId, setSelectedBranchId] = useState("");
+  const [selectedProductId, setSelectedProductId] = useState("");
+  const [profile, setProfile] = useState<any>(null);
+  const [result, setResult] = useState<EligibilityResult | null>(null);
   const [step, setStep] = useState<Step>("select");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [checking, setChecking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loanAmount, setLoanAmount] = useState(500000);
+  const [loanTerm, setLoanTerm] = useState(24);
+  const [hasCrbFlag, setHasCrbFlag] = useState<boolean | null>(null);
+  const [isSaccoMember, setIsSaccoMember] = useState<boolean | null>(null);
+  const [membershipMonths, setMembershipMonths] = useState(0);
+  const [isPartOfGroup, setIsPartOfGroup] = useState<boolean | null>(null);
+  const [isBusinessOwner, setIsBusinessOwner] = useState<boolean | null>(null);
+  const [groupSize, setGroupSize] = useState(0);
+  const [hasFincaAccount, setHasFincaAccount] = useState<boolean | null>(null);
 
-  // ── SACCO intake ─────────────────────────────────────────────────────────────
-  const [saccoIntake, setSaccoIntake] = useState<SaccoIntakeData>({
-    isSaccoMember: false,
-    saccoMembershipMonths: 0,
-    saccoName: "",
-  });
+  const selectedInstitution = useMemo(
+    () => institutions.find((institution) => institution.id === selectedId) ?? null,
+    [institutions, selectedId],
+  );
 
-  // ── Bank (CRB) intake ────────────────────────────────────────────────────────
-  const [bankIntake, setBankIntake] = useState<BankIntakeData>({
-    hasCrbFlag: null,
-  });
+  const selectedCriteria = selectedId ? criteria[selectedId] : null;
+  const activeBranches = branches.filter((branch) => branch.status === "ACTIVE");
+  const activeProducts = products.filter((product) => product.status === "ACTIVE");
 
-  // ── Finca intake ─────────────────────────────────────────────────────────────
-  const [fincaIntake, setFincaIntake] = useState<FincaIntakeData>({
-    isPartOfGroup: null,
-    groupSize: 0,
-    ownsBusiness: null,
-    hasFincaAccount: null,
-  });
+  async function loadAll() {
+    setLoading(true);
+    setError(null);
+    try {
+      const [institutionData, branchData, productData, announcementData] =
+        await Promise.all([
+          fetchInstitutions(),
+          fetchSaccoBranches(),
+          fetchFincaProducts(),
+          fetchActiveAnnouncements(),
+        ]);
 
-  // ── Selected products (for institutions that require product selection) ──────
-  const [selectedProducts, setSelectedProducts] = useState<Record<string, string>>({});
+      const liveInstitutions = Array.isArray(institutionData) ? institutionData : [];
+      setInstitutions(liveInstitutions);
+      setBranches(Array.isArray(branchData) ? branchData : []);
+      setProducts(Array.isArray(productData) ? productData : []);
+      setAnnouncements(Array.isArray(announcementData) ? announcementData : []);
 
-  // ── Results ──────────────────────────────────────────────────────────────────
-  const [results, setResults] = useState<EligibilityResult[]>([]);
+      const criteriaEntries = await Promise.all(
+        liveInstitutions.map(async (institution: Institution) => {
+          try {
+            const item = await fetchInstitutionCriteria(Number(institution.id));
+            return [institution.id, item] as const;
+          } catch {
+            return null;
+          }
+        }),
+      );
+      setCriteria(
+        Object.fromEntries(criteriaEntries.filter(Boolean) as [string, Criteria][]),
+      );
 
-  // ── Calculator ───────────────────────────────────────────────────────────────
-  const [calcState, setCalcState] = useState<Record<string, {
-    loanType: LoanTypeConfig | null;
-    rate: number;
-    term: number;
-  }>>({});
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  useEffect(() => {
-    fetch("/api/profile")
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.profile) setProfile(d.profile);
-        setProfileLoading(false);
-      })
-      .catch(() => setProfileLoading(false));
-  }, []);
-
-  // ── Derived profile values ────────────────────────────────────────────────────
-  const monthlyIncome       = profile?.monthlySalary ?? profile?.monthlyNetSalary ?? 0;
-  const serviceMonths       = profile?.employmentYears ?? 0;  // stored as months
-  const existingObligations = profile?.existingLoanAmount ?? 0;
-  const employmentCategory  = (profile?.employmentCategory ?? "private_sector") as EmploymentCategory;
-
-  // ── Derived institution sets from selection ───────────────────────────────────
-  const displayCards = useMemo(() => {
-    const cards: InstitutionConfig[] = [];
-    const saccoInsts = INSTITUTIONS.filter(i => i.type === "SACCO");
-    
-    if (saccoInsts.length > 0) {
-      cards.push({
-        id: "sacco-group",
-        name: "SACCO",
-        type: "SACCO",
-        logoUrl: "/logos/sacco.png",
-        description: "Select this if you are a member of a SACCO. You will be asked to choose your specific SACCO from a list.",
-        membershipRequired: true,
-        crbCheckRequired: false,
-        requiresProductSelection: false,
-        requiresGroupLending: false,
-        minimumMembershipMonths: 0,
-        turnaroundDays: "Varies",
-        comparisonFields: {
-          minimumLoanMWK: 0,
-          maximumLoanMWK: 0,
-        }
-      } as any);
+      const profileResponse = await fetch("/api/profile", { cache: "no-store" });
+      if (profileResponse.ok) {
+        const profileJson = await profileResponse.json();
+        setProfile(profileJson.profile ?? null);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to load live institution data.");
+    } finally {
+      setLoading(false);
     }
-    cards.push(...INSTITUTIONS.filter(i => i.type !== "SACCO"));
-    return cards;
-  }, []);
-
-  const selectedDisplayCards = useMemo(
-    () => (selectedId ? displayCards.filter(i => i.id === selectedId) : []),
-    [selectedId, displayCards]
-  );
-
-  const selectedInstitutions = useMemo(() => {
-    const insts = selectedId
-      ? INSTITUTIONS.filter(i => i.id === selectedId && i.type !== "SACCO")
-      : [];
-    if (selectedId === "sacco-group" && saccoIntake.saccoName) {
-      const selectedSacco = INSTITUTIONS.find(i => i.id === saccoIntake.saccoName);
-      if (selectedSacco) insts.push(selectedSacco);
-    }
-    return insts;
-  }, [selectedId, saccoIntake.saccoName]);
-
-  const hasSaccoInstitution = useMemo(
-    () => selectedDisplayCards.some(i => i.type === "SACCO" || i.membershipRequired),
-    [selectedDisplayCards]
-  );
-  const hasBankInstitution = useMemo(
-    () => selectedDisplayCards.some(i => i.crbCheckRequired),
-    [selectedDisplayCards]
-  );
-  const hasFincaInstitution = useMemo(
-    () => selectedDisplayCards.some(i => i.requiresGroupLending),
-    [selectedDisplayCards]
-  );
-  const needsIntakeStep = hasSaccoInstitution || hasBankInstitution || hasFincaInstitution;
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Handlers
-  // ─────────────────────────────────────────────────────────────────────────────
-  function toggleInstitution(id: string) {
-    setSelectedId(prev => (prev === id ? null : id));
   }
 
-  function handleProceedFromSelect() {
-    if (!selectedId) return;
-    
-    // Validate that institutions requiring product selection have a product selected
-    const unselectedProductInsts = selectedDisplayCards.filter(
-      inst => inst.requiresProductSelection && !selectedProducts[inst.id]
-    );
-    if (unselectedProductInsts.length > 0) {
-      alert(ny ? "Chonde sankhani mtundu wa ngongole woyamba" : "Please select a loan product for all expanded institutions.");
+  useEffect(() => {
+    loadAll();
+  }, []);
+
+  function chooseInstitution(id: string) {
+    setSelectedId(id);
+    setSelectedBranchId("");
+    setSelectedProductId("");
+    setResult(null);
+  }
+
+  function resetFlow() {
+    setStep("select");
+    setResult(null);
+  }
+
+  function proceedToIntake() {
+    if (!selectedInstitution) return;
+    setStep("intake");
+  }
+
+  async function runCheck() {
+    if (!selectedInstitution) return;
+    if (selectedInstitution.type === "SACCO_CATEGORY" && !selectedBranchId) {
+      setError("Please select your SACCO before checking eligibility.");
+      return;
+    }
+    if (selectedInstitution.type === "MICROFINANCE" && activeProducts.length > 0 && !selectedProductId) {
+      setError("Please select a FINCA loan product before checking eligibility.");
       return;
     }
 
-    if (needsIntakeStep) {
-      setStep("intake");
-    } else {
-      runEligibility();
+    setChecking(true);
+    setError(null);
+    try {
+      const isSacco = selectedInstitution.type === "SACCO_CATEGORY";
+      const employmentCategory =
+        isSacco && isSaccoMember
+          ? "SACCO_MEMBER"
+          : profile?.employmentCategory?.toUpperCase?.() ?? "PRIVATE_SECTOR";
+      const userProfile = {
+        monthly_net_income:
+          profile?.monthlyNetSalary ?? profile?.monthlySalary ?? 0,
+        employment_category: employmentCategory,
+        length_of_service_months: profile?.employmentYears ?? 0,
+        existing_monthly_obligations: profile?.existingLoanAmount ?? 0,
+        requested_amount: loanAmount,
+        requested_term_months: loanTerm,
+        sacco_membership_months: isSacco ? membershipMonths : null,
+        has_crb_flag: hasCrbFlag ?? false,
+        is_business_owner: selectedInstitution.type === "MICROFINANCE" ? isBusinessOwner : null,
+        group_size:
+          selectedInstitution.type === "MICROFINANCE"
+            ? isPartOfGroup
+              ? groupSize
+              : 0
+            : null,
+        has_finca_account: selectedInstitution.type === "MICROFINANCE" ? hasFincaAccount : null,
+      };
+      const data = await checkEligibility(userProfile, [selectedInstitution.id]);
+      setResult(Array.isArray(data) ? data[0] ?? null : null);
       setStep("results");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Eligibility check failed.");
+    } finally {
+      setChecking(false);
     }
   }
 
-  function runEligibility() {
-    const newResults: EligibilityResult[] = selectedInstitutions.map(inst => {
-      if (inst.requiresGroupLending) {
-        return runFincaEligibility(inst, {
-          employmentCategory,
-          monthlyNetIncome: monthlyIncome,
-          serviceMonths,
-          existingMonthlyObligations: existingObligations,
-          finca: fincaIntake,
-          bank: bankIntake,
-        });
-      }
-      if (inst.type === "Commercial Bank") {
-        return runBankEligibility(inst, {
-          employmentCategory,
-          monthlyNetIncome: monthlyIncome,
-          serviceMonths,
-          existingMonthlyObligations: existingObligations,
-          bank: bankIntake,
-        });
-      }
-      // SACCO and any other types — use SACCO engine
-      return runSaccoEligibility(inst, {
-        employmentCategory,
-        monthlyNetIncome: monthlyIncome,
-        serviceMonths,
-        existingMonthlyObligations: existingObligations,
-        sacco: saccoIntake,
-      });
-    });
-    setResults(newResults);
-
-    // Initialise calculator for each eligible or borderline institution
-    const init: typeof calcState = {};
-    newResults.forEach(r => {
-      if (r.status === "likely_eligible" || r.status === "borderline") {
-        const defaultTerm = r.institution.defaultRepaymentTermMonths
-          ?? r.institution.repaymentTermsMonths[0]
-          ?? 12;
-        // If institution requires product selection, only select the chosen product
-        let matchedLoanType = r.institution.loanTypes[0] ?? null;
-        if (r.institution.requiresProductSelection && selectedProducts[r.institution.id]) {
-          matchedLoanType = r.institution.loanTypes.find(lt => lt.key === selectedProducts[r.institution.id]) ?? matchedLoanType;
-        }
-
-        init[r.institution.id] = {
-          loanType: matchedLoanType,
-          rate: r.institution.fixedInterestRate ?? 24,
-          term: defaultTerm,
-        };
-      }
-    });
-    setCalcState(init);
+  if (loading) {
+    return <div className={styles.page}>Loading live institution data...</div>;
   }
 
-  function handleProceedFromIntake() {
-    runEligibility();
-    setStep("results");
-  }
-
-  function reset() {
-    setStep("select");
-    setSelectedId(null);
-    setResults([]);
-    setSaccoIntake({ isSaccoMember: false, saccoMembershipMonths: 0, saccoName: "" });
-    setBankIntake({ hasCrbFlag: null });
-    setFincaIntake({ isPartOfGroup: null, groupSize: 0, ownsBusiness: null, hasFincaAccount: null });
-    setSelectedProducts({});
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  const profileComplete = !!(profile && monthlyIncome > 0 && profile.employmentCategory);
-  const stepIdx = STEPS.indexOf(step);
-
-  // ─────────────────────────────────────────────────────────────────────────────
   return (
     <div className={styles.page}>
-      {/* ── Page header ─────────────────────────────────────────────────────── */}
       <div className={styles.header}>
-        <h1 className="text-h2">
-          {ny ? "Kuyang'anira Mwayi wa Ngongole" : "Institution Eligibility Check"}
-        </h1>
-        <p className="text-sm" style={{ color: "var(--color-text-secondary)", marginTop: 4 }}>
-          {ny
-            ? "Sankhani malo amodzi kuti muyang'ane mwayi wanu wa ngongole." 
-            : "Select one institution to check your loan eligibility and compare terms."}
-        </p>
+        <div>
+          <h1 className="text-h2">Check Eligibility</h1>
+          <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+            Choose one lender and answer the guided questions before checking.
+          </p>
+        </div>
+        <button className="btn btn-ghost btn-sm" onClick={loadAll}>
+          <RefreshCw size={16} /> Refresh
+        </button>
       </div>
 
-      {/* ── Profile warning ──────────────────────────────────────────────────── */}
-      {!profileLoading && !profileComplete && (
-        <div className="alert alert-warning">
-          <span>⚠</span>
-          <div>
-            <strong>{ny ? "Uzani mbiri yanu choyamba" : "Complete your financial profile first."}</strong>{" "}
-            {ny
-              ? "Kumbukirani kutha mbiri yanu yachuma kuti muthe kuyang'anira ngongole."
-              : "Your profile is needed to run eligibility checks."}{" "}
-            <Link href="/user/dashboard/profile">{ny ? "Konzani mbiri →" : "Set up profile →"}</Link>
+      <StepIndicator step={step} />
+
+      {announcements
+        .filter((announcement) => !announcement.institution_id)
+        .map((announcement) => (
+          <div key={announcement.id} className="alert alert-info">
+            {announcement.message_english}
           </div>
+        ))}
+
+      {error && (
+        <div className="alert alert-danger">
+          {error} <button className="btn btn-sm" onClick={() => setError(null)}>Dismiss</button>
         </div>
       )}
 
-      {/* ── Step progress indicator ──────────────────────────────────────────── */}
-      {profileComplete && (
-        <div className={styles.stepIndicator}>
-          {STEPS.map((s, i) => {
-            const isDone   = i < stepIdx;
-            const isActive = i === stepIdx;
-            return (
-              <div key={s} style={{ display: "flex", alignItems: "center", flex: i < STEPS.length - 1 ? 1 : "0 0 auto" }}>
-                <div className={styles.step}>
-                  <div className={`${styles.stepDot} ${isActive ? styles.active : ""} ${isDone ? styles.done : ""}`}>
-                    {isDone ? <CheckCircle2 size={16} /> : i + 1}
+      {step === "select" && (
+        <>
+          {institutions.length === 0 ? (
+            <div className="card">No institutions are currently available. Please check back soon.</div>
+          ) : (
+            <div className={styles.institutionGrid}>
+              {institutions.map((institution) => (
+                <button
+                  key={institution.id}
+                  type="button"
+                  className={`card ${styles.institutionCard} ${
+                    selectedId === institution.id ? styles.selected : ""
+                  }`}
+                  onClick={() => chooseInstitution(institution.id)}
+                >
+                  <div className={styles.cardTop}>
+                    <div className={styles.cardIcon}>
+                      {logoFor(institution) ? (
+                        <img
+                          src={logoFor(institution)}
+                          alt={institution.name}
+                          className={styles.partnerLogo}
+                        />
+                      ) : (
+                        <Building2 size={22} />
+                      )}
+                    </div>
+                    <span className={styles.checkmark}>
+                      <CheckCircle2 size={14} />
+                    </span>
                   </div>
-                  <span className={`${styles.stepLabel} ${isActive ? styles.active : ""} ${isDone ? styles.done : ""}`}>
-                    {ny ? STEP_LABELS[s].ny : STEP_LABELS[s].en}
-                  </span>
-                </div>
-                {i < STEPS.length - 1 && (
-                  <div className={`${styles.stepConnector} ${isDone ? styles.done : ""}`} />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* ══════════════════════════════════════════════════════════════════════ */}
-      {/* STEP 1 — Institution selection                                       */}
-      {/* ══════════════════════════════════════════════════════════════════════ */}
-      {step === "select" && profileComplete && (
-        <div>
-          <h2 className="text-h3" style={{ marginBottom: "var(--space-md)" }}>
-            {ny ? "Sankhani malo omwe mukufuna" : "Choose one institution to check"}
-          </h2>
-          <p className="text-sm" style={{ color: "var(--color-text-secondary)", marginBottom: "var(--space-lg)" }}>
-            {ny
-              ? "Sankhani malo amodzi okha kuti muyang'ane."
-              : "Select one institution at a time. Only one can be checked."}
-          </p>
-
-          <div className={styles.institutionGrid}>
-            {displayCards.map(inst => (
-              <InstitutionCard
-                key={inst.id}
-                institution={inst}
-                selected={selectedId === inst.id}
-                selectedProductId={selectedProducts[inst.id]}
-                onToggle={() => toggleInstitution(inst.id)}
-                onSelectProduct={(productId) => setSelectedProducts(p => ({ ...p, [inst.id]: productId }))}
-                ny={ny}
-              />
-            ))}
-          </div>
-
-          <div className={styles.actionRow} style={{ marginTop: "var(--space-xl)" }}>
-            <button
-              className="btn btn-primary btn-lg"
-              disabled={!selectedId}
-              onClick={handleProceedFromSelect}
-            >
-              {ny ? "Pita →" : "Check Eligibility →"}
-            </button>
-            {!selectedId && (
-              <span className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-                {ny ? "Sankhani malo oyamba" : "Select one institution to continue"}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ══════════════════════════════════════════════════════════════════════ */}
-      {/* STEP 2 — Additional intake form (SACCO + Bank combined)              */}
-      {/* ══════════════════════════════════════════════════════════════════════ */}
-      {step === "intake" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-xl)" }}>
-          {/* SACCO details — only if at least one SACCO is selected */}
-          {hasSaccoInstitution && (
-            <SaccoIntakeForm
-              intake={saccoIntake}
-              onChange={setSaccoIntake}
-              ny={ny}
-            />
-          )}
-
-          {/* CRB declaration — only if at least one commercial bank or FINCA is selected */}
-          {hasBankInstitution && (
-            <BankIntakeForm
-              intake={bankIntake}
-              onChange={setBankIntake}
-              ny={ny}
-            />
-          )}
-
-          {/* FINCA-specific intake */}
-          {hasFincaInstitution && (
-            <FincaIntakeForm
-              intake={fincaIntake}
-              onChange={setFincaIntake}
-              ny={ny}
-            />
+                  <div className={styles.cardName}>{institution.name}</div>
+                  <div className="badge badge-neutral text-xs">{institution.type}</div>
+                  <p className={styles.cardDesc}>{institution.description}</p>
+                  {institution.status === "PENDING_VERIFICATION" && (
+                    <div className="alert alert-warning" style={{ marginTop: 12 }}>
+                      <AlertTriangle size={16} /> {institution.pending_verification_note}
+                    </div>
+                  )}
+                  {announcements
+                    .filter((announcement) => announcement.institution_id === institution.id)
+                    .map((announcement) => (
+                      <div key={announcement.id} className="alert alert-info" style={{ marginTop: 12 }}>
+                        {announcement.message_english}
+                      </div>
+                    ))}
+                </button>
+              ))}
+            </div>
           )}
 
           <div className={styles.actionRow}>
-            <button className="btn btn-ghost" onClick={() => setStep("select")}>
-              ← {ny ? "Bwererani" : "Back"}
-            </button>
             <button
-              className="btn btn-primary btn-lg"
-              disabled={
-                (hasSaccoInstitution && (!saccoIntake.isSaccoMember || saccoIntake.saccoMembershipMonths <= 0 || saccoIntake.saccoName.trim() === "")) ||
-                (hasBankInstitution && bankIntake.hasCrbFlag === null) ||
-                (hasFincaInstitution && (fincaIntake.isPartOfGroup === null || (fincaIntake.isPartOfGroup && (fincaIntake.groupSize < 5 || fincaIntake.groupSize > 25)) || fincaIntake.ownsBusiness === null || fincaIntake.hasFincaAccount === null))
-              }
-              onClick={handleProceedFromIntake}
+              className="btn btn-primary"
+              disabled={!selectedInstitution}
+              onClick={proceedToIntake}
             >
-              {ny ? "Yang'anani Mwayi →" : "Run Eligibility Check →"}
+              Continue <ChevronRight size={16} />
             </button>
           </div>
-        </div>
-      )}
-
-      {/* ══════════════════════════════════════════════════════════════════════ */}
-      {/* STEP 3 — Results                                                     */}
-      {/* ══════════════════════════════════════════════════════════════════════ */}
-      {step === "results" && results.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-xl)" }}>
-          {results.map(result => (
-            <div key={result.institution.id}>
-              <EligibilityResultCard
-                result={result}
-                ny={ny}
-              />
-
-              {/* Calculator — only for eligible or borderline results */}
-              {(result.status === "likely_eligible" || result.status === "borderline") && calcState[result.institution.id] && (
-                <RepaymentCalculator
-                  result={result}
-                  state={calcState[result.institution.id]}
-                  onChange={patch =>
-                    setCalcState(prev => ({
-                      ...prev,
-                      [result.institution.id]: { ...prev[result.institution.id], ...patch },
-                    }))
-                  }
-                  ny={ny}
-                />
-              )}
-
-              {/* Comparison table */}
-              <ComparisonTable
-                institution={result.institution}
-                selectedProductId={selectedProducts[result.institution.id]}
-                ny={ny}
-              />
-            </div>
-          ))}
-
-          <div className={styles.actionRow} style={{ marginTop: "var(--space-md)" }}>
-            <button className="btn btn-ghost" onClick={reset}>
-              ← {ny ? "Bwererani kumayambiriro" : "Start over"}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Component: Institution card
-// ═══════════════════════════════════════════════════════════════════════════════
-function InstitutionCard({
-  institution, selected, selectedProductId, onToggle, onSelectProduct, ny,
-}: {
-  institution: InstitutionConfig;
-  selected: boolean;
-  selectedProductId?: string;
-  onToggle: () => void;
-  onSelectProduct?: (productId: string) => void;
-  ny: boolean;
-}) {
-  const TypeIcon = institution.type === "SACCO" ? Handshake : Building2;
-  const logo = institutionLogo(institution);
-
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      className={`card ${styles.institutionCard} ${selected ? styles.selected : ""}`}
-      style={{ cursor: selected && institution.requiresProductSelection ? "default" : "pointer" }}
-      onClick={onToggle}
-      onKeyDown={e => e.key === "Enter" && onToggle()}
-      aria-pressed={selected}
-      aria-label={`Select ${institution.name}`}
-    >
-      <div>
-        <div className={styles.cardTop}>
-          <div className={styles.cardIcon}>
-            {logo ? (
-              <img src={logo} alt={institution.name} className={styles.partnerLogo} />
-            ) : (
-              <TypeIcon size={24} />
-            )}
-          </div>
-          <div className={`${styles.checkmark} ${selected ? styles.selected : ""}`}>
-            {selected && <CheckCircle2 size={18} />}
-          </div>
-        </div>
-      </div>
-
-      <div className={styles.cardName}>{institution.name}</div>
-
-      <div className={styles.cardMeta}>
-        <span className="badge badge-info">{institution.type}</span>
-        {institution.membershipRequired && (
-          <span className="badge badge-warning">
-            {ny ? "Membala chokha" : "Members only"}
-          </span>
-        )}
-        {institution.crbCheckRequired && (
-          <span className="badge badge-secondary">
-            {ny ? "CRB Imasungidwa" : "CRB Required"}
-          </span>
-        )}
-      </div>
-
-      <p className={styles.cardDesc}>{institution.description}</p>
-
-      <div style={{ marginTop: "var(--space-md)", fontSize: "0.8rem", color: "var(--color-text-muted)", pointerEvents: "none" }}>
-        {institution.minimumMembershipMonths > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Calendar size={12} /> {ny ? "Unansi wofunikira:" : "Min. membership:"} {institution.minimumMembershipMonths} {ny ? "miyezi" : "months"}
-          </div>
-        )}
-        <div style={{ marginTop: institution.minimumMembershipMonths > 0 ? 4 : 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Clock size={12} /> {ny ? "Nthawi yotsatira:" : "Turnaround:"} {institution.turnaroundDays}
-        </div>
-        {institution.id === "sacco-group" ? (
-          <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Wallet size={12} /> {ny ? "Ngongole:" : "Loan:"} {ny ? "Zimatengera SACCO" : "Varies by SACCO"}
-          </div>
-        ) : (
-          <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Wallet size={12} /> {ny ? "Ngongole:" : "Loan:"} {mwk(institution.comparisonFields.minimumLoanMWK)} – {mwk(institution.comparisonFields.maximumLoanMWK)}
-          </div>
-        )}
-      </div>
-
-      {selected && institution.requiresProductSelection && (
-        <div 
-          className={styles.productSelectionContainer}
-          onClick={e => e.stopPropagation()} // Prevent card toggle when clicking inside
-        >
-          <h4 className="text-sm" style={{ fontWeight: 600, marginBottom: "var(--space-sm)", color: "var(--color-text-primary)" }}>
-            {ny ? "Sankhani Mtundu wa Ngongole" : "Select Loan Product"}
-          </h4>
-          <div className={styles.productGrid}>
-            {institution.loanTypes.map(lt => (
-              <div 
-                key={lt.key} 
-                className={`${styles.productCard} ${selectedProductId === lt.key ? styles.selectedProduct : ''}`} 
-                onClick={() => onSelectProduct && onSelectProduct(lt.key)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={e => e.key === "Enter" && onSelectProduct && onSelectProduct(lt.key)}
-              >
-                <div className={styles.productCardLabel}>{ny ? lt.labelNy : lt.label}</div>
-              </div>
-            ))}
-            <div className={styles.productCardComingSoon}>
-              {ny ? "Zambiri zikubwera..." : "More products coming soon..."}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Component: SACCO intake form (shown only when SACCO institution selected)
-// ═══════════════════════════════════════════════════════════════════════════════
-function SaccoIntakeForm({
-  intake, onChange, ny,
-}: {
-  intake: SaccoIntakeData;
-  onChange: (d: SaccoIntakeData) => void;
-  ny: boolean;
-}) {
-  return (
-    <div className={`card ${styles.intakeCard}`}>
-      <div className={styles.intakeTitle}>
-        <div className={styles.intakeIcon}><Handshake size={24} /></div>
-        <div>
-          <h2 className="text-h3">{ny ? "Zambiri za SACCO Yanu" : "Your SACCO Membership Details"}</h2>
-          <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-            {ny
-              ? "Izi zimagwiritsidwa ntchito kuyesa ngati mukuyenera ngongole ku SACCO."
-              : "This information is used to verify your SACCO membership eligibility."}
-          </p>
-        </div>
-      </div>
-
-      <div className="grid-2" style={{ gap: "var(--space-lg)" }}>
-        {/* Are you a SACCO member? */}
-        <div className="form-group" style={{ gridColumn: "1 / -1" }}>
-          <label className="form-label">
-            {ny ? "Kodi ndinu membala wa SACCO?" : "Are you a registered SACCO member?"}
-          </label>
-          <div style={{ display: "flex", gap: "var(--space-md)", marginTop: "var(--space-sm)" }}>
-            {[true, false].map(val => (
-              <label
-                key={String(val)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "var(--space-sm)",
-                  cursor: "pointer",
-                  padding: "10px 18px",
-                  borderRadius: "var(--radius-md)",
-                  border: `1.5px solid ${intake.isSaccoMember === val ? "var(--color-primary)" : "var(--color-border)"}`,
-                  background: intake.isSaccoMember === val ? "var(--color-primary-glow)" : "transparent",
-                  transition: "all var(--transition-fast)",
-                  fontSize: "0.9rem",
-                  fontWeight: 500,
-                }}
-              >
-                <input
-                  type="radio"
-                  name="isSaccoMember"
-                  checked={intake.isSaccoMember === val}
-                  onChange={() => onChange({ ...intake, isSaccoMember: val })}
-                  style={{ display: "none" }}
-                />
-                {val
-                  ? (ny ? "Inde, ndine membala" : "Yes, I am a member")
-                  : (ny ? "Ayi, sindine membala" : "No, I am not a member")}
-              </label>
-            ))}
-          </div>
-          {!intake.isSaccoMember && (
-            <div className="alert alert-warning" style={{ marginTop: "var(--space-md)", display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <AlertTriangle size={20} />
-              <div>
-                {ny
-                  ? "Ngati simuli membala wa SACCO, simutha kulowera malowo."
-                  : "If you are not a SACCO member, you will not qualify for SACCO institutions."}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* SACCO name */}
-        <div className="form-group">
-          <label className="form-label" htmlFor="saccoName">
-            {ny ? "Dzina la SACCO yanu" : "Which SACCO do you belong to?"}
-          </label>
-          <select
-            id="saccoName"
-            className="form-select"
-            value={intake.saccoName}
-            onChange={e => onChange({ ...intake, saccoName: e.target.value })}
-          >
-            <option value="">{ny ? "Sankhani SACCO yanu..." : "Select your SACCO..."}</option>
-            {INSTITUTIONS.filter(i => i.type === "SACCO").map(s => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
-          <div className="form-help" style={{ marginTop: "8px" }}>
-            {ny ? "Simukuwona SACCO yanu? SACCO zina ziwonjezedwa posachedwa." : "Don't see your SACCO? More SACCOs will be added soon."}
-          </div>
-        </div>
-
-        {/* Membership duration */}
-        <div className="form-group">
-          <label className="form-label" htmlFor="saccoMonths">
-            {ny ? "Nthawi ya unansi (miyezi)" : "How long have you been a member? (months)"}
-          </label>
-          <input
-            id="saccoMonths"
-            type="number"
-            min={0}
-            className="form-input"
-            placeholder={ny ? "mwachitsanzo: 6" : "e.g. 6"}
-            value={intake.saccoMembershipMonths || ""}
-            onChange={e => onChange({ ...intake, saccoMembershipMonths: parseInt(e.target.value) || 0 })}
-          />
-          <div className="form-help">
-            {ny
-              ? "Malawi Police SACCO imafuna miyezi 3 yotsatira."
-              : "Malawi Police SACCO requires a minimum of 3 months membership."}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Component: Bank CRB intake form (shown only when commercial bank selected)
-// ═══════════════════════════════════════════════════════════════════════════════
-function BankIntakeForm({
-  intake, onChange, ny,
-}: {
-  intake: BankIntakeData;
-  onChange: (d: BankIntakeData) => void;
-  ny: boolean;
-}) {
-  return (
-    <div className={`card ${styles.intakeCard}`}>
-      <div className={styles.intakeTitle}>
-        <div className={styles.intakeIcon}><Building2 size={24} /></div>
-        <div>
-          <h2 className="text-h3">{ny ? "Nkhani ya CRB" : "Credit Reference Bureau (CRB) Declaration"}</h2>
-          <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-            {ny
-              ? "Mabanki amawona zolemba za CRB nthawi yonse isanapereke ngongole. Tikufuna kuzindikira zomwe muna ndi zolemba za CRB."
-              : "Commercial banks always check CRB records before approving loans. We need to understand your current CRB status."}
-          </p>
-        </div>
-      </div>
-
-      <div style={{ 
-        background: "rgba(30, 111, 255, 0.05)", 
-        borderLeft: "4px solid var(--color-primary)", 
-        padding: "1rem", 
-        borderRadius: "var(--radius-sm)",
-        marginTop: "var(--space-md)"
-      }}>
-        <h4 className="text-xs" style={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px", color: "var(--color-primary)" }}>
-          {ny ? "Kodi CRB check ndi chiyani?" : "What is a CRB check?"}
-        </h4>
-        <p className="text-sm" style={{ lineHeight: "1.5", color: "var(--color-text-secondary)" }}>
-          {ny 
-            ? "Ku Malawi, mabanki onse ndi obwereketsa amagawana mbiri yakubwereka ndi bungwe lalikulu lotchedwa Credit Reference Bureau (CRB). Musanapereke ngongole yanu, mabanki amalonda amafufuza mbiriyi kuti awone ngati muli ndi ngongole zomwe simunalipire kapena mwaphonya malipiro m'mbuyomu. Izi zitha kukhudza mwayi wanu wovomerezeka. Chonde yankhani mwachowona kuti zotsatira zanu zikhale zolondola momwe zingathere."
-            : "In Malawi, all banks and lenders share borrowing records with a central body called the Credit Reference Bureau (CRB). Before approving your loan, commercial banks check this record to see if you owe any unpaid loans or have missed payments in the past. This can affect your chances of approval. Please answer honestly so your result is as accurate as possible."}
-        </p>
-      </div>
-
-      <div className="form-group" style={{ marginTop: "var(--space-md)" }}>
-        <label className="form-label">
-          {ny
-            ? "Kodi muli ndi zolemba za CRB kapena ngongole yomwe simunapalitse?"
-            : "Do you have any outstanding CRB flags or defaulted loans on record?"}
-        </label>
-        <div className="form-help" style={{ marginBottom: "var(--space-md)" }}>
-          {ny
-            ? "Yankha mwachowona. Banki idzaona zolemba izi nthawi yoloweza ngongole."
-            : "Answer honestly. The bank will verify this during your application regardless."}
-        </div>
-        <div style={{ display: "flex", gap: "var(--space-md)" }}>
-          {([false, true] as const).map(val => (
-            <label
-              key={String(val)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "var(--space-sm)",
-                cursor: "pointer",
-                padding: "10px 18px",
-                borderRadius: "var(--radius-md)",
-                border: `1.5px solid ${intake.hasCrbFlag === val
-                  ? val ? "var(--color-danger)" : "var(--color-success)"
-                  : "var(--color-border)"}`,
-                background: intake.hasCrbFlag === val
-                  ? val ? "rgba(255,59,92,0.1)" : "rgba(0,200,150,0.1)"
-                  : "transparent",
-                transition: "all var(--transition-fast)",
-                fontSize: "0.9rem",
-                fontWeight: 500,
-              }}
-            >
-              <input
-                type="radio"
-                name="hasCrbFlag"
-                checked={intake.hasCrbFlag === val}
-                onChange={() => onChange({ hasCrbFlag: val })}
-                style={{ display: "none" }}
-              />
-              {val
-                ? (ny ? "Inde, ndili ndi zolemba" : "Yes, I have a CRB flag")
-                : (ny ? "Ayi, palibe zolemba" : "No, I have no CRB flags")}
-            </label>
-          ))}
-        </div>
-
-        {intake.hasCrbFlag === true && (
-          <div className="alert alert-warning" style={{ marginTop: "var(--space-md)", display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <AlertTriangle size={20} />
-            <div>
-              {ny
-                ? "Zolemba za CRB zimatha kukhudza pangano lanu. Titha kupitirizabe kuyang'anira mwayi wanu."
-                : "A CRB flag may affect your application. We will still calculate your eligibility — the bank makes the final decision."}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Component: Eligibility result card
-// ═══════════════════════════════════════════════════════════════════════════════
-function EligibilityResultCard({
-  result, ny,
-}: {
-  result: EligibilityResult;
-  ny: boolean;
-}) {
-  const {
-    status, institution, failedRule, failedRuleNy,
-    loanTypeResults, profileSummary, civilServantNote, civilServantNoteNy,
-  } = result;
-
-  const statusMeta = {
-    likely_eligible: {
-      icon: <CheckCircle2 size={32} color="var(--color-success)" />,
-      title: ny ? "Mungayenera Ngongole" : "Likely Eligible",
-      subtitle: ny
-        ? "Muli ndi mwayi wopeza ngongole ku malo akuno."
-        : "You appear to meet the eligibility criteria for this institution.",
-      cls: styles.eligible,
-      alertCls: "alert-success",
-      alertIcon: <CheckCircle2 size={20} />,
-    },
-    borderline: {
-      icon: <AlertTriangle size={32} color="var(--color-warning)" />,
-      title: ny ? "Mungayenera — Zobwezera CRB" : "Borderline — CRB Flag Declared",
-      subtitle: ny
-        ? "Mungayenera ngongole koma zolemba za CRB zingateteze pangano lanu."
-        : "You may qualify, but your declared CRB flag may affect your application.",
-      cls: styles.notYet,
-      alertCls: "alert-warning",
-      alertIcon: <AlertTriangle size={20} />,
-    },
-    not_yet_eligible: {
-      icon: <Hourglass size={32} color="var(--color-warning)" />,
-      title: ny ? "Simunafikire Nthawi" : "Not Yet Eligible",
-      subtitle: ny
-        ? "Simunafikire zofunikira zonse koma mutha kubwereza mutsogolo."
-        : "You do not yet meet all criteria, but you may qualify in the future.",
-      cls: styles.notYet,
-      alertCls: "alert-warning",
-      alertIcon: <Hourglass size={20} />,
-    },
-    not_eligible: {
-      icon: <XCircle size={32} color="var(--color-danger)" />,
-      title: ny ? "Simuyenera" : "Not Eligible",
-      subtitle: ny
-        ? "Simukukwaniritsa zofunikira za malo akuno."
-        : "You do not meet the eligibility requirements for this institution.",
-      cls: styles.notEligible,
-      alertCls: "alert-danger",
-      alertIcon: <XCircle size={20} />,
-    },
-  }[status];
-
-  const badgeCls = {
-    likely_eligible: "badge-success",
-    borderline:      "badge-warning",
-    not_yet_eligible:"badge-warning",
-    not_eligible:    "badge-danger",
-  }[status];
-
-  return (
-    <div className={`card ${styles.resultCard} ${statusMeta.cls}`} style={{ marginBottom: "var(--space-lg)" }}>
-      {/* Header */}
-      <div className={styles.resultHeader}>
-        <div className={`${styles.resultIcon} ${statusMeta.cls}`}>
-          {institution.logoUrl ? (
-            <img src={institution.logoUrl} alt={institution.name} className={styles.partnerLogoSmall} />
-          ) : (
-            statusMeta.icon
-          )}
-        </div>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "var(--space-sm)", flexWrap: "wrap" }}>
-            <span className={`${styles.resultTitle} ${statusMeta.cls}`}>{statusMeta.title}</span>
-            <span className={`badge ${badgeCls}`}>{institution.name}</span>
-          </div>
-          <div className={styles.resultSubtitle}>{statusMeta.subtitle}</div>
-        </div>
-      </div>
-
-      {/* Profile summary bar */}
-      <div className={styles.profileSummaryBar}>
-        <div className={styles.summaryItem}>
-          <div className={styles.summaryValue}>{mwk(profileSummary.monthlyIncome)}</div>
-          <div className={styles.summaryLabel}>{ny ? "Malipiro Apamwezi" : "Monthly Income"}</div>
-        </div>
-        <div className={styles.summaryItem}>
-          <div className={styles.summaryValue}>{mwk(profileSummary.existingObligations)}</div>
-          <div className={styles.summaryLabel}>{ny ? "Ngongole Zilipo" : "Existing Obligations"}</div>
-        </div>
-        <div className={styles.summaryItem}>
-          <div className={styles.summaryValue}>{mwk(profileSummary.availableRepayment)}</div>
-          <div className={styles.summaryLabel}>{ny ? "Malo Otsala" : "Available Repayment"}</div>
-        </div>
-      </div>
-
-      {/* Failure / borderline reason */}
-      {(status !== "likely_eligible") && (failedRule || failedRuleNy) && (
-        <div
-          className={`alert ${statusMeta.alertCls}`}
-          style={{ marginTop: "var(--space-md)", display: 'flex', alignItems: 'center', gap: '8px' }}
-        >
-          <span>{statusMeta.alertIcon}</span>
-          <div>
-            <strong>{ny ? "Chifukwa:" : "Reason:"}</strong>{" "}
-            {ny ? (failedRuleNy ?? failedRule) : failedRule}
-          </div>
-        </div>
-      )}
-
-      {/* Civil servant informational note */}
-      {(civilServantNote || civilServantNoteNy) && (
-        <div className="alert alert-info" style={{ marginTop: "var(--space-md)", display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Building size={20} />
-          <div>
-            <strong>{ny ? "Cholinga cha Ogwira Ntchito Boma:" : "Civil Servant Note:"}</strong>{" "}
-            {ny ? (civilServantNoteNy ?? civilServantNote) : civilServantNote}
-          </div>
-        </div>
-      )}
-
-      {/* Loan type breakdown (eligible and borderline) */}
-      {(status === "likely_eligible" || status === "borderline") && loanTypeResults && (
-        <div>
-          <h3 className="text-h3" style={{ margin: "var(--space-lg) 0 var(--space-sm)" }}>
-            {ny ? "Mtundu wa Ngongole — Ndalama Zapadera" : "Loan Type Maximum Amounts"}
-          </h3>
-          <p className="text-sm" style={{ color: "var(--color-text-secondary)", marginBottom: "var(--space-md)" }}>
-            {ny
-              ? "Izi ndi ndalama zapadera zomwe mungalandire pazinthu zosiyanasiyana."
-              : "These are your estimated maximum loan amounts by loan type, based on your repayment capacity."}
-          </p>
-          <div className={styles.loanTypeGrid}>
-            {loanTypeResults.map(lt => (
-              <div key={lt.loanType.key} className={styles.loanTypeItem}>
-                <div className={styles.loanTypeName}>
-                  {ny ? lt.loanType.labelNy : lt.loanType.label}
-                </div>
-                <div className={styles.loanTypeAmount}>{mwk(lt.maxAffordableMWK)}</div>
-                <div className={styles.loanTypeCap}>
-                  {lt.cappedAtMax
-                    ? (ny ? `Malire: ${mwk(lt.loanType.maxAmountMWK)}` : `Capped at max: ${mwk(lt.loanType.maxAmountMWK)}`)
-                    : (ny ? `Malire: ${mwk(lt.loanType.maxAmountMWK)}` : `Type max: ${mwk(lt.loanType.maxAmountMWK)}`)}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Component: Repayment calculator
-// ═══════════════════════════════════════════════════════════════════════════════
-function RepaymentCalculator({
-  result, state, onChange, ny,
-}: {
-  result: EligibilityResult;
-  state: { loanType: LoanTypeConfig | null; rate: number; term: number };
-  onChange: (patch: Partial<{ loanType: LoanTypeConfig; rate: number; term: number }>) => void;
-  ny: boolean;
-}) {
-  const { institution, loanTypeResults, profileSummary } = result;
-
-  // Selected loan type config
-  const selectedLt = state.loanType ?? institution.loanTypes[0];
-  const ltResult = loanTypeResults?.find(lt => lt.loanType.key === selectedLt?.key);
-  const maxPrincipal = ltResult?.maxAffordableMWK ?? selectedLt?.maxAmountMWK ?? 0;
-
-  // Calculator output
-  const breakdown = useMemo(() => {
-    if (!state.rate || !state.term || maxPrincipal <= 0) return null;
-    return calcLoanBreakdown(maxPrincipal, state.rate, state.term);
-  }, [maxPrincipal, state.rate, state.term]);
-
-  return (
-    <div className={`card ${styles.calcCard}`} style={{ marginBottom: "var(--space-lg)" }}>
-      <h3 className="text-h3" style={{ marginBottom: "var(--space-xs)", display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <Calculator size={20} /> {ny ? "Kasoti ya Malipiro" : "Repayment Calculator"}
-      </h3>
-      <p className="text-sm" style={{ color: "var(--color-text-secondary)", marginBottom: "var(--space-lg)" }}>
-        {institution.fixedInterestRate !== undefined
-          ? (ny
-            ? "Sankhani mtundu wa ngongole ndi nthawi yolipira. Faida ya malo ano ndi yosasintha."
-            : "Select a loan type and repayment term. This institution's interest rate is fixed.")
-          : (ny
-            ? "Sankhani mtundu wa ngongole, cholinga cha faida, ndi nthawi yolipira."
-            : "Select a loan type, enter the interest rate offered by the institution, and choose a repayment term.")}
-      </p>
-
-      {/* Loan type selector */}
-      <div className="form-group" style={{ marginBottom: "var(--space-lg)" }}>
-        <label className="form-label">{ny ? "Mtundu wa Ngongole" : "Loan Type"}</label>
-        <select
-          className="form-select"
-          value={selectedLt?.key ?? ""}
-          onChange={e => {
-            const lt = institution.loanTypes.find(l => l.key === e.target.value) ?? null;
-            if (lt) onChange({ loanType: lt });
-          }}
-        >
-          {institution.loanTypes.map(lt => (
-            <option key={lt.key} value={lt.key}>
-              {ny ? lt.labelNy : lt.label} — max {mwk(lt.maxAmountMWK)}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className={styles.calcGrid}>
-        {/* Interest rate */}
-        <div className="form-group">
-          <label className="form-label" htmlFor={`rate-${institution.id}`}>
-            {ny ? "Faida ya Padzaka (% pa annum)" : "Interest Rate (% per annum)"}
-          </label>
-          <input
-            id={`rate-${institution.id}`}
-            type="number"
-            min={1}
-            max={100}
-            step={0.5}
-            className={`form-input ${institution.fixedInterestRate !== undefined ? styles.fixedInterestInput : ""}`}
-            placeholder="e.g. 24"
-            value={state.rate || ""}
-            onChange={e => onChange({ rate: parseFloat(e.target.value) || 0 })}
-            disabled={institution.fixedInterestRate !== undefined}
-            aria-readonly={institution.fixedInterestRate !== undefined}
-          />
-          <div className="form-help">
-            {institution.fixedInterestRate !== undefined
-              ? (ny ? "Malo ano ali ndi faida yosasintha." : "This institution has a fixed interest rate.")
-              : (ny
-                ? "Lowetsani faida imene malo akudziwa. Muza funsira ku malo."
-                : "Enter the annual interest rate quoted by the institution. Ask the institution directly for their current rate.")}
-          </div>
-        </div>
-
-        {/* Repayment term */}
-        <div className="form-group">
-          <label className="form-label">{ny ? "Nthawi Yolipira (miyezi)" : "Repayment Term (months)"}</label>
-          <div className={styles.termSelector}>
-            {institution.repaymentTermsMonths.map(t => (
-              <button
-                key={t}
-                type="button"
-                className={`${styles.termBtn} ${state.term === t ? styles.selected : ""}`}
-                onClick={() => onChange({ term: t })}
-              >
-                {t}m
-              </button>
-            ))}
-          </div>
-          <div className="form-help">
-            {ny ? "Sankhani nthawi yolipira" : "Select your preferred repayment period"}
-          </div>
-        </div>
-      </div>
-
-      {/* Results */}
-      {breakdown && state.rate > 0 && (
-        <>
-          <div className={styles.calcResults}>
-            <div className={styles.calcResultItem}>
-              <div className={styles.calcResultValue}>{mwk(maxPrincipal)}</div>
-              <div className={styles.calcResultLabel}>{ny ? "Ngongole Yapadera" : "Max Loan Amount"}</div>
-            </div>
-            <div className={styles.calcResultItem}>
-              <div className={styles.calcResultValue}>{mwk(breakdown.monthlyRepayment)}</div>
-              <div className={styles.calcResultLabel}>{ny ? "Malipiro Apamwezi" : "Est. Monthly Repayment"}</div>
-            </div>
-            <div className={styles.calcResultItem}>
-              <div className={styles.calcResultValue}>{mwk(breakdown.totalRepayment)}</div>
-              <div className={styles.calcResultLabel}>{ny ? "Ndalama Zonse Zolipira" : "Total Repayment"}</div>
-            </div>
-            <div className={styles.calcResultItem}>
-              <div className={styles.calcResultValue}>{mwk(breakdown.totalInterest)}</div>
-              <div className={styles.calcResultLabel}>{ny ? "Faida Yonse" : "Total Interest Payable"}</div>
-            </div>
-          </div>
-
-          {/* Fees and Collateral */}
-          {(institution.processingFeePercent || institution.insuranceFeePercent || institution.cashCollateralPercent) && (
-            <div className={styles.feesSection}>
-              <h4 className="text-sm" style={{ fontWeight: 600, marginBottom: "var(--space-sm)", marginTop: "var(--space-md)" }}>
-                {ny ? "Ndalama Zowonjezera" : "Additional Fees & Collateral"}
-              </h4>
-              <div className="table-wrapper">
-                <table className={styles.feesTable}>
-                  <tbody>
-                    {institution.processingFeePercent && (
-                      <tr>
-                        <td>{ny ? "Ndalama yopangira" : "Processing Fee"} ({institution.processingFeePercent}%)</td>
-                        <td>{mwk(maxPrincipal * (institution.processingFeePercent / 100))}</td>
-                      </tr>
-                    )}
-                    {institution.insuranceFeePercent && (
-                      <tr>
-                        <td>{ny ? "Inshuwalansi" : "Insurance"} ({institution.insuranceFeePercent}%)</td>
-                        <td>{mwk(maxPrincipal * (institution.insuranceFeePercent / 100))}</td>
-                      </tr>
-                    )}
-                    {institution.cashCollateralPercent && (
-                      <tr>
-                        <td>{ny ? "Ndalama yosungira yomweyo" : "Upfront Cash Collateral"} ({institution.cashCollateralPercent}%)</td>
-                        <td>{mwk(maxPrincipal * (institution.cashCollateralPercent / 100))}</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* Affordability check */}
-          {breakdown.monthlyRepayment > profileSummary.availableRepayment && (
-            <div className="alert alert-warning" style={{ marginTop: "var(--space-md)", display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <AlertTriangle size={20} />
-              <div>
-                {ny
-                  ? `Malipiro apamwezi (${mwk(breakdown.monthlyRepayment)}) aposa malo otsala (${mwk(profileSummary.availableRepayment)}). Gwiritsani ntchito nthawi yaitali kapena ngongole yochepa.`
-                  : `The estimated monthly repayment (${mwk(breakdown.monthlyRepayment)}) exceeds your available repayment capacity (${mwk(profileSummary.availableRepayment)}). Consider a longer term or smaller amount.`}
-              </div>
-            </div>
-          )}
         </>
       )}
 
-      {/* Repayment method note */}
-      <div className={styles.repaymentNote}>
-        <span className={styles.repaymentNoteIcon}><Info size={16} /></span>
-        <div>
-          <strong>{ny ? "Njira ya Malipiro:" : "Repayment Method:"}</strong>{" "}
-          {ny ? institution.repaymentMethodNoteNy : institution.repaymentMethodNote}
+      {step === "intake" && selectedInstitution && (
+        <section className={`card ${styles.intakeCard}`}>
+          <div className={styles.intakeTitle}>
+            <div className={styles.intakeIcon}>
+              {logoFor(selectedInstitution) ? (
+                <img
+                  src={logoFor(selectedInstitution)}
+                  alt={selectedInstitution.name}
+                  className={styles.partnerLogo}
+                />
+              ) : (
+                <Building2 size={18} />
+              )}
+            </div>
+            <div>
+              <h2 className="text-h3">{selectedInstitution.name}</h2>
+              <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+                Answer these questions for this institution only.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid-2" style={{ gap: "var(--space-lg)" }}>
+            <NumberField label="Requested loan amount" value={loanAmount} onChange={setLoanAmount} />
+            <NumberField label="Preferred repayment term (months)" value={loanTerm} onChange={setLoanTerm} />
+
+            {selectedInstitution.type === "COMMERCIAL_BANK" && (
+              <>
+                <AdvisoryBox
+                  title="What is CRB?"
+                  text="CRB means Credit Reference Bureau. It is a record of how you have handled past loans and repayments. Banks use it to see whether you have unpaid loans, missed payments, or a negative credit flag. A CRB flag does not always mean automatic rejection, but it can make approval harder or require manual review."
+                />
+                <YesNoField
+                  label="Do you currently have a CRB flag or unresolved credit issue?"
+                  value={hasCrbFlag}
+                  onChange={setHasCrbFlag}
+                />
+              </>
+            )}
+
+            {selectedInstitution.type === "SACCO_CATEGORY" && (
+              <>
+                <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                  <label className="form-label" htmlFor="saccoBranch">Which SACCO do you belong to?</label>
+                  {activeBranches.length === 0 ? (
+                    <div className="alert alert-warning">
+                      No SACCOs are currently available. Please check back soon.
+                    </div>
+                  ) : (
+                    <select
+                      id="saccoBranch"
+                      className="form-select"
+                      value={selectedBranchId}
+                      onChange={(event) => setSelectedBranchId(event.target.value)}
+                    >
+                      <option value="">Select your SACCO...</option>
+                      {branches.map((branch) => (
+                        <option
+                          key={branch.id}
+                          value={branch.id}
+                          disabled={branch.status === "COMING_SOON"}
+                        >
+                          {branch.branch_name}
+                          {branch.status === "COMING_SOON" ? " - Coming Soon" : ""}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+                <YesNoField
+                  label="Are you a registered SACCO member?"
+                  value={isSaccoMember}
+                  onChange={setIsSaccoMember}
+                />
+                <AdvisoryBox
+                  title="Why SACCO membership matters"
+                  text="Police SACCO loans are member-based. The app asks this because SACCOs usually require active membership before lending, and newer members may need to wait until they meet the minimum membership period."
+                />
+                <NumberField
+                  label="How many months have you been a member?"
+                  value={membershipMonths}
+                  onChange={setMembershipMonths}
+                />
+              </>
+            )}
+
+            {selectedInstitution.type === "MICROFINANCE" && (
+              <>
+                <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                  <label className="form-label">Select FINCA loan product</label>
+                  {activeProducts.length === 0 ? (
+                    <div className="alert alert-warning">
+                      No loan products are currently available. Please check back soon.
+                    </div>
+                  ) : (
+                    <div className={styles.productGrid}>
+                      {products.map((product) => (
+                        <button
+                          key={product.id}
+                          type="button"
+                          disabled={product.status === "COMING_SOON"}
+                          className={`${styles.productCard} ${
+                            selectedProductId === product.id ? styles.selectedProduct : ""
+                          }`}
+                          onClick={() => setSelectedProductId(product.id)}
+                        >
+                          <span>{product.product_name}</span>
+                          {product.status === "COMING_SOON" && <span>Coming Soon</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <YesNoField
+                  label="Are you part of an active business group?"
+                  value={isPartOfGroup}
+                  onChange={setIsPartOfGroup}
+                />
+                <AdvisoryBox
+                  title="Why FINCA asks about groups"
+                  text="FINCA Village Bank Loans are group-based. The group acts as part of the support and guarantee structure, so group size and active participation can affect whether you are ready to apply."
+                />
+                <YesNoField
+                  label="Do you own or actively run a business?"
+                  value={isBusinessOwner}
+                  onChange={setIsBusinessOwner}
+                />
+                <NumberField label="If applying as a group, how many members are in the group?" value={groupSize} onChange={setGroupSize} />
+                <YesNoField
+                  label="Do you have or are you willing to open a FINCA account?"
+                  value={hasFincaAccount}
+                  onChange={setHasFincaAccount}
+                />
+                <AdvisoryBox
+                  title="What is CRB?"
+                  text="CRB means Credit Reference Bureau. FINCA may use a CRB report to review repayment history. A flag can move your result to manual review because the lender may need to understand what caused the credit issue."
+                />
+                <YesNoField
+                  label="Do you currently have a CRB flag or unresolved credit issue?"
+                  value={hasCrbFlag}
+                  onChange={setHasCrbFlag}
+                />
+              </>
+            )}
+          </div>
+
+          <div className={styles.actionRow} style={{ marginTop: "var(--space-lg)" }}>
+            <button className="btn btn-ghost" onClick={() => setStep("select")}>
+              <ChevronLeft size={16} /> Back
+            </button>
+            <button className="btn btn-primary" onClick={runCheck} disabled={checking}>
+              {checking ? "Checking..." : "Check Eligibility"} <ChevronRight size={16} />
+            </button>
+          </div>
+        </section>
+      )}
+
+      {step === "results" && selectedInstitution && (
+        <section>
+          {result ? (
+            <div
+              className={`card ${styles.resultCard}`}
+              style={{ borderColor: resultColor(result.result) }}
+            >
+              <div className={styles.resultHeader}>
+                <div className={styles.resultIcon}>
+                  {logoFor(selectedInstitution) ? (
+                    <img
+                      src={logoFor(selectedInstitution)}
+                      alt={selectedInstitution.name}
+                      className={styles.partnerLogoSmall}
+                    />
+                  ) : (
+                    <Building2 size={24} />
+                  )}
+                </div>
+                <div>
+                  <div className={styles.resultTitle} style={{ color: resultColor(result.result) }}>
+                    {result.result.replaceAll("_", " ")}
+                  </div>
+                  <div className={styles.resultSubtitle}>{result.institution_name}</div>
+                </div>
+              </div>
+              <p>{result.reason}</p>
+              <AdvisoryExplanation
+                institution={selectedInstitution}
+                result={result}
+                criteria={selectedCriteria}
+                answers={{
+                  hasCrbFlag,
+                  isSaccoMember,
+                  membershipMonths,
+                  isPartOfGroup,
+                  isBusinessOwner,
+                  groupSize,
+                  hasFincaAccount,
+                }}
+              />
+              <div className={styles.profileSummaryBar}>
+                <SummaryItem label="Max loan" value={currency(result.max_loan_amount)} />
+                <SummaryItem label="Available repayment" value={currency(result.available_monthly_repayment)} />
+                <SummaryItem label="Requested amount" value={currency(loanAmount)} />
+              </div>
+            </div>
+          ) : (
+            <div className="card">No result returned for this institution.</div>
+          )}
+
+          {selectedCriteria && (
+            <details className={`card ${styles.compareCard}`} open>
+              <summary>Live criteria used for this check</summary>
+              <div className="table-wrapper">
+                <table className={styles.compareTable}>
+                  <tbody>
+                    <tr><td>Minimum income</td><td>{currency(selectedCriteria.min_income)}</td></tr>
+                    <tr><td>DTI cap</td><td>{selectedCriteria.dti_cap_percent}%</td></tr>
+                    <tr><td>CRB check</td><td>{selectedCriteria.crb_check_required ? "Required" : "Not required"}</td></tr>
+                    <tr><td>Required documents</td><td>{selectedCriteria.required_documents.join(", ") || "None listed"}</td></tr>
+                    <tr><td>Turnaround time</td><td>{selectedCriteria.turnaround_time}</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          )}
+
+          <div className={styles.actionRow}>
+            <button className="btn btn-ghost" onClick={() => setStep("intake")}>
+              <ChevronLeft size={16} /> Edit Answers
+            </button>
+            <button className="btn btn-primary" onClick={resetFlow}>
+              Check Another Institution
+            </button>
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function StepIndicator({ step }: { step: Step }) {
+  const activeIndex = STEPS.indexOf(step);
+  return (
+    <div className={styles.stepIndicator}>
+      {STEPS.map((item, index) => (
+        <div key={item} className={styles.step}>
+          <span
+            className={`${styles.stepDot} ${
+              index === activeIndex ? styles.active : index < activeIndex ? styles.done : ""
+            }`}
+          >
+            {index + 1}
+          </span>
+          <span
+            className={`${styles.stepLabel} ${
+              index === activeIndex ? styles.active : index < activeIndex ? styles.done : ""
+            }`}
+          >
+            {STEP_LABELS[item]}
+          </span>
+          {index < STEPS.length - 1 && (
+            <span className={`${styles.stepConnector} ${index < activeIndex ? styles.done : ""}`} />
+          )}
         </div>
+      ))}
+    </div>
+  );
+}
+
+function YesNoField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: boolean | null;
+  onChange: (value: boolean) => void;
+}) {
+  return (
+    <div className="form-group">
+      <label className="form-label">{label}</label>
+      <div style={{ display: "flex", gap: "var(--space-sm)", flexWrap: "wrap" }}>
+        <button
+          type="button"
+          className={`btn ${value === true ? "btn-primary" : "btn-ghost"}`}
+          onClick={() => onChange(true)}
+        >
+          Yes
+        </button>
+        <button
+          type="button"
+          className={`btn ${value === false ? "btn-primary" : "btn-ghost"}`}
+          onClick={() => onChange(false)}
+        >
+          No
+        </button>
       </div>
     </div>
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Component: Comparison table
-// ═══════════════════════════════════════════════════════════════════════════════
-function ComparisonTable({
-  institution, selectedProductId, ny,
+function NumberField({
+  label,
+  value,
+  onChange,
 }: {
-  institution: InstitutionConfig;
-  selectedProductId?: string;
-  ny: boolean;
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
 }) {
-  const cf = institution.comparisonFields;
-
-  let institutionDisplayName = institution.name;
-  if (institution.requiresProductSelection && selectedProductId) {
-    const selectedLoanType = institution.loanTypes.find(lt => lt.key === selectedProductId);
-    if (selectedLoanType) {
-      institutionDisplayName = `${institution.name} — ${ny ? selectedLoanType.labelNy : selectedLoanType.label}`;
-    }
-  }
-
-  // Build the rows — conditionally include bank-specific rows
-  const rows: [string, string, string][] = [
-    ["Institution",        institutionDisplayName,                              "Malo"],
-    ["Type",               institution.type,                                    "Mtundu"],
-    ["Who can apply",      cf.whoCanApply,                                      "Amene angasindikize"],
-    ["Minimum loan",       mwk(cf.minimumLoanMWK),                              "Ngongole yochepa"],
-    ["Maximum loan",       `Up to ${mwk(cf.maximumLoanMWK)}`,                   "Ngongole yapadera"],
-    ["Interest rate",      cf.interestRateLabel,                                "Faida"],
-    ...(cf.repaymentPeriod
-      ? [["Repayment period",  cf.repaymentPeriod,                              "Nthawi ya malipiro"] as [string, string, string]]
-      : [["Repayment periods", institution.repaymentTermsMonths.map(m => `${m}m`).join(", ") + " months", "Nthawi ya malipiro"] as [string, string, string]]),
-    ["Installment cap",    cf.debtToIncomeCapLabel,                             "Malire a malipiro"],
-    ["Repayment method",   institution.repaymentMethod,                         "Njira ya malipiro"],
-    ["Membership needed",  cf.membershipRequired,                               "Unansi wofunikira"],
-    ["Proof of income",    cf.proofOfIncomeShort,                               "Umboni wa malipiro"],
-    ...(cf.crbCheck
-      ? [["CRB check",   cf.crbCheck,                                           "Kuwona CRB"] as [string, string, string]]
-      : []),
-    ["Collateral",         institution.collateralAccepted ? "Accepted" : "Not required", "Chingwe"],
-    ["Turnaround time",    institution.turnaroundDays,                          "Nthawi yotsatira"],
-    ...(cf.digitalApplication
-      ? [["Digital application", cf.digitalApplication,                        "Kusindikiza pa intaneti"] as [string, string, string]]
-      : []),
-    ...(cf.repaymentReminders
-      ? [["Repayment reminders", cf.repaymentReminders,                        "Zoikumbutsa malipiro"] as [string, string, string]]
-      : []),
-  ];
-
   return (
-    <details
-      className={`card ${styles.compareCard}`}
-      style={{ marginBottom: "var(--space-lg)" }}
-    >
-      <summary
-        style={{
-          cursor: "pointer",
-          fontWeight: 600,
-          fontSize: "1rem",
-          padding: "4px 0",
-          display: "flex",
-          alignItems: "center",
-          gap: "var(--space-sm)",
-          listStyle: "none",
-        }}
-      >
-        <span className={styles.compareSummaryLogo}>
-          {institutionLogo(institution) ? (
-            <img src={institutionLogo(institution)} alt={institution.name} className={styles.partnerLogo} />
-          ) : (
-            <BarChart3 size={18} />
-          )}
-        </span>
-        <BarChart3 size={20} /> {ny
-          ? `Tebulo la Kuyerekeza — ${institutionDisplayName}`
-          : `Side-by-Side Comparison — ${institutionDisplayName}`}
-        <span className="text-sm" style={{ color: "var(--color-text-muted)", fontWeight: 400 }}>
-          ({ny ? "dinani kuona" : "click to expand"})
-        </span>
-      </summary>
-
-      <div style={{ marginTop: "var(--space-lg)" }}>
-        <div className="table-wrapper">
-          <table className={styles.compareTable}>
-            <tbody>
-              {rows.map(([enLabel, value, nyLabel]) => (
-                <tr key={enLabel}>
-                  <td>{ny ? nyLabel : enLabel}</td>
-                  <td>{value}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Proof of income breakdown */}
-        <div style={{ marginTop: "var(--space-lg)" }}>
-          <h4 className="text-h3" style={{ marginBottom: "var(--space-md)", fontSize: "0.95rem" }}>
-            {ny ? "Umboni wa Malipiro — Mndandanda" : "Proof of Income Requirements"}
-          </h4>
-          <div className="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>{ny ? "Mtundu wa Mlongwe" : "Borrower Type"}</th>
-                  <th>{ny ? "Umboni Wovomerezeka" : "Accepted Proof"}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {institution.proofOfIncome.map((row) => (
-                  <tr key={row.borrowerType}>
-                    <td>{row.borrowerType}</td>
-                    <td>{ny ? row.acceptedNy : row.accepted}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Credit factors — shown for banks only */}
-        {institution.creditFactors && institution.creditFactors.length > 0 && (
-          <div style={{ marginTop: "var(--space-lg)" }}>
-            <h4 className="text-h3" style={{ marginBottom: "var(--space-md)", fontSize: "0.95rem" }}>
-              {ny ? "Zomwe Banki Imawona — Mndandanda" : "Credit Factors Considered"}
-            </h4>
-            <ul style={{ paddingLeft: "var(--space-lg)", color: "var(--color-text-secondary)", fontSize: "0.9rem", lineHeight: 1.8 }}>
-              {institution.creditFactors.map(f => (
-                <li key={f}>{f}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-    </details>
+    <div className="form-group">
+      <label className="form-label">{label}</label>
+      <input
+        type="number"
+        min={0}
+        className="form-input"
+        value={value || ""}
+        onChange={(event) => onChange(Number(event.target.value))}
+      />
+    </div>
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Component: FINCA intake form
-// ═══════════════════════════════════════════════════════════════════════════════
-function FincaIntakeForm({
-  intake, onChange, ny,
-}: {
-  intake: FincaIntakeData;
-  onChange: (d: FincaIntakeData) => void;
-  ny: boolean;
-}) {
+function AdvisoryBox({ title, text }: { title: string; text: string }) {
   return (
-    <div className={`card ${styles.intakeCard}`}>
-      <div className={styles.intakeTitle}>
-        <div className={styles.intakeIcon}><Users size={24} /></div>
-        <div>
-          <h2 className="text-h3">{ny ? "Zambiri za Ngongole ya Gulu" : "Group Loan Details"}</h2>
-          <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-            {ny
-              ? "Ngongole izi zimafuna gulu. Yankhani mafunso otsatirawa."
-              : "These loans require you to be part of a business group. Answer the questions below."}
-          </p>
-        </div>
+    <div
+      className="alert alert-info"
+      style={{
+        gridColumn: "1 / -1",
+        alignItems: "flex-start",
+        lineHeight: 1.6,
+      }}
+    >
+      <div>
+        <strong>{title}</strong>
+        <div>{text}</div>
       </div>
+    </div>
+  );
+}
 
-      <div className="grid-2" style={{ gap: "var(--space-lg)", marginTop: "var(--space-md)" }}>
-        {/* Part of group */}
-        <div className="form-group" style={{ gridColumn: "1 / -1" }}>
-          <label className="form-label">
-            {ny ? "Kodi muli mgulu la bizinesi?" : "Are you part of a business group?"}
-          </label>
-          <div style={{ display: "flex", gap: "var(--space-md)", marginTop: "var(--space-sm)" }}>
-            {[true, false].map(val => (
-              <label
-                key={String(val)}
-                className={`${styles.radioBtn} ${intake.isPartOfGroup === val ? styles.selected : ""}`}
-                style={{
-                  display: "flex", alignItems: "center", gap: "var(--space-sm)", cursor: "pointer",
-                  padding: "10px 18px", borderRadius: "var(--radius-md)",
-                  border: `1.5px solid ${intake.isPartOfGroup === val ? "var(--color-primary)" : "var(--color-border)"}`,
-                  background: intake.isPartOfGroup === val ? "var(--color-primary-glow)" : "transparent",
-                  fontSize: "0.9rem", fontWeight: 500,
-                }}
-              >
-                <input
-                  type="radio"
-                  name="isPartOfGroup"
-                  checked={intake.isPartOfGroup === val}
-                  onChange={() => onChange({ ...intake, isPartOfGroup: val })}
-                  style={{ display: "none" }}
-                />
-                {val ? (ny ? "Inde" : "Yes") : (ny ? "Ayi" : "No")}
-              </label>
-            ))}
-          </div>
-        </div>
+function AdvisoryExplanation({
+  institution,
+  result,
+  criteria,
+  answers,
+}: {
+  institution: Institution;
+  result: EligibilityResult;
+  criteria: Criteria | null;
+  answers: {
+    hasCrbFlag: boolean | null;
+    isSaccoMember: boolean | null;
+    membershipMonths: number;
+    isPartOfGroup: boolean | null;
+    isBusinessOwner: boolean | null;
+    groupSize: number;
+    hasFincaAccount: boolean | null;
+  };
+}) {
+  const points: string[] = [];
 
-        {/* Group size */}
-        {intake.isPartOfGroup && (
-          <div className="form-group">
-            <label className="form-label" htmlFor="groupSize">
-              {ny ? "Anthu angati alipo mgulu lanu?" : "How many members are in your group?"}
-            </label>
-            <input
-              id="groupSize"
-              type="number"
-              min={1}
-              max={100}
-              className="form-input"
-              placeholder={ny ? "mwachitsanzo: 10" : "e.g. 10"}
-              value={intake.groupSize || ""}
-              onChange={e => onChange({ ...intake, groupSize: parseInt(e.target.value) || 0 })}
-            />
-            <div className="form-help">
-              {ny ? "Gulu liyenera kukhala ndi anthu 5 mpaka 25." : "Must be between 5 and 25 members."}
-            </div>
-          </div>
-        )}
+  if (result.result === "LIKELY_ELIGIBLE") {
+    points.push(
+      "Your profile appears to fit the lender's basic rules, but this is still an advisory result. The lender makes the final decision after document checks.",
+    );
+  }
 
-        {/* Owns business */}
-        <div className="form-group">
-          <label className="form-label">
-            {ny ? "Kodi mumayendetsa bizinesi?" : "Do you actively own or run a business?"}
-          </label>
-          <div style={{ display: "flex", gap: "var(--space-md)", marginTop: "var(--space-sm)" }}>
-            {[true, false].map(val => (
-              <label
-                key={String(val)}
-                className={`${styles.radioBtn} ${intake.ownsBusiness === val ? styles.selected : ""}`}
-                style={{
-                  display: "flex", alignItems: "center", gap: "var(--space-sm)", cursor: "pointer",
-                  padding: "10px 18px", borderRadius: "var(--radius-md)",
-                  border: `1.5px solid ${intake.ownsBusiness === val ? "var(--color-primary)" : "var(--color-border)"}`,
-                  background: intake.ownsBusiness === val ? "var(--color-primary-glow)" : "transparent",
-                  fontSize: "0.9rem", fontWeight: 500,
-                }}
-              >
-                <input
-                  type="radio"
-                  name="ownsBusiness"
-                  checked={intake.ownsBusiness === val}
-                  onChange={() => onChange({ ...intake, ownsBusiness: val })}
-                  style={{ display: "none" }}
-                />
-                {val ? (ny ? "Inde" : "Yes") : (ny ? "Ayi" : "No")}
-              </label>
-            ))}
-          </div>
-        </div>
+  if (result.result === "BORDERLINE") {
+    points.push(
+      "This is an amber result. It means the application may still proceed, but one or more answers could trigger manual review or extra verification.",
+    );
+  }
 
-        {/* FINCA account */}
-        <div className="form-group" style={{ gridColumn: "1 / -1" }}>
-          <label className="form-label">
-            {ny ? "Kodi muli ndi akaunti ya FINCA?" : "Do you currently have a FINCA account, or are you willing to open one?"}
-          </label>
-          <div style={{ display: "flex", gap: "var(--space-md)", marginTop: "var(--space-sm)", flexWrap: "wrap" }}>
-            {[
-              { val: 'yes', labelEn: 'Yes, I have one', labelNy: 'Inde, ndili nayo' },
-              { val: 'willing', labelEn: 'Willing to open', labelNy: 'Ndingatsegule' },
-              { val: 'no', labelEn: 'No', labelNy: 'Ayi' },
-            ].map(opt => (
-              <label
-                key={opt.val}
-                className={`${styles.radioBtn} ${intake.hasFincaAccount === opt.val ? styles.selected : ""}`}
-                style={{
-                  display: "flex", alignItems: "center", gap: "var(--space-sm)", cursor: "pointer",
-                  padding: "10px 18px", borderRadius: "var(--radius-md)",
-                  border: `1.5px solid ${intake.hasFincaAccount === opt.val ? "var(--color-primary)" : "var(--color-border)"}`,
-                  background: intake.hasFincaAccount === opt.val ? "var(--color-primary-glow)" : "transparent",
-                  fontSize: "0.9rem", fontWeight: 500,
-                }}
-              >
-                <input
-                  type="radio"
-                  name="hasFincaAccount"
-                  checked={intake.hasFincaAccount === opt.val}
-                  onChange={() => onChange({ ...intake, hasFincaAccount: opt.val as 'yes'|'willing'|'no' })}
-                  style={{ display: "none" }}
-                />
-                {ny ? opt.labelNy : opt.labelEn}
-              </label>
-            ))}
-          </div>
-        </div>
+  if (result.result === "NOT_ELIGIBLE") {
+    points.push(
+      "This is a red result because at least one key lender rule was not met. The reason above shows the first major issue found.",
+    );
+  }
 
+  if (result.result === "NOT_YET_ELIGIBLE") {
+    points.push(
+      "This usually means you may qualify later after time-based requirements are met, such as SACCO membership duration.",
+    );
+  }
+
+  if (institution.type === "COMMERCIAL_BANK") {
+    points.push(
+      `FDH Bank checks income, existing monthly obligations, repayment capacity, and credit history. CRB is important because it shows repayment behavior from previous loans.`,
+    );
+    if (answers.hasCrbFlag) {
+      points.push(
+        "You answered that you have a CRB flag, so the result is treated cautiously. A bank may ask for settlement proof or more information before approval.",
+      );
+    }
+  }
+
+  if (institution.type === "SACCO_CATEGORY") {
+    points.push(
+      "Police SACCO lending is member-based. Membership status and membership duration are checked before affordability is considered.",
+    );
+    if (answers.isSaccoMember === false) {
+      points.push(
+        "You answered that you are not a SACCO member, so the app cannot advise you to proceed with a SACCO loan yet.",
+      );
+    } else if (answers.membershipMonths > 0 && answers.membershipMonths < 3) {
+      points.push(
+        "Your membership period is below the usual 3 month minimum, so this is not yet eligible rather than permanently ineligible.",
+      );
+    }
+  }
+
+  if (institution.type === "MICROFINANCE") {
+    points.push(
+      "FINCA Village Bank Loans are assessed around business activity, group participation, FINCA account readiness, and credit history.",
+    );
+    if (answers.isPartOfGroup === false || answers.groupSize < 5 || answers.groupSize > 25) {
+      points.push(
+        "The group requirement matters because Village Bank Loans are designed for groups of 5 to 25 business owners.",
+      );
+    }
+    if (answers.isBusinessOwner === false) {
+      points.push(
+        "You answered that you do not actively own or run a business, which conflicts with this product's target borrower profile.",
+      );
+    }
+    if (answers.hasFincaAccount === false) {
+      points.push(
+        "FINCA repayments are normally handled through a FINCA account, so not having or not being willing to open one blocks this product.",
+      );
+    }
+  }
+
+  if (criteria) {
+    points.push(
+      `The live criteria used include a minimum income of ${currency(criteria.min_income)} and a DTI cap of ${criteria.dti_cap_percent}%.`,
+    );
+  }
+
+  return (
+    <div className="alert alert-info" style={{ marginTop: "var(--space-md)", lineHeight: 1.65 }}>
+      <div>
+        <strong>Why this result?</strong>
+        <ul style={{ margin: "0.5rem 0 0", paddingLeft: "1.2rem" }}>
+          {points.map((point) => (
+            <li key={point}>{point}</li>
+          ))}
+        </ul>
       </div>
+    </div>
+  );
+}
+
+function SummaryItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className={styles.summaryItem}>
+      <div className={styles.summaryValue}>{value}</div>
+      <div className={styles.summaryLabel}>{label}</div>
     </div>
   );
 }

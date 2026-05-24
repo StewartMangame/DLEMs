@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import styles from "./layout.module.css";
 import { LanguageProvider, useLanguage } from "@/lib/LanguageContext";
+import { fetchActiveAnnouncements } from "@/lib/api";
 import { 
   Hexagon, 
   LayoutDashboard, 
@@ -33,6 +34,7 @@ type Theme = "dark" | "light";
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState<Theme>("dark");
+  const [announcements, setAnnouncements] = useState<any[]>([]);
   const pathname = usePathname();
   const router = useRouter();
   const { t, language, setLanguage } = useLanguage();
@@ -44,6 +46,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         setTheme(savedTheme as Theme);
       }
     }
+    fetchActiveAnnouncements()
+      .then((data) => setAnnouncements(Array.isArray(data) ? data : []))
+      .catch(() => setAnnouncements([]));
   }, []);
 
   useEffect(() => {
@@ -160,6 +165,15 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
 
         <main className={styles.content}>
+          {announcements
+            .filter((announcement) => !announcement.institution_id)
+            .map((announcement) => (
+              <div key={announcement.id} className="alert alert-info" style={{ marginBottom: 16 }}>
+                {language === "ny"
+                  ? announcement.message_chichewa || announcement.message_english
+                  : announcement.message_english}
+              </div>
+            ))}
           <Suspense
             fallback={
               <div

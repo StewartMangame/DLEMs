@@ -1,5 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState } from "react";
+import { fetchContentStrings } from "./api";
 
 type Language = "en" | "ny";
 
@@ -133,12 +134,27 @@ const LanguageContext = createContext<LanguageContextProps>({
 
 export const LanguageProvider = ({ children }: { children: React.ReactNode }) => {
   const [language, setLanguageState] = useState<Language>("en");
+  const [liveStrings, setLiveStrings] = useState<Record<Language, TranslationMap>>({
+    en: {},
+    ny: {},
+  });
 
   React.useEffect(() => {
     const saved = window.localStorage.getItem("dlem_lang");
     if (saved === "ny" || saved === "en") {
       setLanguageState(saved);
     }
+    fetchContentStrings()
+      .then((rows) => {
+        if (!Array.isArray(rows)) return;
+        const next: Record<Language, TranslationMap> = { en: {}, ny: {} };
+        rows.forEach((row: { key: string; english: string; chichewa: string }) => {
+          next.en[row.key] = row.english;
+          next.ny[row.key] = row.chichewa;
+        });
+        setLiveStrings(next);
+      })
+      .catch(() => undefined);
   }, []);
 
   const setLanguage = (lang: Language) => {
@@ -150,7 +166,12 @@ export const LanguageProvider = ({ children }: { children: React.ReactNode }) =>
     key: string,
     values: Record<string, string | number> = {},
   ): string => {
-    let template = translations[language][key] || translations.en[key] || key;
+    let template =
+      liveStrings[language][key] ||
+      liveStrings.en[key] ||
+      translations[language][key] ||
+      translations.en[key] ||
+      key;
     Object.entries(values).forEach(([name, value]) => {
       template = template.replace(`{${name}}`, String(value));
     });

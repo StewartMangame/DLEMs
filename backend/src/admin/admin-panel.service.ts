@@ -156,7 +156,10 @@ export class AdminPanelService {
     const inst = this.instRepo.create({
       name: data.name,
       type: data.type,
-      status: data.status ?? 'active',
+      status:
+        typeof data.status === 'string'
+          ? data.status.toLowerCase()
+          : 'active',
       isActive: data.status !== 'inactive',
       description: data.description,
       isInterestRateFixed: data.isInterestRateFixed ?? true,
@@ -179,7 +182,7 @@ export class AdminPanelService {
         inst.logoUrl = `/uploads/${safeName}`;
       } catch (e) {
         // Log error but continue without failing creation
-        // eslint-disable-next-line no-console
+
         console.error('Failed to save uploaded logo:', e);
       }
     }
@@ -229,6 +232,8 @@ export class AdminPanelService {
       'reminderAvailable',
       'digitalApplicationAvailable',
       'isInterestRateFixed',
+      'requiredDocuments',
+      'hasBranches',
       'reviewDueDate',
     ];
 
@@ -353,6 +358,9 @@ export class AdminPanelService {
     data: Partial<LoanProduct>,
   ) {
     const product = this.productRepo.create({ ...data, institutionId });
+    if (typeof product.status === 'string') {
+      product.status = product.status.toLowerCase() as any;
+    }
     await this.productRepo.save(product);
     await this.log(admin.adminId, 'product.create', {
       entityType: 'LoanProduct',
@@ -362,14 +370,81 @@ export class AdminPanelService {
     return { success: true, product };
   }
 
+  async createBranchOrProduct(admin: any, institutionId: number, data: any) {
+    const institution = await this.instRepo.findOne({
+      where: { id: institutionId },
+    });
+    if (!institution) throw new NotFoundException('Institution not found');
+
+    if (institution.type === 'sacco') {
+      return this.createSacco(admin, {
+        name: data.branch_name ?? data.name,
+        status: data.status ?? 'active',
+        notes: data.description ?? data.notes,
+      });
+    }
+
+    return this.createProduct(admin, institutionId, {
+      name: data.product_name ?? data.name,
+      minAmount: data.min_amount ?? data.minAmount ?? 0,
+      maxAmount: data.max_amount ?? data.maxAmount ?? 0,
+      interestRate: data.interest_rate_value ?? data.interestRate ?? null,
+      repaymentPeriods: Array.isArray(data.repayment_periods)
+        ? data.repayment_periods.join(',')
+        : data.repaymentPeriods,
+      processingFeePercent:
+        data.processing_fee_percent ?? data.processingFeePercent ?? 0,
+      insuranceFeePercent:
+        data.insurance_fee_percent ?? data.insuranceFeePercent ?? 0,
+      conditions: data.description ?? data.conditions,
+      status: data.status ?? 'active',
+    });
+  }
+
   async updateProduct(admin: any, id: number, data: any) {
-    await this.productRepo.update(id, data);
+    const updateData = Object.fromEntries(
+      Object.entries(data).filter(([, value]) => value !== undefined),
+    );
+    await this.productRepo.update(id, updateData);
     await this.log(admin.adminId, 'product.update', {
       entityType: 'LoanProduct',
       entityId: String(id),
     });
     const product = await this.productRepo.findOne({ where: { id } });
     return { success: true, product };
+  }
+
+  async updateBranchOrProduct(admin: any, id: number, data: any) {
+    const product = await this.productRepo.findOne({ where: { id } });
+    if (product) {
+      return this.updateProduct(admin, id, {
+        name: data.product_name ?? data.name,
+        minAmount: data.min_amount ?? data.minAmount,
+        maxAmount: data.max_amount ?? data.maxAmount,
+        interestRate: data.interest_rate_value ?? data.interestRate,
+        repaymentPeriods: Array.isArray(data.repayment_periods)
+          ? data.repayment_periods.join(',')
+          : data.repaymentPeriods,
+        processingFeePercent:
+          data.processing_fee_percent ?? data.processingFeePercent,
+        insuranceFeePercent:
+          data.insurance_fee_percent ?? data.insuranceFeePercent,
+        conditions: data.description ?? data.conditions,
+        status:
+          typeof data.status === 'string'
+            ? data.status.toLowerCase()
+            : undefined,
+      });
+    }
+
+    const sacco = await this.saccoRepo.findOne({ where: { id } });
+    if (!sacco) throw new NotFoundException('Branch or product not found');
+    return this.updateSacco(admin, id, {
+      name: data.branch_name ?? data.name,
+      status:
+        typeof data.status === 'string' ? data.status.toLowerCase() : undefined,
+      notes: data.description ?? data.notes,
+    });
   }
 
   // ─── Section 3: User Management ────────────────────────────────────────────
@@ -381,7 +456,10 @@ export class AdminPanelService {
     this.requireSuper(admin);
     const sacco = this.saccoRepo.create({
       name: data.name,
-      status: data.status ?? 'active',
+      status:
+        typeof data.status === 'string'
+          ? (data.status.toLowerCase() as any)
+          : 'active',
       notes: data.notes,
     });
     await this.saccoRepo.save(sacco);
@@ -400,7 +478,10 @@ export class AdminPanelService {
 
     this.saccoRepo.merge(sacco, {
       name: data.name ?? sacco.name,
-      status: data.status ?? sacco.status,
+      status:
+        typeof data.status === 'string'
+          ? (data.status.toLowerCase() as any)
+          : sacco.status,
       notes: data.notes ?? sacco.notes,
     });
     await this.saccoRepo.save(sacco);
@@ -649,6 +730,24 @@ export class AdminPanelService {
     await this.log(admin.adminId, 'content.update', {
       entityType: 'ContentString',
       entityId: String(id),
+      description: `Updated content string: ${content.key}`,
+    });
+    return { success: true, content };
+  }
+
+  async updateContentByKey(
+    admin: any,
+    key: string,
+    data: Partial<ContentString>,
+  ) {
+    const content = await this.contentRepo.findOne({ where: { key } });
+    if (!content) throw new NotFoundException('Content string not found');
+
+    this.contentRepo.merge(content, data);
+    await this.contentRepo.save(content);
+    await this.log(admin.adminId, 'content.update', {
+      entityType: 'ContentString',
+      entityId: String(content.id),
       description: `Updated content string: ${content.key}`,
     });
     return { success: true, content };

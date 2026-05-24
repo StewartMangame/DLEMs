@@ -23,7 +23,9 @@ import { User } from './entities/user.entity';
 import { AdminPanelModule } from './admin/admin-panel.module';
 import { AdminModule } from './admin/admin.module';
 
+import { AnnouncementsModule } from './announcements/announcements.module';
 import { AuthModule } from './auth/auth.module';
+import { ContentStringsModule } from './content-strings/content-strings.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { EligibilityModule } from './eligibility/eligibility.module';
 import { InstitutionsModule } from './institutions/institutions.module';
@@ -78,6 +80,8 @@ import { AppService } from './app.service';
     EligibilityModule,
     ReminderModule,
     NotificationsModule,
+    AnnouncementsModule,
+    ContentStringsModule,
     AdminModule,
     AdminPanelModule,
     DashboardModule,

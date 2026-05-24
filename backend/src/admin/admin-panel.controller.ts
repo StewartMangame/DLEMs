@@ -35,7 +35,7 @@ import { File } from 'multer';
 
 const Guard = () => UseGuards(AuthGuard('admin-jwt'));
 
-@Controller('admin-panel')
+@Controller(['admin-panel', 'admin'])
 @UseGuards(AuthGuard('admin-jwt'))
 export class AdminPanelController {
   constructor(private readonly svc: AdminPanelService) {}
@@ -100,6 +100,15 @@ export class AdminPanelController {
     return this.svc.updateInstitution(req.user, +id, body);
   }
 
+  @Patch('institutions/:id/status')
+  updateInstitutionStatus(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() body: { status: string },
+  ) {
+    return this.svc.updateInstitution(req.user, +id, { status: body.status });
+  }
+
   @Post('institutions/:id/verify')
   verifyInstitution(
     @Req() req: any,
@@ -133,6 +142,15 @@ export class AdminPanelController {
     return this.svc.createProduct(req.user, +id, body);
   }
 
+  @Post('institutions/:id/branches')
+  createBranchOrProduct(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
+    return this.svc.createBranchOrProduct(req.user, +id, body);
+  }
+
   @Put('products/:id')
   updateProduct(
     @Req() req: any,
@@ -140,6 +158,26 @@ export class AdminPanelController {
     @Body() body: UpdateProductDto,
   ) {
     return this.svc.updateProduct(req.user, +id, body);
+  }
+
+  @Put('branches/:id')
+  updateBranchOrProduct(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
+    return this.svc.updateBranchOrProduct(req.user, +id, body);
+  }
+
+  @Patch('branches/:id/status')
+  updateBranchOrProductStatus(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() body: { status: string },
+  ) {
+    return this.svc.updateBranchOrProduct(req.user, +id, {
+      status: body.status,
+    });
   }
 
   // ── Section 2: SACCOs ──────────────────────────────────────────────────────
@@ -241,7 +279,11 @@ export class AdminPanelController {
     @Param('id') id: string,
     @Body() body: UpdateContentDto,
   ) {
-    return this.svc.updateContent(req.user, +id, body);
+    const numericId = Number(id);
+    if (Number.isFinite(numericId)) {
+      return this.svc.updateContent(req.user, numericId, body);
+    }
+    return this.svc.updateContentByKey(req.user, id, body);
   }
 
   // ── Section 8: Announcements ───────────────────────────────────────────────
@@ -266,6 +308,17 @@ export class AdminPanelController {
     @Body() body: UpdateAnnouncementDto,
   ) {
     return this.svc.updateAnnouncement(req.user, +id, body);
+  }
+
+  @Patch('announcements/:id/status')
+  updateAnnouncementStatus(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() body: { status: string },
+  ) {
+    return this.svc.updateAnnouncement(req.user, +id, {
+      status: body.status,
+    });
   }
 
   // ── Section 9: Admin Account Management ────────────────────────────────────
