@@ -73,6 +73,10 @@ export class AuthService {
     }
   }
 
+  private isDevOtpEnabled(): boolean {
+    return this.configService.get<string>('SHOW_DEV_OTP') === 'true';
+  }
+
   async getUserById(id: number) {
     return this.userRepository.findOne({ where: { id } });
   }
@@ -137,9 +141,12 @@ export class AuthService {
         await this.userRepository.save(existing);
 
         // Send OTP to the email — the front-end will handle verification in the next step
-        await this.generateAndSendOtp(registerDto.email);
+        const otpCode = await this.generateAndSendOtp(registerDto.email);
 
-        return { message: 'Account details updated. Please verify your email.' };
+        return {
+          message: 'Account details updated. Please verify your email.',
+          devOtp: this.isDevOtpEnabled() ? otpCode : undefined,
+        };
       }
 
       if (existing.email === registerDto.email) {
@@ -165,9 +172,12 @@ export class AuthService {
     await this.userRepository.save(user);
 
     // Send OTP to the email — the front-end will handle verification in the next step
-    await this.generateAndSendOtp(registerDto.email);
+    const otpCode = await this.generateAndSendOtp(registerDto.email);
 
-    return { message: 'Account created successfully. Please verify your email.' };
+    return {
+      message: 'Account created successfully. Please verify your email.',
+      devOtp: this.isDevOtpEnabled() ? otpCode : undefined,
+    };
   }
 
   async generateAndSendOtp(email: string) {
@@ -196,6 +206,8 @@ export class AuthService {
       `,
       fallbackText: `Your verification code is: ${code}`,
     });
+
+    return code;
   }
 
   async verifyOtp(verifyDto: { email: string; otp: string }) {
@@ -241,8 +253,11 @@ export class AuthService {
       throw new BadRequestException('User is already verified');
     }
 
-    await this.generateAndSendOtp(email);
-    return { message: 'OTP resent successfully' };
+    const otpCode = await this.generateAndSendOtp(email);
+    return {
+      message: 'OTP resent successfully',
+      devOtp: this.isDevOtpEnabled() ? otpCode : undefined,
+    };
   }
 
   async forgotPassword(email: string) {
