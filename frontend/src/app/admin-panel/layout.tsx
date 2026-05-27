@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { Sun, Moon } from "lucide-react";
@@ -13,6 +13,8 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const sidebarRef = useRef<HTMLElement | null>(null);
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     const saved = (window.localStorage.getItem("dlem_admin_theme") as "dark" | "light") || "dark";
@@ -38,6 +40,24 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
       .catch(() => { router.replace("/admin-panel/login"); setLoading(false); });
   }, [pathname, router]);
 
+  useEffect(() => {
+    if (!sidebarOpen) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (
+        sidebarRef.current?.contains(target) ||
+        menuButtonRef.current?.contains(target)
+      ) {
+        return;
+      }
+      setSidebarOpen(false);
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [sidebarOpen]);
+
   async function logout() {
     await fetch("/api/admin-panel/auth/logout", { method: "POST" });
     router.replace("/admin-panel/login");
@@ -57,10 +77,7 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
 
   return (
     <div className={styles.layout}>
-      {/* Mobile overlay */}
-      {sidebarOpen && <div className={styles.overlay} onClick={() => setSidebarOpen(false)} />}
-
-      <aside className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ""}`}>
+      <aside ref={sidebarRef} className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ""}`}>
         <div className={styles.sidebarHeader}>
           <Hexagon className={styles.logoIcon} size={28} aria-hidden />
           <div>
@@ -107,34 +124,38 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
 
       <div className={styles.mainWrapper}>
         <header className={styles.topBar}>
-          <button
-            type="button"
-            className={styles.menuBtn}
-            onClick={() => setSidebarOpen(v => !v)}
-            aria-label="Toggle menu"
-          >
-            <Menu size={22} aria-hidden />
-          </button>
-          <span className={styles.topBarTitle}>DLEM Admin</span>
-          <div className={styles.topBarActions}>
+          <div className={styles.topBarInner}>
             <button
               type="button"
-              onClick={toggleTheme}
-              className="btn btn-ghost"
-              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              ref={menuButtonRef}
+              className={styles.menuBtn}
+              onClick={() => setSidebarOpen(v => !v)}
+              aria-label="Toggle menu"
+              aria-expanded={sidebarOpen}
             >
-              {theme === "dark" ? (
-                <>
-                  <Sun size={18} aria-hidden />
-                  Light mode
-                </>
-              ) : (
-                <>
-                  <Moon size={18} aria-hidden />
-                  Dark mode
-                </>
-              )}
+              <Menu size={22} aria-hidden />
             </button>
+            <span className={styles.topBarTitle}>DLEM Admin</span>
+            <div className={styles.topBarActions}>
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="btn btn-ghost"
+                aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {theme === "dark" ? (
+                  <>
+                    <Sun size={18} aria-hidden />
+                    Light mode
+                  </>
+                ) : (
+                  <>
+                    <Moon size={18} aria-hidden />
+                    Dark mode
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </header>
         <main className={styles.main}>

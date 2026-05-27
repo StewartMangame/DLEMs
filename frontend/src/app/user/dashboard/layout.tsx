@@ -1,5 +1,5 @@
 "use client";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import styles from "./layout.module.css";
@@ -38,6 +38,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { t, language, setLanguage } = useLanguage();
+  const sidebarRef = useRef<HTMLElement | null>(null);
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -56,6 +58,24 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
+  useEffect(() => {
+    if (!sidebarOpen) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (
+        sidebarRef.current?.contains(target) ||
+        menuButtonRef.current?.contains(target)
+      ) {
+        return;
+      }
+      setSidebarOpen(false);
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [sidebarOpen]);
+
   const toggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark";
     setTheme(next);
@@ -69,11 +89,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
   return (
     <div className={styles.layout}>
-      {sidebarOpen && (
-        <div className={styles.overlay} onClick={() => setSidebarOpen(false)} />
-      )}
-
       <aside
+        ref={sidebarRef}
         className={`${styles.sidebar} ${
           sidebarOpen ? styles.sidebarOpen : ""
         }`}
@@ -115,90 +132,94 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
       <div className={styles.main}>
         <header className={styles.topbar}>
-          <button
-            className={styles.menuBtn}
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            aria-label="Toggle menu"
-          >
-            <Menu size={20} />
-          </button>
-
-          <div className={styles.topbarActions} style={{ position: "relative" }}>
-            <select
-              value={language}
-              onChange={(event) => setLanguage(event.target.value as "en" | "ny")}
-              className="form-select"
-              aria-label="Language"
-            >
-              <option value="en">English</option>
-              <option value="ny">Chichewa</option>
-            </select>
-
+          <div className={styles.topbarInner}>
             <button
-              onClick={toggleTheme}
-              className="btn btn-ghost"
-              aria-label="Toggle theme"
+              ref={menuButtonRef}
+              className={styles.menuBtn}
+              onClick={() => setSidebarOpen((open) => !open)}
+              aria-label="Toggle menu"
+              aria-expanded={sidebarOpen}
             >
-              {theme === "dark" ? (
-                <>
-                  <Sun size={18} /> {t("theme.light")}
-                </>
-              ) : (
-                <>
-                  <Moon size={18} /> {t("theme.dark")}
-                </>
-              )}
+              <Menu size={20} />
             </button>
 
-            <button
-              onClick={() => setNotificationsOpen(!notificationsOpen)}
-              className={styles.notificationBtn}
-              aria-label="Notifications"
-              aria-expanded={notificationsOpen}
-              aria-haspopup="menu"
-              title="Notifications"
-            >
-              <Bell size={24} strokeWidth={2.4} />
-              {announcements.length > 0 && (
-                <span className={styles.notificationBadge}>
-                  {announcements.length}
-                </span>
-              )}
-            </button>
+            <div className={styles.topbarActions} style={{ position: "relative" }}>
+              <select
+                value={language}
+                onChange={(event) => setLanguage(event.target.value as "en" | "ny")}
+                className="form-select"
+                aria-label="Language"
+              >
+                <option value="en">English</option>
+                <option value="ny">Chichewa</option>
+              </select>
 
-            <div
-              className={styles.notificationsMenu}
-              role="menu"
-              hidden={!notificationsOpen}
-            >
-              <div className={styles.notificationsHeader}>
-                <span>Notifications</span>
+              <button
+                onClick={toggleTheme}
+                className="btn btn-ghost"
+                aria-label="Toggle theme"
+              >
+                {theme === "dark" ? (
+                  <>
+                    <Sun size={18} /> {t("theme.light")}
+                  </>
+                ) : (
+                  <>
+                    <Moon size={18} /> {t("theme.dark")}
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={() => setNotificationsOpen(!notificationsOpen)}
+                className={styles.notificationBtn}
+                aria-label="Notifications"
+                aria-expanded={notificationsOpen}
+                aria-haspopup="menu"
+                title="Notifications"
+              >
+                <Bell size={24} strokeWidth={2.4} />
                 {announcements.length > 0 && (
-                  <span className={styles.notificationsCount}>
+                  <span className={styles.notificationBadge}>
                     {announcements.length}
                   </span>
                 )}
-              </div>
-              {announcements.length === 0 ? (
-                <p className={styles.notificationsEmpty}>
-                  {t("home.noAnnouncements") || "No announcements"}
-                </p>
-              ) : (
-                <>
-                  {announcements.map((announcement) => (
-                    <div key={announcement.id} className={styles.notificationItem} role="menuitem">
-                      {language === "ny"
-                        ? announcement.message_chichewa || announcement.message_english
-                        : announcement.message_english}
+              </button>
+
+              <div
+                className={styles.notificationsMenu}
+                role="menu"
+                hidden={!notificationsOpen}
+              >
+                <div className={styles.notificationsHeader}>
+                  <span>Notifications</span>
+                  {announcements.length > 0 && (
+                    <span className={styles.notificationsCount}>
+                      {announcements.length}
+                    </span>
+                  )}
+                </div>
+                {announcements.length === 0 ? (
+                  <p className={styles.notificationsEmpty}>
+                    {t("home.noAnnouncements") || "No announcements"}
+                  </p>
+                ) : (
+                  <>
+                    {announcements.map((announcement) => (
+                      <div key={announcement.id} className={styles.notificationItem} role="menuitem">
+                        {language === "ny"
+                          ? announcement.message_chichewa || announcement.message_english
+                          : announcement.message_english}
+                      </div>
+                    ))}
+                    <div className={styles.notificationsFooter}>
+                      <Link href="/user/dashboard/announcements" className="btn btn-ghost btn-sm">
+                        {t("home.viewAllAnnouncements") || "View all announcements"}
+                      </Link>
                     </div>
-                  ))}
-                  <div className={styles.notificationsFooter}>
-                    <Link href="/user/dashboard/announcements" className="btn btn-ghost btn-sm">
-                      {t("home.viewAllAnnouncements") || "View all announcements"}
-                    </Link>
-                  </div>
-                </>
-              )}
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </header>

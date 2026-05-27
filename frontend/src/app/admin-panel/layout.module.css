@@ -39,13 +39,6 @@
     sans-serif;
 }
 
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 99;
-}
-
 .sidebar {
   width: var(--ap-sidebar-w);
   background: var(--ap-sidebar-bg);
@@ -57,7 +50,7 @@
   left: 0;
   height: 100vh;
   z-index: 100;
-  transition: transform 0.25s ease;
+  transition: transform 0.3s ease;
   overflow-y: auto;
   transform: translateX(-100%);
 }
@@ -213,9 +206,10 @@
 
 .main {
   flex: 1;
-  padding: 2rem 2.5rem;
-  max-width: 1400px;
+  padding: 2rem 1rem;
+  max-width: 1200px;
   width: 100%;
+  margin: 0 auto;
   color: var(--ap-text);
 }
 
@@ -223,13 +217,19 @@
 .topBar {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.875rem 2.5rem;
+  padding: 0.875rem 1rem;
   background: var(--ap-sidebar-bg);
   border-bottom: 1px solid var(--ap-sidebar-border);
   position: sticky;
   top: 0;
   z-index: 50;
+}
+
+.topBarInner {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
   justify-content: space-between;
 }
 
@@ -244,6 +244,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  margin-left: auto;
 }
 
 .menuBtn {
@@ -292,11 +293,8 @@
   .mainWrapper {
     margin-left: 0;
   }
-  .topBar {
-    padding: 1rem 1.5rem;
-  }
   .main {
-    padding: 1.5rem;
+    padding: 1.5rem 1rem;
   }
 }
 
