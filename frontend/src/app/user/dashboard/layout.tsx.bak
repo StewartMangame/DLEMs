@@ -99,6 +99,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
   return (
     <div className={styles.layout}>
+      {sidebarOpen && (
+        <div className={styles.overlay} onClick={() => setSidebarOpen(false)} />
+      )}
 
       <aside
         ref={sidebarRef}
@@ -163,7 +166,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           {/* Left side: hamburger icon */}
           <button
             className={styles.menuBtn}
-            onClick={() => setSidebarOpen((value) => !value)}
+            onClick={() => setSidebarOpen(!sidebarOpen)}
             aria-label="Toggle menu"
           >
             <Menu size={20} />

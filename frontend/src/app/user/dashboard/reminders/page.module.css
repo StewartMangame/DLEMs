@@ -1,7 +1,7 @@
 .page {
-  padding: var(--space-xl);
   max-width: 900px;
   margin: 0 auto;
+  width: 100%;
 }
 
 .header {
@@ -54,4 +54,16 @@
 
 .remStatusBadge {
   margin-left: auto;
+}
+
+@media (max-width: 640px) {
+  .reminderCard {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .remStatusBadge {
+    margin-left: 0;
+  }
 }
