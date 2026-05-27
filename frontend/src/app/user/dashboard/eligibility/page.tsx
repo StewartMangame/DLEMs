@@ -113,6 +113,8 @@ export default function EligibilityPage() {
       is_business_owner: null,
       group_size: null,
       has_finca_account: null,
+      requested_amount: loanAmount,
+      requested_term_months: duration,
     };
 
     try {

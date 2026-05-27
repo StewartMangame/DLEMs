@@ -102,6 +102,8 @@ export default function RegisterPage() {
       }
 
       setDevOtp(data.devOtp || "");
+      setOtp(["", "", "", "", "", ""]);
+      setOtpError("");
       setStep("otp");
       startResendCooldown();
     } catch {
@@ -210,10 +212,8 @@ export default function RegisterPage() {
               <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
                 Join thousands of Malawians managing loans digitally
               </p>
-              {/* Step indicator */}
               <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
                 <span style={stepDot(true)} />
-                <span style={stepDot(false)} />
               </div>
             </div>
 
@@ -289,7 +289,7 @@ export default function RegisterPage() {
                 )}
                 {emailTouched && emailValid && (
                   <div style={{ marginTop: 4, fontSize: "0.8rem", color: "var(--color-success)" }}>
-                    ✓ Valid email — we'll send your OTP here
+                    ✓ Valid email
                   </div>
                 )}
                 <div className="form-help">
