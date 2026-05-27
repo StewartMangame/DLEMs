@@ -42,6 +42,8 @@ export class EligibilityController {
         requested_term_months?: number | null;
       };
       selected_institution_ids: string[];
+      selected_sacco_id?: string | null;
+      selected_product_id?: string | null;
     },
   ) {
     return this.eligibilityService.checkEligibility(body);

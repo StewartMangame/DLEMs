@@ -1,3 +1,5 @@
+import { readJson } from "./http";
+
 function apiUrl(path: string) {
   const base =
     typeof window === 'undefined' ? process.env.NEXT_PUBLIC_API_URL || '' : '';
@@ -8,35 +10,35 @@ export async function fetchInstitutions() {
   const res = await fetch(apiUrl('/api/institutions'), {
     cache: 'no-store',
   });
-  if (!res.ok) throw new Error('Failed to fetch institutions');
-  return res.json();
+  return readJson(res, 'Failed to fetch institutions');
 }
 
 export async function fetchSaccoBranches() {
   const res = await fetch(apiUrl('/api/institutions/sacco/branches'), {
     cache: 'no-store',
   });
-  if (!res.ok) throw new Error('Failed to fetch SACCO branches');
-  return res.json();
+  return readJson(res, 'Failed to fetch SACCO branches');
 }
 
 export async function fetchFincaProducts() {
   const res = await fetch(apiUrl('/api/institutions/finca/products'), {
     cache: 'no-store',
   });
-  if (!res.ok) throw new Error('Failed to fetch FINCA products');
-  return res.json();
+  return readJson(res, 'Failed to fetch FINCA products');
 }
 
 export async function fetchInstitutionCriteria(id: number) {
   const res = await fetch(apiUrl(`/api/institutions/${id}/criteria`), {
     cache: 'no-store',
   });
-  if (!res.ok) throw new Error('Failed to fetch institution criteria');
-  return res.json();
+  return readJson(res, 'Failed to fetch institution criteria');
 }
 
-export async function checkEligibility(userProfile: any, selectedInstitutionIds: string[]) {
+export async function checkEligibility(
+  userProfile: any,
+  selectedInstitutionIds: string[],
+  options: { selectedSaccoId?: string; selectedProductId?: string } = {},
+) {
   const res = await fetch(apiUrl('/api/eligibility/check'), {
     method: 'POST',
     headers: {
@@ -45,24 +47,23 @@ export async function checkEligibility(userProfile: any, selectedInstitutionIds:
     body: JSON.stringify({
       user_profile: userProfile,
       selected_institution_ids: selectedInstitutionIds,
+      selected_sacco_id: options.selectedSaccoId,
+      selected_product_id: options.selectedProductId,
     }),
   });
-  if (!res.ok) throw new Error('Failed to check eligibility');
-  return res.json();
+  return readJson(res, 'Failed to check eligibility');
 }
 
 export async function fetchActiveAnnouncements() {
   const res = await fetch(apiUrl('/api/announcements/active'), {
     cache: 'no-store',
   });
-  if (!res.ok) throw new Error('Failed to fetch announcements');
-  return res.json();
+  return readJson(res, 'Failed to fetch announcements');
 }
 
 export async function fetchContentStrings() {
   const res = await fetch(apiUrl('/api/content/strings'), {
     cache: 'no-store',
   });
-  if (!res.ok) throw new Error('Failed to fetch content strings');
-  return res.json();
+  return readJson(res, 'Failed to fetch content strings');
 }

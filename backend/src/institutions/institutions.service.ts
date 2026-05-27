@@ -121,6 +121,40 @@ const SEED_INSTITUTIONS = [
   },
 ];
 
+const POLICE_SACCO_SEED = {
+  name: 'Malawi Police SACCO',
+  minMonthlyIncome: 40_000,
+  minMembershipMonths: 3,
+  minServiceMonths: 6,
+  maxDtiRatio: 0.45,
+  repaymentMethod: 'Salary deduction / stop order only',
+  loanProducts: 'Personal / Salary Loan',
+  collateralAccepted: true,
+  turnaroundTime: '1 to 3 days',
+  interestRate: 18,
+  processingFeePercent: 0.5,
+  minRepaymentMonths: 3,
+  maxRepaymentMonths: 60,
+  notes:
+    'Exclusive to registered Malawi Police SACCO members. Members can access salary-based loans after meeting the minimum membership period.',
+  status: 'active' as const,
+};
+
+const FINCA_VILLAGE_BANK_PRODUCT_SEED = {
+  name: 'Village Bank Loan',
+  minAmount: 50_000,
+  maxAmount: 4_000_000,
+  interestRate: 28,
+  repaymentPeriods: '3,6,9,12,18,24',
+  processingFeePercent: 2.5,
+  insuranceFeePercent: 0.85,
+  collateralRequirements:
+    '10% upfront cash collateral and mutual group guarantee',
+  conditions:
+    'For business owners in active groups of 5 to 25 members. Requires a FINCA account and CRB review.',
+  status: 'active' as const,
+};
+
 @Injectable()
 export class InstitutionsService {
   constructor(
@@ -161,19 +195,19 @@ export class InstitutionsService {
    * INACTIVE SACCOs are excluded at the query level.
    */
   async getSaccoBranches() {
+    await this.ensureDefaultSaccoBranches();
+
     const branches = await this.saccoRepo.find({
-      where: [
-        { status: 'active' as const },
-        { status: 'coming_soon' as const },
-      ],
       order: { name: 'ASC' },
     });
 
-    return branches.map((branch) => ({
-      id: String(branch.id),
-      branch_name: branch.name,
-      status: normalizeBranchStatus(branch.status),
-    }));
+    return branches
+      .filter((branch) => String(branch.status).toLowerCase() !== 'inactive')
+      .map((branch) => ({
+        id: String(branch.id),
+        branch_name: branch.name,
+        status: normalizeBranchStatus(branch.status),
+      }));
   }
 
   /**
@@ -181,21 +215,25 @@ export class InstitutionsService {
    * INACTIVE products are excluded at the query level.
    */
   async getFincaProducts() {
+    await this.ensureDefaultLoanProducts();
+
     const products = await this.productRepo.find({
-      where: [
-        { status: 'active' as const },
-        { status: 'coming_soon' as const },
-      ],
       relations: ['institution'],
       order: { name: 'ASC' },
     });
 
     return products
-      .filter(
-        (product) =>
-          product.institution?.type === 'microfinance' &&
-          product.institution.name.toLowerCase().includes('finca'),
-      )
+      .filter((product) => {
+        const status = String(product.status).toLowerCase();
+        const institutionType = String(product.institution?.type || '').toLowerCase();
+        const institutionName = String(product.institution?.name || '').toLowerCase();
+
+        return (
+          status !== 'inactive' &&
+          institutionType === 'microfinance' &&
+          institutionName.includes('finca')
+        );
+      })
       .map((product) => ({
         id: String(product.id),
         product_name: product.name,
@@ -318,24 +356,63 @@ export class InstitutionsService {
     }
 
     const count = await this.instRepo.count();
-    if (count > 0) return;
+    if (count === 0) {
+      for (const data of SEED_INSTITUTIONS) {
+        const inst = this.instRepo.create({
+          name: data.name,
+          type: data.type,
+          status: data.status,
+          isActive: true,
+          hasBranches: data.hasBranches,
+        });
+        await this.instRepo.save(inst);
 
-    for (const data of SEED_INSTITUTIONS) {
-      const inst = this.instRepo.create({
-        name: data.name,
-        type: data.type,
-        status: data.status,
-        isActive: true,
-        hasBranches: data.hasBranches,
-      });
-      await this.instRepo.save(inst);
-
-      const crit = this.criteriaRepo.create({
-        ...data.criteria,
-        institutionId: inst.id,
-      });
-      await this.criteriaRepo.save(crit);
+        const crit = this.criteriaRepo.create({
+          ...data.criteria,
+          institutionId: inst.id,
+        });
+        await this.criteriaRepo.save(crit);
+      }
     }
+
+    await this.ensureDefaultSaccoBranches();
+    await this.ensureDefaultLoanProducts();
+  }
+
+  private async ensureDefaultSaccoBranches() {
+    const existing = await this.saccoRepo.findOne({
+      where: { name: POLICE_SACCO_SEED.name },
+    });
+    const sacco = existing
+      ? this.saccoRepo.merge(existing, POLICE_SACCO_SEED)
+      : this.saccoRepo.create(POLICE_SACCO_SEED);
+
+    await this.saccoRepo.save(sacco);
+  }
+
+  private async ensureDefaultLoanProducts() {
+    const finca = await this.instRepo.findOne({
+      where: { name: 'FINCA Malawi', isActive: true },
+    });
+    if (!finca) return;
+
+    const existing = await this.productRepo.findOne({
+      where: {
+        institutionId: finca.id,
+        name: FINCA_VILLAGE_BANK_PRODUCT_SEED.name,
+      },
+    });
+    const product = existing
+      ? this.productRepo.merge(existing, {
+          ...FINCA_VILLAGE_BANK_PRODUCT_SEED,
+          institutionId: finca.id,
+        })
+      : this.productRepo.create({
+          ...FINCA_VILLAGE_BANK_PRODUCT_SEED,
+          institutionId: finca.id,
+        });
+
+    await this.productRepo.save(product);
   }
 
   private async removeRetiredInstitutions() {
@@ -384,18 +461,19 @@ export class InstitutionsService {
 }
 
 function normalizeInstitutionType(type: string) {
-  if (type === 'bank') return 'COMMERCIAL_BANK';
-  if (type === 'microfinance') return 'MICROFINANCE';
-  if (type === 'sacco') return 'SACCO_CATEGORY';
-  return type.toUpperCase();
+  const normalized = String(type).toLowerCase();
+  if (normalized === 'bank') return 'COMMERCIAL_BANK';
+  if (normalized === 'microfinance') return 'MICROFINANCE';
+  if (normalized === 'sacco') return 'SACCO_CATEGORY';
+  return String(type).toUpperCase();
 }
 
 function normalizeVisibleStatus(status: string) {
-  return status === 'coming_soon' ? 'COMING_SOON' : 'ACTIVE';
+  return String(status).toLowerCase() === 'coming_soon' ? 'COMING_SOON' : 'ACTIVE';
 }
 
 function normalizeBranchStatus(status: string) {
-  return status === 'coming_soon' ? 'COMING_SOON' : 'ACTIVE';
+  return String(status).toLowerCase() === 'coming_soon' ? 'COMING_SOON' : 'ACTIVE';
 }
 
 function parseRepaymentPeriods(

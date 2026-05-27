@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { readJson } from "@/lib/http";
 import styles from "../institutions/institutions.module.css";
 
 export default function EligibilityMonitorPage() {
@@ -8,8 +9,9 @@ export default function EligibilityMonitorPage() {
 
   useEffect(() => {
     fetch("/api/admin-panel/eligibility/stats")
-      .then(r => r.json())
+      .then((r) => readJson(r, "Failed to load eligibility stats"))
       .then(setStats)
+      .catch(() => setStats(null))
       .finally(() => setLoading(false));
   }, []);
 

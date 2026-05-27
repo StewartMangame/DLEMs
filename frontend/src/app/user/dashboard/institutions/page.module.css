@@ -221,6 +221,25 @@
   z-index: 2;
 }
 
+.subSelectionCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  border-left: 4px solid var(--color-primary);
+}
+
+.emptySubSelection {
+  min-height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--color-text-muted);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-xl);
+}
+
 .productGrid {
   display: grid;
   grid-template-columns: 1fr;
@@ -237,6 +256,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-md);
+  color: var(--color-text-primary);
+  text-align: left;
 }
 
 .productCard:hover {
@@ -250,9 +272,28 @@
   color: #fff;
 }
 
+.productCard:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+  background: rgba(148, 163, 184, 0.12);
+}
+
 .productCardLabel {
+  display: block;
   font-size: 0.9rem;
   font-weight: 600;
+}
+
+.productDescription {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+}
+
+.productCard.selectedProduct .productDescription {
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .productCardComingSoon {

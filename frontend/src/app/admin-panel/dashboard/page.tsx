@@ -17,6 +17,7 @@ import {
   ClipboardList,
   ArrowRight,
 } from "lucide-react";
+import { readJson } from "@/lib/http";
 import styles from "./dashboard.module.css";
 
 interface DashboardData {
@@ -72,10 +73,7 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     fetch("/api/admin-panel/dashboard")
-      .then((r) => {
-        if (!r.ok) throw new Error();
-        return r.json();
-      })
+      .then((r) => readJson<DashboardData>(r, "Failed to load dashboard data"))
       .then(setData)
       .catch(() => setError("Failed to load dashboard data"))
       .finally(() => setLoading(false));

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import { useLanguage } from "@/lib/LanguageContext";
+import { readJson } from "@/lib/http";
 import { 
   Info, 
   Building2, 
@@ -21,9 +22,12 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetch("/api/dashboard")
-      .then(r => {
-        if (r.status === 401) { router.push("/user/login"); return null; }
-        return r.json();
+      .then((r) => {
+        if (r.status === 401) {
+          router.push("/user/login");
+          return null;
+        }
+        return readJson(r, "Failed to load dashboard");
       })
       .then(d => { if (d) setData(d); setLoading(false); })
       .catch(() => setLoading(false));

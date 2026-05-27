@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { readJson } from '@/lib/http';
 import styles from '../institutions/institutions.module.css';
 
 export default function LoanMonitorPage() {
@@ -8,8 +9,9 @@ export default function LoanMonitorPage() {
 
   useEffect(() => {
     fetch('/api/admin-panel/loans/stats')
-      .then((r) => r.json())
+      .then((r) => readJson(r, 'Failed to load loan stats'))
       .then(setStats)
+      .catch(() => setStats(null))
       .finally(() => setLoading(false));
   }, []);
 
