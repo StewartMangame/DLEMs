@@ -122,7 +122,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         <div className={styles.sidebarBottom}>
           <div className={styles.divider} />
           <Link href="/" className="btn btn-ghost btn-sm" style={{ width: "100%", marginBottom: 12, display: "flex", alignItems: "center", gap: "8px" }}>
-            <ArrowLeft size={16} /> Back to Site
+            <ArrowLeft size={16} /> Back
           </Link>
           <button onClick={handleLogout} className={styles.logoutBtn} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <LogOut size={18} /> {t("nav.logout")}
@@ -225,15 +225,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         </header>
 
         <main className={styles.content}>
-          {announcements
-            .filter((announcement) => !announcement.institution_id)
-            .map((announcement) => (
-              <div key={announcement.id} className="alert alert-info" style={{ marginBottom: 16 }}>
-                {language === "ny"
-                  ? announcement.message_chichewa || announcement.message_english
-                  : announcement.message_english}
-              </div>
-            ))}
           <Suspense
             fallback={
               <div

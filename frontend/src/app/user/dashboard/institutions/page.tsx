@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import styles from "./page.module.css";
 import {
   checkEligibility,
-  fetchActiveAnnouncements,
   fetchFincaProducts,
   fetchInstitutionCriteria,
   fetchInstitutions,
@@ -109,7 +109,6 @@ export default function InstitutionsPage() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [criteria, setCriteria] = useState<Record<string, Criteria>>({});
-  const [announcements, setAnnouncements] = useState<any[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
   const [selectedBranchId, setSelectedBranchId] = useState("");
   const [selectedProductId, setSelectedProductId] = useState("");
@@ -142,19 +141,17 @@ export default function InstitutionsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [institutionData, branchData, productData, announcementData] =
+      const [institutionData, branchData, productData] =
         await Promise.all([
           fetchInstitutions(),
           fetchSaccoBranches(),
           fetchFincaProducts(),
-          fetchActiveAnnouncements(),
         ]);
 
       const liveInstitutions = Array.isArray(institutionData) ? institutionData : [];
       setInstitutions(liveInstitutions);
       setBranches(Array.isArray(branchData) ? branchData : []);
       setProducts(Array.isArray(productData) ? productData : []);
-      setAnnouncements(Array.isArray(announcementData) ? announcementData : []);
 
       const criteriaEntries = await Promise.all(
         liveInstitutions.map(async (institution: Institution) => {
@@ -259,6 +256,9 @@ export default function InstitutionsPage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
+          <Link href="/user/dashboard" className="btn btn-ghost btn-sm" style={{ gap: "8px", marginBottom: "var(--space-md)" }}>
+            <ChevronLeft size={16} /> Back
+          </Link>
           <h1 className="text-h2">Check Eligibility</h1>
           <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
             Choose one lender and answer the guided questions before checking.
@@ -270,14 +270,6 @@ export default function InstitutionsPage() {
       </div>
 
       <StepIndicator step={step} />
-
-      {announcements
-        .filter((announcement) => !announcement.institution_id)
-        .map((announcement) => (
-          <div key={announcement.id} className="alert alert-info">
-            {announcement.message_english}
-          </div>
-        ))}
 
       {error && (
         <div className="alert alert-danger">
@@ -319,13 +311,6 @@ export default function InstitutionsPage() {
                   <div className={styles.cardName}>{institution.name}</div>
                   <div className="badge badge-neutral text-xs">{institution.type}</div>
                   <p className={styles.cardDesc}>{institution.description}</p>
-                  {announcements
-                    .filter((announcement) => announcement.institution_id === institution.id)
-                    .map((announcement) => (
-                      <div key={announcement.id} className="alert alert-info" style={{ marginTop: 12 }}>
-                        {announcement.message_english}
-                      </div>
-                    ))}
                 </button>
               ))}
             </div>

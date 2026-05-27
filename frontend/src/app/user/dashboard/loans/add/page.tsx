@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 export default function AddLoanPage() {
   const router = useRouter();
@@ -74,7 +75,9 @@ export default function AddLoanPage() {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <Link href="/user/dashboard/loans" className="btn btn-ghost btn-sm">← Back to Loans</Link>
+        <Link href="/user/dashboard/loans" className="btn btn-ghost btn-sm" style={{ display: "inline-flex", alignItems: "center", gap: "8px", alignSelf: "flex-start" }}>
+          <ArrowLeft size={16} /> Back
+        </Link>
         <h1 className="text-h2">Record Manual Loan</h1>
         <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
           Manually enter details for loans you're already repaying to keep your dashboard accurate.

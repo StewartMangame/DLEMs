@@ -496,7 +496,7 @@ export default function RegisterPage() {
                   display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center', width: '100%'
                 }}
               >
-                <ArrowLeft size={14} /> Back to edit details
+                <ArrowLeft size={14} /> Back
               </button>
             </div>
           </div>
