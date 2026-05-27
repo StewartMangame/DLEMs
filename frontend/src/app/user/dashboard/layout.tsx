@@ -152,47 +152,47 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
             <button
               onClick={() => setNotificationsOpen(!notificationsOpen)}
-              className="btn btn-ghost"
+              className={styles.notificationBtn}
               aria-label="Notifications"
-              style={{ position: "relative" }}
+              aria-expanded={notificationsOpen}
+              aria-haspopup="menu"
+              title="Notifications"
             >
-              <Bell size={18} />
+              <Bell size={24} strokeWidth={2.4} />
               {announcements.length > 0 && (
-                <span style={{ position: "absolute", top: -8, right: -8, background: "var(--color-danger)", color: "white", borderRadius: "50%", padding: "2px 6px", fontSize: "0.75rem" }}>
+                <span className={styles.notificationBadge}>
                   {announcements.length}
                 </span>
               )}
             </button>
 
             <div
-              style={{
-                position: "absolute",
-                top: "100%",
-                right: 0,
-                marginTop: "8px",
-                width: "280px",
-                background: "var(--color-bg-card)",
-                border: "1px solid var(--color-border)",
-                borderRadius: "var(--radius-md)",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                zIndex: 1000,
-                display: notificationsOpen ? "block" : "none",
-              }}
+              className={styles.notificationsMenu}
+              role="menu"
+              hidden={!notificationsOpen}
             >
+              <div className={styles.notificationsHeader}>
+                <span>Notifications</span>
+                {announcements.length > 0 && (
+                  <span className={styles.notificationsCount}>
+                    {announcements.length}
+                  </span>
+                )}
+              </div>
               {announcements.length === 0 ? (
-                <p style={{ padding: "12px", color: "var(--color-text-muted)" }}>
+                <p className={styles.notificationsEmpty}>
                   {t("home.noAnnouncements") || "No announcements"}
                 </p>
               ) : (
                 <>
                   {announcements.map((announcement) => (
-                    <div key={announcement.id} style={{ padding: "12px", borderBottom: "1px solid var(--color-border)" }}>
+                    <div key={announcement.id} className={styles.notificationItem} role="menuitem">
                       {language === "ny"
                         ? announcement.message_chichewa || announcement.message_english
                         : announcement.message_english}
                     </div>
                   ))}
-                  <div style={{ padding: "12px", textAlign: "center" }}>
+                  <div className={styles.notificationsFooter}>
                     <Link href="/user/dashboard/announcements" className="btn btn-ghost btn-sm">
                       {t("home.viewAllAnnouncements") || "View all announcements"}
                     </Link>
