@@ -5,6 +5,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    env_file:
+      - ./backend/.env
     ports:
       - '3001:3001'
     environment:
@@ -15,6 +17,7 @@ services:
       - ADMIN_SEED_PASSWORD=ChangeThisAdminPassword123!
       - SQLITE_DB_PATH=/data/loan_db.sqlite
       - TYPEORM_SYNC=true
+      - FRONTEND_URL=http://localhost:3000
     volumes:
       - backend-data:/data
     networks:

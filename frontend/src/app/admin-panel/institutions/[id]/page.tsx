@@ -213,7 +213,7 @@ export default function EditInstitutionPage() {
               }}
             >
               <ArrowLeft size={14} aria-hidden />
-              Institutions
+              Back
             </Link>
           </div>
           <h1 className={styles.pageTitle}>{data.name}</h1>

@@ -40,11 +40,11 @@ export default function ForgotPasswordPage() {
       <div className={styles.bgOrb2} />
       <div className={styles.container}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
+          <Link href="/login" className="btn btn-ghost btn-sm" style={{ gap: '8px' }}>
+            <ArrowLeft size={16} /> Back
+          </Link>
           <Link href="/" className={styles.logo}>
             <Hexagon size={24} className={styles.logoIcon} /> DLEM
-          </Link>
-          <Link href="/login" className="btn btn-ghost btn-sm" style={{ gap: '8px' }}>
-            <ArrowLeft size={16} /> Back to Login
           </Link>
         </div>
         <div className={`card ${styles.card} ${styles.cardNarrow}`}>
@@ -73,7 +73,7 @@ export default function ForgotPasswordPage() {
 
           <p className={styles.switchLink}>
             Remembered your password?{" "}
-            <Link href="/user/login">Back to Sign In</Link>
+            <Link href="/user/login">Back</Link>
           </p>
         </div>
       </div>

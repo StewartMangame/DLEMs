@@ -4,6 +4,7 @@ import Link from "next/link";
 import styles from "./page.module.css";
 import { useLanguage } from "@/lib/LanguageContext";
 import { checkEligibility } from "@/lib/api";
+import { ArrowLeft } from "lucide-react";
 
 interface FinancialProfile {
   monthlyNetSalary?: number;
@@ -113,6 +114,8 @@ export default function EligibilityPage() {
       is_business_owner: null,
       group_size: null,
       has_finca_account: null,
+      requested_amount: loanAmount,
+      requested_term_months: duration,
     };
 
     try {
@@ -130,6 +133,9 @@ export default function EligibilityPage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
+          <Link href="/user/dashboard" className="btn btn-ghost btn-sm" style={{ gap: "8px", marginBottom: "var(--space-md)" }}>
+            <ArrowLeft size={16} /> Back
+          </Link>
           <h1 className="text-h2">{t("eligibility.title")}</h1>
           <p
             className="text-sm"

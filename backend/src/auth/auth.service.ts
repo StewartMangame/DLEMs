@@ -2,6 +2,9 @@ import {
   Injectable,
   UnauthorizedException,
   BadRequestException,
+  InternalServerErrorException,
+  Logger,
+  OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
@@ -14,7 +17,8 @@ import { User } from '../entities/user.entity';
 import { Otp } from '../entities/otp.entity';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
+  private readonly logger = new Logger(AuthService.name);
   private transporter: nodemailer.Transporter;
 
   constructor(
@@ -26,16 +30,59 @@ export class AuthService {
     private configService: ConfigService,
   ) {
     const smtpPort = Number(this.configService.get<string>('SMTP_PORT') || 587);
+    const smtpHost = this.cleanConfig('SMTP_HOST') || 'smtp.gmail.com';
+    const smtpUser = this.cleanConfig('SMTP_USER');
+    const smtpPass = this.cleanConfig('SMTP_PASS').replace(/\s+/g, '');
 
     this.transporter = nodemailer.createTransport({
-      host: this.configService.get<string>('SMTP_HOST') || 'smtp.gmail.com',
+      host: smtpHost,
       port: smtpPort,
       secure: smtpPort === 465,
       auth: {
-        user: this.configService.get<string>('SMTP_USER') || '',
-        pass: this.configService.get<string>('SMTP_PASS') || '',
+        user: smtpUser,
+        pass: smtpPass,
       },
+      connectionTimeout: 15_000,
+      greetingTimeout: 15_000,
+      socketTimeout: 20_000,
     });
+  }
+
+  async onModuleInit() {
+    const smtpUser = this.cleanConfig('SMTP_USER');
+    const smtpPass = this.cleanConfig('SMTP_PASS').replace(/\s+/g, '');
+
+    if (!smtpUser || !smtpPass) {
+      this.logger.error(
+        'SMTP is not configured. OTP emails will fail until SMTP_USER and SMTP_PASS are set.',
+      );
+      return;
+    }
+
+    try {
+      await this.transporter.verify();
+      this.logger.log(`SMTP connection verified for ${smtpUser}.`);
+    } catch (error: any) {
+      this.logger.error(`SMTP verification failed: ${error.message}`);
+    }
+  }
+
+  private cleanConfig(key: string): string {
+    return (this.configService.get<string>(key) || '')
+      .trim()
+      .replace(/^['"]|['"]$/g, '');
+  }
+
+  private normalizeEmail(email: string): string {
+    return email.trim().toLowerCase();
+  }
+
+  private getFrontendUrl(): string {
+    return (
+      this.cleanConfig('FRONTEND_URL') ||
+      this.cleanConfig('APP_URL') ||
+      'http://localhost:3000'
+    ).replace(/\/+$/, '');
   }
 
   private async sendEmail(options: {
@@ -44,31 +91,33 @@ export class AuthService {
     html: string;
     fallbackText: string;
   }) {
-    const from =
-      this.configService.get<string>('SMTP_FROM') || '"DLEM" <noreply@dlem.mw>';
+    const from = this.cleanConfig('SMTP_FROM') || '"DLEM" <noreply@dlem.mw>';
+    const smtpUser = this.cleanConfig('SMTP_USER');
+    const smtpPass = this.cleanConfig('SMTP_PASS').replace(/\s+/g, '');
+
+    if (!smtpUser || !smtpPass) {
+      throw new InternalServerErrorException(
+        'Email service is not configured. Please set SMTP_USER and SMTP_PASS.',
+      );
+    }
 
     try {
       await this.transporter.sendMail({
         from,
         to: options.to,
         subject: options.subject,
+        text: options.fallbackText,
         html: options.html,
       });
-      console.log(
-        `\n[EMAIL SENT] ${options.subject} sent successfully to ${options.to}.`,
+      this.logger.log(
+        `Email "${options.subject}" sent successfully to ${options.to}.`,
       );
     } catch (smtpError: any) {
-      console.warn(
-        `\n[SMTP WARNING] Failed to send "${options.subject}" to ${options.to}: ${smtpError.message}`,
+      this.logger.error(
+        `Failed to send "${options.subject}" to ${options.to}: ${smtpError.message}`,
       );
-      console.log(
-        `\n\n-------------------------------------------------------------`,
-      );
-      console.log(`[MOCK EMAIL SENT TO ${options.to}]`);
-      console.log(`Subject: ${options.subject}`);
-      console.log(`Body: ${options.fallbackText}`);
-      console.log(
-        `-------------------------------------------------------------\n\n`,
+      throw new InternalServerErrorException(
+        'Could not send the verification email. Please try again shortly.',
       );
     }
   }
@@ -81,9 +130,21 @@ export class AuthService {
     return this.userRepository.findOne({ where: { id } });
   }
 
+  private createAuthResponse(user: User) {
+    const payload = { sub: user.id, role: user.role };
+    const { passwordHash, ...safeUser } = user;
+
+    return {
+      access_token: this.jwtService.sign(payload),
+      role: user.role,
+      user: safeUser,
+    };
+  }
+
   async login(loginDto: any) {
+    const email = this.normalizeEmail(loginDto.email);
     const user = await this.userRepository.findOne({
-      where: { email: loginDto.email },
+      where: { email },
     });
     if (
       !user ||
@@ -92,29 +153,26 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
     if (!user.isEmailVerified) {
-      throw new UnauthorizedException('Please verify your email address first');
+      throw new UnauthorizedException(
+        'Please verify your email address before signing in.',
+      );
     }
-    const payload = { sub: user.id, role: user.role };
-    const { passwordHash, ...safeUser } = user;
-    return {
-      access_token: this.jwtService.sign(payload),
-      role: user.role,
-      user: safeUser,
-    };
+    return this.createAuthResponse(user);
   }
 
   async register(registerDto: any) {
+    const email = this.normalizeEmail(registerDto.email);
     // Check if user already exists by email, nationalId, or employeeNumber
     const existing = await this.userRepository.findOne({
       where: [
-        { email: registerDto.email },
+        { email },
         { nationalId: registerDto.nationalId },
         { employeeNumber: registerDto.employeeNumber },
       ],
     });
 
     if (existing) {
-      if (existing.email === registerDto.email && !existing.isEmailVerified) {
+      if (existing.email === email && !existing.isEmailVerified) {
         // Before updating, ensure new nationalId or employeeNumber aren't taken by OTHER users
         const conflict = await this.userRepository.findOne({
           where: [
@@ -140,16 +198,16 @@ export class AuthService {
         existing.isEmailVerified = false;
         await this.userRepository.save(existing);
 
-        // Send OTP to the email — the front-end will handle verification in the next step
-        const otpCode = await this.generateAndSendOtp(registerDto.email);
-
+        const otpCode = await this.generateAndSendOtp(email);
         return {
-          message: 'Account details updated. Please verify your email.',
+          message:
+            'Account details updated successfully. Please verify the OTP sent to your email.',
+          requiresOtp: true,
           devOtp: this.isDevOtpEnabled() ? otpCode : undefined,
         };
       }
 
-      if (existing.email === registerDto.email) {
+      if (existing.email === email) {
         throw new BadRequestException('Email is already registered');
       }
       if (existing.nationalId === registerDto.nationalId) {
@@ -160,7 +218,7 @@ export class AuthService {
       }
     }
     const user = new User();
-    user.email = registerDto.email;
+    user.email = email;
     user.passwordHash = await bcrypt.hash(registerDto.password, 10);
     user.fullName = registerDto.fullName;
     user.nationalId = registerDto.nationalId;
@@ -171,18 +229,21 @@ export class AuthService {
     user.isEmailVerified = false;
     await this.userRepository.save(user);
 
-    // Send OTP to the email — the front-end will handle verification in the next step
-    const otpCode = await this.generateAndSendOtp(registerDto.email);
-
+    const otpCode = await this.generateAndSendOtp(email);
     return {
-      message: 'Account created successfully. Please verify your email.',
+      message: 'Account created successfully. Please verify the OTP sent to your email.',
+      requiresOtp: true,
       devOtp: this.isDevOtpEnabled() ? otpCode : undefined,
     };
   }
 
   async generateAndSendOtp(email: string) {
+    const normalizedEmail = this.normalizeEmail(email);
     // Invalidate existing OTPs for this email
-    await this.otpRepository.update({ email }, { verified: true });
+    await this.otpRepository.update(
+      { email: normalizedEmail },
+      { verified: true },
+    );
 
     // Generate 6-digit OTP
     const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -190,14 +251,14 @@ export class AuthService {
     expiresAt.setMinutes(expiresAt.getMinutes() + 10);
 
     const otp = this.otpRepository.create({
-      email,
+      email: normalizedEmail,
       code,
       expiresAt,
     });
     await this.otpRepository.save(otp);
 
     await this.sendEmail({
-      to: email,
+      to: normalizedEmail,
       subject: 'DLEM - Verify your account',
       html: `
         <h2>Account Verification</h2>
@@ -211,7 +272,8 @@ export class AuthService {
   }
 
   async verifyOtp(verifyDto: { email: string; otp: string }) {
-    const { email, otp } = verifyDto;
+    const email = this.normalizeEmail(verifyDto.email);
+    const { otp } = verifyDto;
 
     const otpRecord = await this.otpRepository.findOne({
       where: { email, code: otp, verified: false },
@@ -245,7 +307,10 @@ export class AuthService {
   }
 
   async resendOtp(email: string) {
-    const user = await this.userRepository.findOne({ where: { email } });
+    const normalizedEmail = this.normalizeEmail(email);
+    const user = await this.userRepository.findOne({
+      where: { email: normalizedEmail },
+    });
     if (!user) {
       throw new BadRequestException('User not found');
     }
@@ -253,7 +318,7 @@ export class AuthService {
       throw new BadRequestException('User is already verified');
     }
 
-    const otpCode = await this.generateAndSendOtp(email);
+    const otpCode = await this.generateAndSendOtp(normalizedEmail);
     return {
       message: 'OTP resent successfully',
       devOtp: this.isDevOtpEnabled() ? otpCode : undefined,
@@ -261,7 +326,10 @@ export class AuthService {
   }
 
   async forgotPassword(email: string) {
-    const user = await this.userRepository.findOne({ where: { email } });
+    const normalizedEmail = this.normalizeEmail(email);
+    const user = await this.userRepository.findOne({
+      where: { email: normalizedEmail },
+    });
     if (!user) {
       // Return a success message even if the user doesn't exist to prevent email enumeration
       return {
@@ -283,7 +351,7 @@ export class AuthService {
     user.resetPasswordExpires = passwordResetExpires;
     await this.userRepository.save(user);
 
-    const resetUrl = `http://localhost:3000/reset-password?token=${resetToken}`;
+    const resetUrl = `${this.getFrontendUrl()}/user/reset-password?token=${resetToken}`;
 
     await this.sendEmail({
       to: user.email,

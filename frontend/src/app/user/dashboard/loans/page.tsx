@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import RepaymentButton from "./RepaymentButton";
-import { Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 
 const STATUS_BADGE: Record<string, string> = {
   PENDING: "badge-warning", APPROVED: "badge-success", REJECTED: "badge-danger", ACTIVE: "badge-info",
@@ -43,6 +43,9 @@ export default function LoansPage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
+          <Link href="/user/dashboard" className="btn btn-ghost btn-sm" style={{ gap: "8px", marginBottom: "var(--space-md)" }}>
+            <ArrowLeft size={16} /> Back
+          </Link>
           <h1 className="text-h2">My Loans</h1>
           <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
             Track your active loans

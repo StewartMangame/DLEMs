@@ -33,10 +33,8 @@ export default function InstitutionChangelogPage() {
           <div style={{ fontSize: "0.8rem", color: "var(--ap-text-muted)", marginBottom: "0.5rem" }}>
             <Link href="/admin-panel/institutions" style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", color: "var(--ap-accent-light)", textDecoration: "none" }}>
               <ArrowLeft size={14} aria-hidden />
-              Institutions
+              Back
             </Link>
-            {" / "}
-            <Link href={`/admin-panel/institutions/${id}`} style={{ color: "var(--ap-accent-light)", textDecoration: "none" }}>{instName}</Link>
           </div>
           <h1 className={styles.pageTitle}>Change Log</h1>
           <p className={styles.pageSub}>{total} changes recorded for {instName}</p>

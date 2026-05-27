@@ -77,16 +77,16 @@ export default function ProfilePage() {
 
   return (
     <div className={styles.page}>
-      <div className={styles.header} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
+      <div className={styles.header} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 'var(--space-md)', marginBottom: '2rem' }}>
+        <Link href="/user/dashboard" className="btn btn-ghost btn-sm" style={{ gap: '8px' }}>
+          <ArrowLeft size={16} /> Back
+        </Link>
         <div>
           <h1 className="text-h2">Financial Profile</h1>
           <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
             This information is used to calculate your loan eligibility and risk score across Malawian lenders.
           </p>
         </div>
-        <Link href="/dashboard" className="btn btn-ghost btn-sm" style={{ gap: '8px' }}>
-          <ArrowLeft size={16} /> Back to Dashboard
-        </Link>
       </div>
 
 

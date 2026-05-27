@@ -11,7 +11,7 @@
   display: flex; flex-direction: column;
   position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
   overflow-y: auto;
-  transition: transform var(--transition-base);
+  transition: transform 0.3s ease;
   transform: translateX(-100%);
 }
 
@@ -72,11 +72,20 @@
 .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 
 .topbar {
-  height: 64px; padding: 0 var(--space-xl);
-  display: flex; align-items: center; justify-content: space-between;
+  height: 64px;
+  padding: 0 var(--space-md);
+  display: flex; align-items: center;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-bg-dark);
   position: sticky; top: 0; z-index: 50;
+}
+
+.topbarInner {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
 }
 
 .menuBtn {
@@ -96,6 +105,7 @@
   display: flex; 
   align-items: center; 
   gap: var(--space-md); 
+  margin-left: auto;
 }
 
 .notificationBtn {
@@ -108,9 +118,9 @@
   flex: 0 0 46px;
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: var(--color-bg-elevated);
+  background: var(--color-bg-dark);
   color: var(--color-text-primary);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
   transition:
     background var(--transition-fast),
     border-color var(--transition-fast),
@@ -120,7 +130,7 @@
 
 .notificationBtn:hover {
   border-color: var(--color-primary);
-  background: var(--color-primary-glow);
+  background: var(--color-bg-dark);
   box-shadow: var(--shadow-primary);
 }
 
@@ -216,13 +226,20 @@
   text-align: center;
 }
 
-.content { flex: 1; padding: var(--space-xl); }
+.content {
+  flex: 1;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-xl) var(--space-md);
+}
 
-/* ── Overlay (shown when sidebar is open) ── */
-.overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 90;
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(4px);
+@media (max-width: 640px) {
+  .content {
+    padding: var(--space-lg) var(--space-md);
+  }
+
+  .topbarActions {
+    gap: var(--space-sm);
+  }
 }

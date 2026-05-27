@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 
 export default function LoanSchedulePage() {
   const params = useParams();
@@ -67,7 +68,7 @@ export default function LoanSchedulePage() {
     >
       <div>
         <Link href="/user/dashboard/loans" className="btn btn-ghost btn-sm" style={{ marginBottom: "var(--space-sm)" }}>
-          ← Back to Loans
+          <ArrowLeft size={16} /> Back
         </Link>
         <h1 className="text-h2">Amortization Schedule</h1>
         <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>

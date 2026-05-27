@@ -406,6 +406,7 @@ input, select, textarea { font-family: inherit; }
 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-lg); }
 
 @media (max-width: 768px) {
+  .container { padding-left: var(--space-md); padding-right: var(--space-md); }
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
   .hide-mobile { display: none; }
 }
