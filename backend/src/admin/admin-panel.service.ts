@@ -798,8 +798,24 @@ export class AdminPanelService {
   }
 
   async updateAnnouncement(admin: any, id: number, data: any) {
-    await this.announcementRepo.update(id, data);
+    const announcement = await this.announcementRepo.findOne({ where: { id } });
+    if (!announcement) throw new NotFoundException('Announcement not found');
+
+    this.announcementRepo.merge(announcement, data);
+    await this.announcementRepo.save(announcement);
     await this.log(admin.adminId, 'announcement.update', {
+      entityType: 'Announcement',
+      entityId: String(id),
+    });
+    return { success: true, announcement };
+  }
+
+  async deleteAnnouncement(admin: any, id: number) {
+    const announcement = await this.announcementRepo.findOne({ where: { id } });
+    if (!announcement) throw new NotFoundException('Announcement not found');
+
+    await this.announcementRepo.remove(announcement);
+    await this.log(admin.adminId, 'announcement.delete', {
       entityType: 'Announcement',
       entityId: String(id),
     });
