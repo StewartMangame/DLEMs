@@ -28,6 +28,8 @@ backend/prisma/*.sqlite
 # Build files
 *.tsbuildinfo
 tsconfig.tsbuildinfo
+__pycache__/
+*.py[cod]
 
 # Logs
 *.log

@@ -16,8 +16,6 @@ import {
   Sun, 
   Moon, 
   Menu,
-  FileText,
-  PieChart,
   ArrowLeft
 } from "lucide-react";
 
@@ -114,39 +112,22 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
       <div className={styles.main}>
         <header className={styles.topbar}>
-          {/* Left side: hamburger + Check Eligibility CTA */}
-          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-            <button
-              className={styles.menuBtn}
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              aria-label="Toggle menu"
-              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-            >
-              <Menu size={20} />
-            </button>
-            <Link
-              href="/user/dashboard/institutions"
-              className="btn btn-primary"
-              style={{ padding: "8px 24px" }}
-            >
-              {t("action.checkEligibility")}
-            </Link>
-          </div>
+          {/* Left side: hamburger icon */}
+          <button
+            className={styles.menuBtn}
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            aria-label="Toggle menu"
+          >
+            <Menu size={20} />
+          </button>
 
           {/* Right side: Language + Theme */}
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <div className={styles.topbarActions}>
             <select
               value={language}
               onChange={event => setLanguage(event.target.value as "en" | "ny")}
               className="form-select"
               aria-label="Language"
-              style={{
-                padding: "6px 28px 6px 12px",
-                minWidth: "125px",
-                fontSize: "0.9rem",
-                backgroundPosition: "right 8px center",
-                border: "1px solid var(--color-border)",
-              }}
             >
               <option value="en">English</option>
               <option value="ny">Chichewa</option>
@@ -156,7 +137,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               onClick={toggleTheme}
               className="btn btn-ghost"
               aria-label="Toggle theme"
-              style={{ padding: "8px 16px", minWidth: "140px", display: 'flex', alignItems: 'center', gap: '8px' }}
             >
               {theme === "dark" ? <><Sun size={18} /> {t("theme.light")}</> : <><Moon size={18} /> {t("theme.dark")}</>}
             </button>
