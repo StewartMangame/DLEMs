@@ -44,7 +44,6 @@
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
   z-index: 99;
-  display: none;
 }
 
 .sidebar {
@@ -60,6 +59,11 @@
   z-index: 100;
   transition: transform 0.25s ease;
   overflow-y: auto;
+  transform: translateX(-100%);
+}
+
+.sidebarOpen {
+  transform: translateX(0);
 }
 
 .sidebarHeader {
@@ -202,7 +206,6 @@
 /* Main content area */
 .mainWrapper {
   flex: 1;
-  margin-left: var(--ap-sidebar-w);
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -227,6 +230,7 @@
   position: sticky;
   top: 0;
   z-index: 50;
+  justify-content: space-between;
 }
 
 .topBarTitle {
@@ -237,20 +241,22 @@
 }
 
 .topBarActions {
-  margin-left: auto;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
 .menuBtn {
-  display: none;
-  background: none;
-  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--ap-border);
+  border-radius: 10px;
   color: var(--ap-text);
-  font-size: 1.25rem;
   cursor: pointer;
-  padding: 0.25rem;
 }
 
 .themeToggle {
@@ -283,23 +289,8 @@
 
 /* Responsive */
 @media (max-width: 1024px) {
-  .sidebar {
-    transform: translateX(-100%);
-  }
-  .sidebarOpen {
-    transform: translateX(0);
-  }
-  .overlay {
-    display: block;
-  }
   .mainWrapper {
     margin-left: 0;
-  }
-  .menuBtn {
-    display: block;
-  }
-  .topBarTitle {
-    display: block;
   }
   .topBar {
     padding: 1rem 1.5rem;
