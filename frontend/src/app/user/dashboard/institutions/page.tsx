@@ -696,18 +696,6 @@ function AdvisoryExplanation({
     );
   }
 
-  if (result.result === "BORDERLINE") {
-    points.push(
-      "This is an amber result. It means the application may still proceed, but one or more answers could trigger manual review or extra verification.",
-    );
-  }
-
-  if (result.result === "NOT_ELIGIBLE") {
-    points.push(
-      "This is a red result because at least one key lender rule was not met. The reason above shows the first major issue found.",
-    );
-  }
-
   if (result.result === "NOT_YET_ELIGIBLE") {
     points.push(
       "This usually means you may qualify later after time-based requirements are met, such as SACCO membership duration.",
