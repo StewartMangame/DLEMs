@@ -363,7 +363,11 @@ export class AdminPanelController {
     @Param('id') id: string,
     @Body() body: UpdateAnnouncementDto,
   ) {
-    return this.svc.updateAnnouncement(req.user, +id, body);
+    return this.svc.updateAnnouncement(req.user, +id, {
+      ...body,
+      startDate: body.startDate ? new Date(body.startDate) : undefined,
+      expiryDate: body.expiryDate ? new Date(body.expiryDate) : undefined,
+    });
   }
 
   @Patch('announcements/:id/status')
@@ -378,6 +382,11 @@ export class AdminPanelController {
   }
 
   // ── Section 9: Admin Account Management ────────────────────────────────────
+  @Delete('announcements/:id')
+  deleteAnnouncement(@Req() req: any, @Param('id') id: string) {
+    return this.svc.deleteAnnouncement(req.user, +id);
+  }
+
   @Get('admins')
   listAdmins(@Req() req: any) {
     this.svc.requireSuper(req.user);

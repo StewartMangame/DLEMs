@@ -5,18 +5,19 @@ import { usePathname, useRouter } from "next/navigation";
 import styles from "./layout.module.css";
 import { LanguageProvider, useLanguage } from "@/lib/LanguageContext";
 import { fetchActiveAnnouncements } from "@/lib/api";
-import { 
-  Hexagon, 
-  LayoutDashboard, 
-  UserCircle, 
-  Building2, 
-  Scale, 
-  Wallet, 
-  LogOut, 
-  Sun, 
-  Moon, 
+import {
+  Hexagon,
+  LayoutDashboard,
+  UserCircle,
+  Building2,
+  Scale,
+  Wallet,
+  LogOut,
+  Sun,
+  Moon,
   Menu,
-  ArrowLeft
+  ArrowLeft,
+  Bell,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -33,6 +34,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState<Theme>("dark");
   const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { t, language, setLanguage } = useLanguage();
@@ -44,6 +46,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         setTheme(savedTheme as Theme);
       }
     }
+
     fetchActiveAnnouncements()
       .then((data) => setAnnouncements(Array.isArray(data) ? data : []))
       .catch(() => setAnnouncements([]));
@@ -85,7 +88,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <nav className={styles.nav}>
-          {NAV_ITEMS.map(item => (
+          {NAV_ITEMS.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -101,10 +104,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         </nav>
         <div className={styles.sidebarBottom}>
           <div className={styles.divider} />
-          <Link href="/" className="btn btn-ghost btn-sm" style={{ width: "100%", marginBottom: 12, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Link href="/" className="btn btn-ghost btn-sm" style={{ width: "100%", marginBottom: 12, display: "flex", alignItems: "center", gap: "8px" }}>
             <ArrowLeft size={16} /> Back to Site
           </Link>
-          <button onClick={handleLogout} className={styles.logoutBtn} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button onClick={handleLogout} className={styles.logoutBtn} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <LogOut size={18} /> {t("nav.logout")}
           </button>
         </div>
@@ -112,7 +115,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
       <div className={styles.main}>
         <header className={styles.topbar}>
-          {/* Left side: hamburger icon */}
           <button
             className={styles.menuBtn}
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -121,11 +123,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             <Menu size={20} />
           </button>
 
-          {/* Right side: Language + Theme */}
-          <div className={styles.topbarActions}>
+          <div className={styles.topbarActions} style={{ position: "relative" }}>
             <select
               value={language}
-              onChange={event => setLanguage(event.target.value as "en" | "ny")}
+              onChange={(event) => setLanguage(event.target.value as "en" | "ny")}
               className="form-select"
               aria-label="Language"
             >
@@ -138,11 +139,69 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               className="btn btn-ghost"
               aria-label="Toggle theme"
             >
-              {theme === "dark" ? <><Sun size={18} /> {t("theme.light")}</> : <><Moon size={18} /> {t("theme.dark")}</>}
+              {theme === "dark" ? (
+                <>
+                  <Sun size={18} /> {t("theme.light")}
+                </>
+              ) : (
+                <>
+                  <Moon size={18} /> {t("theme.dark")}
+                </>
+              )}
             </button>
+
+            <button
+              onClick={() => setNotificationsOpen(!notificationsOpen)}
+              className={styles.notificationBtn}
+              aria-label="Notifications"
+              aria-expanded={notificationsOpen}
+              aria-haspopup="menu"
+              title="Notifications"
+            >
+              <Bell size={24} strokeWidth={2.4} />
+              {announcements.length > 0 && (
+                <span className={styles.notificationBadge}>
+                  {announcements.length}
+                </span>
+              )}
+            </button>
+
+            <div
+              className={styles.notificationsMenu}
+              role="menu"
+              hidden={!notificationsOpen}
+            >
+              <div className={styles.notificationsHeader}>
+                <span>Notifications</span>
+                {announcements.length > 0 && (
+                  <span className={styles.notificationsCount}>
+                    {announcements.length}
+                  </span>
+                )}
+              </div>
+              {announcements.length === 0 ? (
+                <p className={styles.notificationsEmpty}>
+                  {t("home.noAnnouncements") || "No announcements"}
+                </p>
+              ) : (
+                <>
+                  {announcements.map((announcement) => (
+                    <div key={announcement.id} className={styles.notificationItem} role="menuitem">
+                      {language === "ny"
+                        ? announcement.message_chichewa || announcement.message_english
+                        : announcement.message_english}
+                    </div>
+                  ))}
+                  <div className={styles.notificationsFooter}>
+                    <Link href="/user/dashboard/announcements" className="btn btn-ghost btn-sm">
+                      {t("home.viewAllAnnouncements") || "View all announcements"}
+                    </Link>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </header>
-
 
         <main className={styles.content}>
           {announcements

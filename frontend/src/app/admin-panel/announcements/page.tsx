@@ -43,7 +43,17 @@ export default function AnnouncementsPage() {
     load();
   }
 
-  const pages = Math.ceil(total / 10);
+  async function remove(id: number) {
+    const confirmed = window.confirm("Delete this announcement permanently?");
+    if (!confirmed) return;
+
+    await fetch(`/api/admin-panel/announcements/${id}`, {
+      method: "DELETE",
+    });
+    load();
+  }
+
+  const pages = Math.ceil(total / 20);
 
   return (
     <div>
@@ -93,9 +103,10 @@ export default function AnnouncementsPage() {
                 <td className={styles.dateCell}>{a.institutionId ? `Institution #${a.institutionId}` : "System-wide"}</td>
                 <td>
                   <div className={styles.actionRow}>
-                    {a.status === "draft" && <button className={`${styles.actionBtn} ${styles.success}`} onClick={() => publish(a.id)}>Publish</button>}
-                    {a.status === "draft" && <button className={styles.actionBtn} onClick={() => setEditing(a)}>Edit</button>}
+                    {a.status !== "active" && <button className={`${styles.actionBtn} ${styles.success}`} onClick={() => publish(a.id)}>Publish</button>}
+                    <button className={styles.actionBtn} onClick={() => setEditing(a)}>Edit</button>
                     {a.status === "active" && <button className={`${styles.actionBtn} ${styles.danger}`} onClick={() => deactivate(a.id)}>Deactivate</button>}
+                    <button className={`${styles.actionBtn} ${styles.danger}`} onClick={() => remove(a.id)}>Delete</button>
                   </div>
                 </td>
               </tr>

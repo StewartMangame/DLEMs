@@ -8,5 +8,6 @@ import { Announcement } from '../entities/announcement.entity';
   imports: [TypeOrmModule.forFeature([Announcement])],
   controllers: [AnnouncementsController],
   providers: [AnnouncementsService],
+  exports: [AnnouncementsService],
 })
 export class AnnouncementsModule {}
