@@ -15,9 +15,14 @@ import {
   Sun, 
   Moon, 
   Menu,
+<<<<<<< Updated upstream
   FileText,
   PieChart,
   ArrowLeft
+=======
+  ArrowLeft,
+  Bell
+>>>>>>> Stashed changes
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -33,6 +38,11 @@ type Theme = "dark" | "light";
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState<Theme>("dark");
+<<<<<<< Updated upstream
+=======
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+>>>>>>> Stashed changes
   const pathname = usePathname();
   const router = useRouter();
   const { t, language, setLanguage } = useLanguage();
@@ -128,8 +138,13 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             </Link>
           </div>
 
+<<<<<<< Updated upstream
           {/* Right side: Language + Theme */}
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+=======
+          {/* Right side: Language + Theme + Notifications */}
+          <div className={styles.topbarActions} style={{ position: 'relative' }}>
+>>>>>>> Stashed changes
             <select
               value={language}
               onChange={event => setLanguage(event.target.value as "en" | "ny")}
@@ -155,6 +170,59 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             >
               {theme === "dark" ? <><Sun size={18} /> {t("theme.light")}</> : <><Moon size={18} /> {t("theme.dark")}</>}
             </button>
+
+            {/* Notifications button */}
+            <button
+              onClick={() => setNotificationsOpen(!notificationsOpen)}
+              className="btn btn-ghost"
+              aria-label="Notifications"
+              style={{ position: 'relative' }}
+            >
+              <Bell size={18} />
+              {announcements.length > 0 && (
+                <span style={{ position: 'absolute', top: -8, right: -8, background: 'var(--color-danger)', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: '0.75rem' }}>
+                  {announcements.length}
+                </span>
+              )}
+            </button>
+
+            {/* Notifications dropdown */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: '8px',
+                width: '280px',
+                background: 'var(--color-bg-card)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-md)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                zIndex: 1000,
+                display: notificationsOpen ? 'block' : 'none'
+              }}
+            >
+              {announcements.length === 0 ? (
+                <p style={{ padding: '12px', color: 'var(--color-text-muted)' }}>
+                  {t('home.noAnnouncements') || 'No announcements'}
+                </p>
+              ) : (
+                <>
+                  {announcements.map((announcement) => (
+                    <div key={announcement.id} style={{ padding: '12px', borderBottom: '1px solid var(--color-border)' }}>
+                      {language === "ny"
+                        ? announcement.message_chichewa || announcement.message_english
+                        : announcement.message_english}
+                    </div>
+                  ))}
+                  <div style={{ padding: '12px', textAlign: 'center' }}>
+                    <Link href="/user/dashboard/announcements" className="btn btn-ghost btn-sm">
+                      {t('home.viewAllAnnouncements') || 'View all announcements'}
+                    </Link>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </header>
 

@@ -18,6 +18,7 @@ import { Otp } from './entities/otp.entity';
 import { Reminder } from './entities/reminder.entity';
 import { Sacco } from './entities/sacco.entity';
 import { User } from './entities/user.entity';
+import { AnnouncementsService } from './announcements/announcements.service';
 
 // ── Admin modules ────────────────────────────────────────────────────────────
 import { AdminPanelModule } from './admin/admin-panel.module';
@@ -87,9 +88,13 @@ import { AppService } from './app.service';
   providers: [AppService],
 })
 export class AppModule implements OnModuleInit {
-  constructor(private readonly instService: InstitutionsService) {}
+  constructor(
+    private readonly instService: InstitutionsService,
+    private readonly announcementService: AnnouncementsService,
+  ) {}
 
   async onModuleInit() {
     await this.instService.seedDefaultInstitutions();
+    await this.announcementService.seedAnnouncements();
   }
 }
