@@ -15,6 +15,7 @@ import * as crypto from 'crypto';
 import * as nodemailer from 'nodemailer';
 import { User } from '../entities/user.entity';
 import { Otp } from '../entities/otp.entity';
+import { AdminUser } from '../entities/admin-user.entity';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -26,6 +27,8 @@ export class AuthService implements OnModuleInit {
     private userRepository: Repository<User>,
     @InjectRepository(Otp)
     private otpRepository: Repository<Otp>,
+    @InjectRepository(AdminUser)
+    private adminRepository: Repository<AdminUser>,
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {
@@ -141,23 +144,43 @@ export class AuthService implements OnModuleInit {
     };
   }
 
+  private createAdminAuthResponse(admin: AdminUser) {
+    const payload = { sub: admin.id, role: admin.role, type: 'admin' };
+    const { passwordHash, ...safeAdmin } = admin;
+
+    return {
+      access_token: this.jwtService.sign(payload, {
+        secret: this.configService.getOrThrow<string>('ADMIN_JWT_SECRET'),
+        expiresIn: '8h',
+      }),
+      role: admin.role,
+      admin: safeAdmin,
+    };
+  }
+
   async login(loginDto: any) {
     const email = this.normalizeEmail(loginDto.email);
-    const user = await this.userRepository.findOne({
-      where: { email },
-    });
-    if (
-      !user ||
-      !(await bcrypt.compare(loginDto.password, user.passwordHash))
-    ) {
-      throw new UnauthorizedException('Invalid credentials');
+    const [admin, user] = await Promise.all([
+      this.adminRepository.findOne({ where: { email, isActive: true } }),
+      this.userRepository.findOne({ where: { email } }),
+    ]);
+
+    if (admin && (await bcrypt.compare(loginDto.password, admin.passwordHash))) {
+      admin.lastLoginAt = new Date();
+      await this.adminRepository.save(admin);
+      return this.createAdminAuthResponse(admin);
     }
-    if (!user.isEmailVerified) {
-      throw new UnauthorizedException(
-        'Please verify your email address before signing in.',
-      );
+
+    if (user && (await bcrypt.compare(loginDto.password, user.passwordHash))) {
+      if (!user.isEmailVerified) {
+        throw new UnauthorizedException(
+          'Please verify your email address before signing in.',
+        );
+      }
+      return this.createAuthResponse(user);
     }
-    return this.createAuthResponse(user);
+
+    throw new UnauthorizedException('Invalid email or password. Please try again.');
   }
 
   async register(registerDto: any) {

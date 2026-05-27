@@ -30,14 +30,13 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
   };
 
   useEffect(() => {
-    if (pathname === "/admin-panel/login") { setLoading(false); return; }
     fetch("/api/admin-panel/auth/me", { credentials: "include" })
       .then(r => {
-        if (!r.ok) { router.replace("/admin-panel/login"); return null; }
+        if (!r.ok) { router.replace("/user/login"); return null; }
         return r.json();
       })
       .then(d => { if (d?.admin) setAdmin(d.admin); setLoading(false); })
-      .catch(() => { router.replace("/admin-panel/login"); setLoading(false); });
+      .catch(() => { router.replace("/user/login"); setLoading(false); });
   }, [pathname, router]);
 
   useEffect(() => {
@@ -60,11 +59,9 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
 
   async function logout() {
     await fetch("/api/admin-panel/auth/logout", { method: "POST" });
-    router.replace("/admin-panel/login");
+    router.replace("/user/login");
   }
 
-  // Don't wrap login page
-  if (pathname === "/admin-panel/login") return <>{children}</>;
   if (loading) return (
     <div className={styles.loadScreen}>
       <div className={styles.loadSpinner} />

@@ -24,14 +24,18 @@ export default function LoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
+        credentials: "include",
       });
       const data = await readJson(res);
       if (!res.ok) {
-        setError(data.message || data.error || "Login failed.");
+        setError("Invalid email or password. Please try again.");
         return;
       }
-      if (data.role === "admin") router.push("/admin-panel/dashboard");
-      else router.push("/user/dashboard");
+      if (data.role === "super_admin" || data.role === "content_admin") {
+        router.push("/admin-panel/dashboard");
+      } else {
+        router.push("/user/dashboard");
+      }
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -56,7 +60,7 @@ export default function LoginPage() {
           <div className={styles.cardHeader}>
             <h1 className="text-h2">Welcome Back</h1>
             <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-              Sign in to access your loan dashboard
+              Sign in to access your dashboard
             </p>
           </div>
 
@@ -82,15 +86,6 @@ export default function LoginPage() {
               {loading ? <><span className="loading-spinner" /> Signing in…</> : <><LogIn size={20} style={{ marginRight: 8 }} /> Sign In</>}
             </button>
           </form>
-
-          <div className={styles.adminNote}>
-            <Link href="/admin-panel/login" className="badge badge-info" style={{ cursor: "pointer", textDecoration: "none" }}>
-              Admin Access
-            </Link>
-            <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-              Credit officers: use your admin credentials
-            </span>
-          </div>
 
           <p className={styles.switchLink}>
             New customer?{" "}

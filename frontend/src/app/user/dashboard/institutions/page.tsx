@@ -555,7 +555,7 @@ export default function InstitutionsPage() {
 
           <div className={styles.actionRow}>
             <button className="btn btn-ghost" onClick={() => setStep("intake")}>
-              <ChevronLeft size={16} /> Edit Answers
+              <ChevronLeft size={16} /> Edit Input
             </button>
             <button className="btn btn-primary" onClick={resetFlow}>
               Check Another Institution

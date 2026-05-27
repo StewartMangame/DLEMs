@@ -45,7 +45,7 @@ function ResetPasswordForm() {
       }
       setMessage("Password has been reset successfully. Redirecting to login...");
       setTimeout(() => {
-        router.push("/login");
+        router.push("/user/login");
       }, 2000);
     } catch {
       setError("Network error. Please try again.");
@@ -95,7 +95,7 @@ export default function ResetPasswordPage() {
       <div className={styles.bgOrb2} />
       <div className={styles.container}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
-          <Link href="/login" className="btn btn-ghost btn-sm" style={{ gap: '8px' }}>
+          <Link href="/user/login" className="btn btn-ghost btn-sm" style={{ gap: '8px' }}>
             <ArrowLeft size={16} /> Back
           </Link>
           <Link href="/" className={styles.logo}>
@@ -113,7 +113,7 @@ export default function ResetPasswordPage() {
             <ResetPasswordForm />
           </Suspense>
           <p className={styles.switchLink}>
-            <Link href="/login">Back</Link>
+            <Link href="/user/login">Back</Link>
           </p>
         </div>
       </div>
