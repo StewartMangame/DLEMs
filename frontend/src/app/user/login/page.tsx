@@ -25,9 +25,12 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error || "Login failed."); return; }
-      if (data.role === "admin") router.push("/admin");
+      const data = await readJson(res);
+      if (!res.ok) {
+        setError(data.message || data.error || "Login failed.");
+        return;
+      }
+      if (data.role === "admin") router.push("/admin-panel/dashboard");
       else router.push("/user/dashboard");
     } catch {
       setError("Network error. Please try again.");
@@ -81,7 +84,7 @@ export default function LoginPage() {
           </form>
 
           <div className={styles.adminNote}>
-            <Link href="/admin/login" className="badge badge-info" style={{ cursor: "pointer", textDecoration: "none" }}>
+            <Link href="/admin-panel/login" className="badge badge-info" style={{ cursor: "pointer", textDecoration: "none" }}>
               Admin Access
             </Link>
             <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>
@@ -97,5 +100,16 @@ export default function LoginPage() {
       </div>
     </div>
   );
+}
+
+async function readJson(res: Response) {
+  const text = await res.text();
+  if (!text) return {};
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {};
+  }
 }
 

@@ -111,7 +111,7 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
             type="button"
             className={styles.menuBtn}
             onClick={() => setSidebarOpen(v => !v)}
-            aria-label="Open menu"
+            aria-label="Toggle menu"
           >
             <Menu size={22} aria-hidden />
           </button>
@@ -120,14 +120,19 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
             <button
               type="button"
               onClick={toggleTheme}
-              className={styles.themeToggle}
+              className="btn btn-ghost"
               aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-              title={theme === "dark" ? "Light mode" : "Dark mode"}
             >
               {theme === "dark" ? (
-                <Sun className={styles.themeIcon} aria-hidden />
+                <>
+                  <Sun size={18} aria-hidden />
+                  Light mode
+                </>
               ) : (
-                <Moon className={styles.themeIcon} aria-hidden />
+                <>
+                  <Moon size={18} aria-hidden />
+                  Dark mode
+                </>
               )}
             </button>
           </div>

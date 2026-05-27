@@ -50,7 +50,7 @@ export class AnnouncementsService {
       {
         messageEnglish: 'Welcome to the Digital Loan Eligibility & Management System! We are excited to have you on board.',
         messageChichewa: 'Welcome to the Digital Loan Eligibility & Management System! Tibwere kuyenda pakuti tidzikupezere chiyani chotchukula.',
-        status: 'active',
+        status: 'active' as const,
         startDate: new Date(),
         expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
         institutionId: null, // For all users
@@ -58,7 +58,7 @@ export class AnnouncementsService {
       {
         messageEnglish: 'Interest rates have been updated for FDH Bank and FINCA Malawi. Please check the latest rates before applying.',
         messageChichewa: 'Mibango yakondweredwa kwa FDH Bank ndi FINCA Malawi. Chonde chani mibango yochokera kumuyenda kupatonkha.',
-        status: 'active',
+        status: 'active' as const,
         startDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
         expiryDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days from now
         institutionId: null,
@@ -66,7 +66,7 @@ export class AnnouncementsService {
       {
         messageEnglish: 'Maintenance scheduled for Sunday, 2 AM - 4 AM. Service may be temporarily unavailable.',
         messageChichewa: 'Chokudzera Lichachi, 2 AM - 4 AM. Chochepetsa cha kuzeredwa, chitsinzani cholingotseka.',
-        status: 'active',
+        status: 'active' as const,
         startDate: new Date(),
         expiryDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
         institutionId: null,

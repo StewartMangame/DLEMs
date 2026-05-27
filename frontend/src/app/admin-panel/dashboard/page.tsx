@@ -12,7 +12,6 @@ import {
   Trophy,
   Building2,
   CheckCircle2,
-  AlertTriangle,
   Zap,
   Megaphone,
   ClipboardList,
@@ -28,7 +27,6 @@ interface DashboardData {
   checksThisMonth: number;
   topInstitutions: { name: string; count: string }[];
   activeInstitutions: number;
-  pendingVerification: number;
 }
 
 function StatCard({
@@ -103,12 +101,12 @@ export default function AdminDashboardPage() {
   return (
     <div className={styles.page}>
       <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>Dashboard Overview</h1>
+        <h1 className={styles.pageTitle}>Dashboard</h1>
         <p className={styles.pageSub}>Live system statistics — refreshed on every page load</p>
       </div>
 
       <section className={styles.section}>
-        <SectionTitle icon={Users}>Users</SectionTitle>
+        <SectionTitle icon={Users}>Overview</SectionTitle>
         <div className={styles.grid3}>
           <StatCard icon={User} label="Total Registered Users" value={data.totalUsers.toLocaleString()} />
           <StatCard icon={Calendar} label="New This Week" value={data.usersThisWeek} color="var(--ap-info)" />
@@ -145,13 +143,6 @@ export default function AdminDashboardPage() {
         <SectionTitle icon={Building2}>Institution Health</SectionTitle>
         <div className={styles.grid2}>
           <StatCard icon={CheckCircle2} label="Active Institutions" value={data.activeInstitutions} color="var(--ap-success)" />
-          <StatCard
-            icon={AlertTriangle}
-            label="Pending Verification"
-            value={data.pendingVerification}
-            color={data.pendingVerification > 0 ? "var(--ap-warning)" : "var(--ap-success)"}
-            sub={data.pendingVerification > 0 ? "Require review" : "All verified"}
-          />
         </div>
       </section>
 

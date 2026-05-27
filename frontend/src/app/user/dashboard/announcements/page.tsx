@@ -14,7 +14,7 @@ export default function AnnouncementsPage() {
   const router = useRouter();
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   useEffect(() => {
     fetchActiveAnnouncements()
@@ -53,8 +53,8 @@ export default function AnnouncementsPage() {
         <div className={styles.actionsSection}>
           <h2 className="text-h3">{t('home.recentAnnouncements') || 'Recent Announcements'}</h2>
           <div className={styles.actions}>
-            {announcements.map((announcement, index) => (
-              <Link key={announcement.index} href="#" className={`card card-hover ${styles.actionCard}`} style={{ display: 'block', width: '100%' }}>
+            {announcements.map((announcement) => (
+              <Link key={announcement.id} href="#" className={`card card-hover ${styles.actionCard}`} style={{ display: 'block', width: '100%' }}>
                 <div className={styles.actionIcon} style={{ background: 'rgba(0,200,150,0.15)' }}>
                   <Bell size={20} color="var(--color-text-primary)" />
                 </div>

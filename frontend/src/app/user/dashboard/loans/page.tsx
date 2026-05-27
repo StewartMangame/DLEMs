@@ -16,7 +16,6 @@ const RISK_BADGE: Record<string, string> = {
 export default function LoansPage() {
   const router = useRouter();
   const [loans, setLoans] = useState<any[]>([]);
-  const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,7 +29,6 @@ export default function LoansPage() {
       .then((data) => {
         const activeLoans = (data.loans || []).filter((l: any) => l.isActive);
         setLoans(activeLoans);
-        setApplications(data.applications || []);
         setLoading(false);
       })
       .catch((err) => {
@@ -47,7 +45,7 @@ export default function LoansPage() {
         <div>
           <h1 className="text-h2">My Loans</h1>
           <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-            Track your active loans and application history
+            Track your active loans
           </p>
         </div>
         <div style={{ display: "flex", gap: 12 }}>
@@ -140,52 +138,6 @@ export default function LoansPage() {
           </div>
         </section>
       )}
-
-      <section className={styles.section}>
-        <h2 className="text-h3">Application History</h2>
-        {applications.length === 0 ? (
-          <div className={`card ${styles.empty}`}>
-            <div className={styles.emptyIcon}>📋</div>
-            <h3 className="text-h3">No Applications Yet</h3>
-            <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-              Start by checking your eligibility or directly applying for a loan.
-            </p>
-            <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-              <Link href="/user/dashboard/eligibility" className="btn btn-primary btn-sm">Compare Lenders</Link>
-            </div>
-          </div>
-        ) : (
-          <div className="table-wrapper">
-            <table>
-              <thead>
-                <tr><th>Date</th><th>Amount</th><th>Purpose</th><th>Bank</th><th>Duration</th><th>Risk</th><th>DTI</th><th>Status</th></tr>
-              </thead>
-              <tbody>
-                {applications.map((app: any) => (
-                  <tr key={app.id}>
-                    <td>{new Date(app.createdAt).toLocaleDateString()}</td>
-                    <td>MK {app.amount.toLocaleString()}</td>
-                    <td>{app.purpose || "N/A"}</td>
-                    <td>{app.institution?.name}</td>
-                    <td>{app.durationMonths} mo</td>
-                    <td>
-                      <span className={`badge ${RISK_BADGE[app.riskCategory] ?? "badge-neutral"}`}>
-                        {app.riskScore}/120 {app.riskCategory}
-                      </span>
-                    </td>
-                    <td style={{ color: app.dtiRatio > 33 ? "var(--color-danger)" : "var(--color-success)" }}>
-                      {app.dtiRatio.toFixed(1)}%
-                    </td>
-                    <td>
-                      <span className={`badge ${STATUS_BADGE[app.status] ?? "badge-neutral"}`}>{app.status}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
     </div>
   );
 }

@@ -12,9 +12,36 @@ import {
   MinLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { Transform } from 'class-transformer';
 
 type InstitutionType = 'bank' | 'sacco' | 'microfinance' | 'other';
-type InstitutionStatus = 'active' | 'inactive' | 'pending_verification';
+type InstitutionStatus = 'active' | 'inactive' | 'coming_soon';
+
+function normalizeInstitutionType(value: unknown): InstitutionType | unknown {
+  if (typeof value !== 'string') return value;
+  const normalized = value.trim().toLowerCase();
+  if (
+    normalized === 'commercial_bank' ||
+    normalized === 'commercial bank' ||
+    normalized === 'bank'
+  ) {
+    return 'bank';
+  }
+  if (normalized === 'sacco' || normalized === 'sacco_category') {
+    return 'sacco';
+  }
+  if (normalized === 'microfinance') return 'microfinance';
+  if (normalized === 'other') return 'other';
+  return normalized;
+}
+
+function normalizeInstitutionStatus(value: unknown): InstitutionStatus | unknown {
+  if (typeof value !== 'string') return value;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'coming soon' || normalized === 'coming-soon')
+    return 'coming_soon';
+  return normalized;
+}
 
 class InstitutionCriteriaDto {
   @IsOptional()
@@ -80,6 +107,10 @@ class InstitutionCriteriaDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsArray()
+  customCriteria?: any[];
 }
 
 export class CreateInstitutionDto {
@@ -90,10 +121,16 @@ export class CreateInstitutionDto {
   @IsEnum(['bank', 'sacco', 'microfinance', 'other'], {
     message: 'Type must be one of: bank, sacco, microfinance, other',
   })
+  @Transform(({ value }) => normalizeInstitutionType(value))
   type: InstitutionType;
 
   @IsOptional()
-  @IsEnum(['active', 'inactive', 'pending_verification'])
+  @IsString()
+  customInstitutionType?: string;
+
+  @IsOptional()
+  @IsEnum(['active', 'inactive', 'coming_soon'])
+  @Transform(({ value }) => normalizeInstitutionStatus(value))
   status?: InstitutionStatus;
 
   @IsOptional()
@@ -128,6 +165,11 @@ export class CreateInstitutionDto {
   @IsArray()
   @IsString({ each: true })
   requiredDocuments?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  eligibleEmploymentTypes?: string[];
 
   // Criteria fields (flattened on create)
   @IsOptional()
@@ -203,10 +245,16 @@ export class UpdateInstitutionDto {
 
   @IsOptional()
   @IsEnum(['bank', 'sacco', 'microfinance', 'other'])
+  @Transform(({ value }) => normalizeInstitutionType(value))
   type?: InstitutionType;
 
   @IsOptional()
-  @IsEnum(['active', 'inactive', 'pending_verification'])
+  @IsString()
+  customInstitutionType?: string;
+
+  @IsOptional()
+  @IsEnum(['active', 'inactive', 'coming_soon'])
+  @Transform(({ value }) => normalizeInstitutionStatus(value))
   status?: InstitutionStatus;
 
   @IsOptional()
@@ -247,9 +295,18 @@ export class UpdateInstitutionDto {
   reviewDueDate?: string;
 
   @IsOptional()
+  @IsBoolean()
+  hasBranches?: boolean;
+
+  @IsOptional()
   @ValidateNested()
   @Type(() => InstitutionCriteriaDto)
   criteria?: InstitutionCriteriaDto;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  eligibleEmploymentTypes?: string[];
 }
 
 export class VerifyInstitutionDto {
