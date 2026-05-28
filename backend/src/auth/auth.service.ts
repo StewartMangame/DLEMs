@@ -84,7 +84,7 @@ export class AuthService implements OnModuleInit {
     return (
       this.cleanConfig('FRONTEND_URL') ||
       this.cleanConfig('APP_URL') ||
-      'http://localhost:3000'
+      'http://localhost:3002'
     ).replace(/\/+$/, '');
   }
 
@@ -395,9 +395,17 @@ export class AuthService implements OnModuleInit {
   }
 
   async resetPassword(token: string, newPassword: string) {
+    if (!token?.trim()) {
+      throw new BadRequestException('Reset token is required');
+    }
+
+    if (!newPassword || newPassword.length < 8) {
+      throw new BadRequestException('Password must be at least 8 characters');
+    }
+
     const passwordResetToken = crypto
       .createHash('sha256')
-      .update(token)
+      .update(token.trim())
       .digest('hex');
 
     const user = await this.userRepository.findOne({
