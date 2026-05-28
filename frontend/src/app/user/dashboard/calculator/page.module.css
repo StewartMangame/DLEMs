@@ -55,3 +55,19 @@
 @media (max-width: 900px) {
   .grid { grid-template-columns: 1fr; }
 }
+
+@media (max-width: 640px) {
+  .summary {
+    grid-template-columns: 1fr;
+  }
+
+  .barLegend {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .stackPrincipal,
+  .stackInterest {
+    font-size: 0.68rem;
+  }
+}

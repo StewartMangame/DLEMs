@@ -181,7 +181,7 @@ export default function InstitutionsPage() {
                         href={`/admin-panel/institutions/${inst.id}/changelog`}
                         className={styles.actionBtn}
                       >
-                        Log
+                        Logs
                       </Link>
                       {inst.status !== 'active' ? (
                         <button

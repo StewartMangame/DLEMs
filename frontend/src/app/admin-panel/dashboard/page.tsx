@@ -14,9 +14,9 @@ import {
   CheckCircle2,
   Zap,
   Megaphone,
-  ClipboardList,
   ArrowRight,
 } from "lucide-react";
+import { readJson } from "@/lib/http";
 import styles from "./dashboard.module.css";
 
 interface DashboardData {
@@ -72,10 +72,7 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     fetch("/api/admin-panel/dashboard")
-      .then((r) => {
-        if (!r.ok) throw new Error();
-        return r.json();
-      })
+      .then((r) => readJson<DashboardData>(r, "Failed to load dashboard data"))
       .then(setData)
       .catch(() => setError("Failed to load dashboard data"))
       .finally(() => setLoading(false));
@@ -95,14 +92,13 @@ export default function AdminDashboardPage() {
     { href: "/admin-panel/institutions", label: "Manage Institutions", icon: Building2 },
     { href: "/admin-panel/users", label: "View Users", icon: Users },
     { href: "/admin-panel/announcements", label: "Announcements", icon: Megaphone },
-    { href: "/admin-panel/activity-log", label: "Activity Log", icon: ClipboardList },
   ];
 
   return (
     <div className={styles.page}>
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>Dashboard</h1>
-        <p className={styles.pageSub}>Live system statistics — refreshed on every page load</p>
+        <p className={styles.pageSub}>Live system statistics</p>
       </div>
 
       <section className={styles.section}>

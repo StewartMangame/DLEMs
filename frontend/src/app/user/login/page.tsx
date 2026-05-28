@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import styles from "../auth.module.css";
 import { Hexagon, ArrowLeft, LogIn } from "lucide-react";
+import { useLanguage } from "@/lib/LanguageContext";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,16 +26,20 @@ export default function LoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
+        credentials: "include",
       });
       const data = await readJson(res);
       if (!res.ok) {
-        setError(data.message || data.error || "Login failed.");
+        setError(t("auth.invalidLogin"));
         return;
       }
-      if (data.role === "admin") router.push("/admin-panel/dashboard");
-      else router.push("/user/dashboard");
+      if (data.role === "super_admin" || data.role === "content_admin") {
+        router.push("/admin-panel/dashboard");
+      } else {
+        router.push("/user/dashboard");
+      }
     } catch {
-      setError("Network error. Please try again.");
+      setError(t("auth.networkError"));
     } finally {
       setLoading(false);
     }
@@ -44,19 +50,22 @@ export default function LoginPage() {
       <div className={styles.bgOrb1} />
       <div className={styles.bgOrb2} />
       <div className={styles.container}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
-          <Link href="/" className="btn btn-ghost btn-sm" style={{ gap: '8px' }}>
-            <ArrowLeft size={16} /> Back
+        <div className={styles.authBackRow}>
+          <Link href="/" className={styles.authBackButton} aria-label={t("auth.back")}>
+            <ArrowLeft size={20} aria-hidden />
           </Link>
+        </div>
+        <div className={styles.authLogoRow}>
           <Link href="/" className={styles.logo}>
-            <Hexagon size={24} className={styles.logoIcon} /> DLEM
+            <Hexagon size={28} className={styles.logoIcon} />
+            <span>DLEM</span>
           </Link>
         </div>
         <div className={`card ${styles.card} ${styles.cardNarrow}`}>
           <div className={styles.cardHeader}>
-            <h1 className="text-h2">Welcome Back</h1>
+            <h1 className="text-h2">{t("auth.loginTitle")}</h1>
             <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-              Sign in to access your loan dashboard
+              {t("auth.loginSubtitle")}
             </p>
           </div>
 
@@ -64,37 +73,28 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className="form-group">
-              <label className="form-label" htmlFor="email">Email Address</label>
+              <label className="form-label" htmlFor="email">{t("auth.email")}</label>
               <input id="email" name="email" type="email" required className="form-input"
-                placeholder="your@email.com" value={form.email} onChange={handleChange} />
+                placeholder="youremail@gmail.com" value={form.email} onChange={handleChange} />
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="password">Password</label>
+              <label className="form-label" htmlFor="password">{t("auth.password")}</label>
               <input id="password" name="password" type="password" required className="form-input"
-                placeholder="Your password" value={form.password} onChange={handleChange} />
+                placeholder={t("auth.passwordPlaceholder")} value={form.password} onChange={handleChange} />
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.25rem' }}>
                 <Link href="/user/forgot-password" className="text-sm" style={{ color: "var(--color-primary)" }}>
-                  Forgot Password?
+                  {t("auth.forgotPassword")}
                 </Link>
               </div>
             </div>
             <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: "100%", marginTop: 4 }}>
-              {loading ? <><span className="loading-spinner" /> Signing in…</> : <><LogIn size={20} style={{ marginRight: 8 }} /> Sign In</>}
+              {loading ? <><span className="loading-spinner" /> {t("auth.signingIn")}</> : <><LogIn size={20} style={{ marginRight: 8 }} /> {t("auth.signIn")}</>}
             </button>
           </form>
 
-          <div className={styles.adminNote}>
-            <Link href="/admin-panel/login" className="badge badge-info" style={{ cursor: "pointer", textDecoration: "none" }}>
-              Admin Access
-            </Link>
-            <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-              Credit officers: use your admin credentials
-            </span>
-          </div>
-
           <p className={styles.switchLink}>
-            New customer?{" "}
-            <Link href="/user/register">Create an Account</Link>
+            {t("auth.newCustomer")}{" "}
+            <Link href="/user/register">{t("auth.createAccount")}</Link>
           </p>
         </div>
       </div>

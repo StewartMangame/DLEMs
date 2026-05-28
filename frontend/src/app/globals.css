@@ -7,6 +7,9 @@
   --color-bg-elevated:   #334155;
   --color-surface:       #1e293b;
   --color-border:        rgba(255, 255, 255, 0.12); /* Increased opacity */
+  --color-subtle-bg:     rgba(255, 255, 255, 0.04);
+  --color-subtle-bg-hover: rgba(255, 255, 255, 0.02);
+  --color-neutral-bg:    rgba(255, 255, 255, 0.06);
   --color-border-active: rgba(30, 111, 255, 0.8);
 
   --color-primary:       #3b82f6; /* Brighter Blue */
@@ -103,6 +106,9 @@
   --color-bg-elevated:   #f8fafc;
   --color-surface:       #ffffff;
   --color-border:        rgba(0, 0, 0, 0.1);
+  --color-subtle-bg:     rgba(15, 23, 42, 0.04);
+  --color-subtle-bg-hover: rgba(15, 23, 42, 0.035);
+  --color-neutral-bg:    rgba(15, 23, 42, 0.06);
   --color-border-active: rgba(30, 111, 255, 0.5);
 
   --color-primary:       #1e6fff;
@@ -170,6 +176,7 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -189,6 +196,16 @@ a {
 a:hover { color: var(--color-primary-light); }
 
 img, svg { display: block; max-width: 100%; }
+
+main,
+section,
+article,
+aside,
+header,
+footer,
+.card {
+  min-width: 0;
+}
 
 button { cursor: pointer; font-family: inherit; }
 
@@ -265,7 +282,7 @@ input, select, textarea { font-family: inherit; }
   color: var(--color-text-secondary);
   border: 1.5px solid var(--color-border);
 }
-.btn-ghost:hover { color: var(--color-text-primary); border-color: rgba(255,255,255,0.2); }
+.btn-ghost:hover { color: var(--color-text-primary); border-color: var(--color-border-active); }
 
 .btn-success { background: var(--gradient-success); color: #fff; }
 .btn-danger { background: linear-gradient(135deg, #ff3b5c, #ff6b35); color: #fff; }
@@ -328,7 +345,7 @@ input, select, textarea { font-family: inherit; }
 .form-select {
   width: 100%;
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--color-subtle-bg);
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text-primary);
@@ -388,7 +405,7 @@ input, select, textarea { font-family: inherit; }
 .badge-warning { background: var(--color-warning-bg); color: var(--color-warning); border: 1px solid rgba(255,184,0,0.2); }
 .badge-danger  { background: var(--color-danger-bg);  color: var(--color-danger);  border: 1px solid rgba(255,59,92,0.2); }
 .badge-info    { background: rgba(0,180,216,0.12); color: var(--color-info); border: 1px solid rgba(0,180,216,0.2); }
-.badge-neutral { background: rgba(255,255,255,0.06); color: var(--color-text-secondary); border: 1px solid var(--color-border); }
+.badge-neutral { background: var(--color-neutral-bg); color: var(--color-text-secondary); border: 1px solid var(--color-border); }
 
 /* ===================== LAYOUT UTILITIES ===================== */
 .container { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 var(--space-lg); }
@@ -409,6 +426,29 @@ input, select, textarea { font-family: inherit; }
   .container { padding-left: var(--space-md); padding-right: var(--space-md); }
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
   .hide-mobile { display: none; }
+}
+
+@media (max-width: 640px) {
+  .card { padding: var(--space-lg); }
+
+  .btn {
+    min-height: 44px;
+    white-space: normal;
+  }
+
+  .btn-lg {
+    padding: 13px 20px;
+    font-size: 1rem;
+  }
+
+  .alert {
+    padding: var(--space-md);
+  }
+
+  th,
+  td {
+    padding: 12px 14px;
+  }
 }
 
 /* ===================== PROGRESS BARS ===================== */
@@ -516,7 +556,7 @@ input, select, textarea { font-family: inherit; }
 .table-wrapper { overflow-x: auto; border-radius: var(--radius-lg); border: 1px solid var(--color-border); }
 
 table { width: 100%; border-collapse: collapse; }
-thead { background: rgba(255,255,255,0.03); }
+thead { background: var(--color-subtle-bg); }
 th {
   padding: 14px 20px;
   text-align: left;
@@ -531,8 +571,8 @@ td {
   padding: 16px 20px;
   font-size: 0.9rem;
   color: var(--color-text-primary);
-  border-bottom: 1px solid rgba(255,255,255,0.03);
+  border-bottom: 1px solid var(--color-subtle-bg);
 }
 tr:last-child td { border-bottom: none; }
 tbody tr { transition: background var(--transition-fast); }
-tbody tr:hover { background: rgba(255,255,255,0.02); }
+tbody tr:hover { background: var(--color-subtle-bg-hover); }

@@ -87,3 +87,40 @@
   align-items: center;
 }
 
+.authTopbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .page {
+    align-items: stretch;
+    padding: var(--space-lg) var(--space-md);
+    overflow-y: auto;
+  }
+
+  .container {
+    max-width: 100%;
+    gap: var(--space-lg);
+    padding-top: 0;
+  }
+
+  .cardHeader {
+    margin-bottom: var(--space-lg);
+  }
+
+  .adminNote {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 380px) {
+  .authTopbar {
+    align-items: flex-start;
+    flex-direction: column-reverse;
+  }
+}
+

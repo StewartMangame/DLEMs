@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { readJson } from "@/lib/http";
 import styles from "../institutions/institutions.module.css";
 
 export default function UsersPage() {
@@ -14,7 +15,10 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/admin-panel/users/stats").then(r => r.json()).then(setStats);
+    fetch("/api/admin-panel/users/stats")
+      .then((r) => readJson(r, "Failed to load user stats"))
+      .then(setStats)
+      .catch(() => setStats({}));
   }, []);
 
   const load = useCallback(() => {
@@ -25,8 +29,9 @@ export default function UsersPage() {
     if (dateFrom) params.set("dateFrom", dateFrom);
     if (dateTo) params.set("dateTo", dateTo);
     fetch(`/api/admin-panel/users?${params}`)
-      .then(r => r.json())
+      .then((r) => readJson(r, "Failed to load users"))
       .then(d => { setUsers(d.items || []); setTotal(d.total || 0); })
+      .catch(() => { setUsers([]); setTotal(0); })
       .finally(() => setLoading(false));
   }, [page, search, status, dateFrom, dateTo]);
 

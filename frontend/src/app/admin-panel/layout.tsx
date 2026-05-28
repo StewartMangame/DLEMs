@@ -2,8 +2,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { Sun, Moon } from "lucide-react";
 import { NAV_SUPER, NAV_CONTENT, Hexagon, Menu, LogOut } from "./icons";
+import PreferenceControls from "@/components/PreferenceControls";
 import styles from "./layout.module.css";
 
 export default function AdminPanelLayout({ children }: { children: React.ReactNode }) {
@@ -12,32 +12,17 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
   const [admin, setAdmin] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
   const sidebarRef = useRef<HTMLElement | null>(null);
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
-    const saved = (window.localStorage.getItem("dlem_admin_theme") as "dark" | "light") || "dark";
-    setTheme(saved);
-    document.documentElement.setAttribute("data-theme", saved);
-  }, []);
-
-  const toggleTheme = () => {
-    const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    window.localStorage.setItem("dlem_admin_theme", next);
-    document.documentElement.setAttribute("data-theme", next);
-  };
-
-  useEffect(() => {
-    if (pathname === "/admin-panel/login") { setLoading(false); return; }
     fetch("/api/admin-panel/auth/me", { credentials: "include" })
       .then(r => {
-        if (!r.ok) { router.replace("/admin-panel/login"); return null; }
+        if (!r.ok) { router.replace("/user/login"); return null; }
         return r.json();
       })
       .then(d => { if (d?.admin) setAdmin(d.admin); setLoading(false); })
-      .catch(() => { router.replace("/admin-panel/login"); setLoading(false); });
+      .catch(() => { router.replace("/user/login"); setLoading(false); });
   }, [pathname, router]);
 
   useEffect(() => {
@@ -60,11 +45,9 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
 
   async function logout() {
     await fetch("/api/admin-panel/auth/logout", { method: "POST" });
-    router.replace("/admin-panel/login");
+    router.replace("/user/login");
   }
 
-  // Don't wrap login page
-  if (pathname === "/admin-panel/login") return <>{children}</>;
   if (loading) return (
     <div className={styles.loadScreen}>
       <div className={styles.loadSpinner} />
@@ -137,24 +120,7 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
             </button>
             <span className={styles.topBarTitle}>DLEM Admin</span>
             <div className={styles.topBarActions}>
-              <button
-                type="button"
-                onClick={toggleTheme}
-                className="btn btn-ghost"
-                aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-              >
-                {theme === "dark" ? (
-                  <>
-                    <Sun size={18} aria-hidden />
-                    Light mode
-                  </>
-                ) : (
-                  <>
-                    <Moon size={18} aria-hidden />
-                    Dark mode
-                  </>
-                )}
-              </button>
+              <PreferenceControls />
             </div>
           </div>
         </header>

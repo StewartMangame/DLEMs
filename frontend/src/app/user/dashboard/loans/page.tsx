@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import RepaymentButton from "./RepaymentButton";
 import { ArrowLeft, Trash2 } from "lucide-react";
+import { useLanguage } from "@/lib/LanguageContext";
 
 const STATUS_BADGE: Record<string, string> = {
   PENDING: "badge-warning", APPROVED: "badge-success", REJECTED: "badge-danger", ACTIVE: "badge-info",
@@ -15,6 +16,7 @@ const RISK_BADGE: Record<string, string> = {
 
 export default function LoansPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [loans, setLoans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,38 +39,38 @@ export default function LoansPage() {
       });
   }, [router]);
 
-  if (loading) return <div style={{ padding: 40, color: "var(--color-text-muted)" }}>Loading loans…</div>;
+  if (loading) return <div style={{ padding: 40, color: "var(--color-text-muted)" }}>{t("loans.loading")}</div>;
 
   return (
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
           <Link href="/user/dashboard" className="btn btn-ghost btn-sm" style={{ gap: "8px", marginBottom: "var(--space-md)" }}>
-            <ArrowLeft size={16} /> Back
+            <ArrowLeft size={16} /> {t("common.back")}
           </Link>
-          <h1 className="text-h2">My Loans</h1>
+          <h1 className="text-h2">{t("loans.title")}</h1>
           <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-            Track your active loans
+            {t("loans.subtitle")}
           </p>
         </div>
         <div style={{ display: "flex", gap: 12 }}>
-          <Link href="/user/dashboard/loans/add" className="btn btn-outline btn-sm">Record Manual Loan</Link>
+          <Link href="/user/dashboard/loans/add" className="btn btn-outline btn-sm">{t("loans.record")}</Link>
         </div>
       </div>
 
       {loans.length > 0 && (
         <section className={styles.section}>
-          <h2 className="text-h3">Active Loans</h2>
+          <h2 className="text-h3">{t("loans.active")}</h2>
           <div className={styles.activeGrid}>
             {loans.map((loan: any) => {
               const progress = (loan.paidMonths / loan.loanTermMonths) * 100;
               return (
                 <div key={loan.id} className={`card ${styles.activeLoanCard}`}>
                   <div className={styles.cardChrome}>
-                    <span className="badge badge-info">Active</span>
+                    <span className="badge badge-info">{t("loans.active")}</span>
                     <button
                       onClick={() => {
-                        if (confirm("Are you sure you want to remove this loan? This will also update your monthly debt capacity.")) {
+                        if (confirm(t("loans.removeConfirm"))) {
                           fetch(`/api/loans/${loan.id}`, { method: "DELETE" })
                             .then(r => r.json())
                             .then(data => {
@@ -79,8 +81,8 @@ export default function LoansPage() {
                         }
                       }}
                       className={styles.deleteBtn}
-                      title="Remove loan"
-                      aria-label="Remove loan"
+                      title={t("loans.remove")}
+                      aria-label={t("loans.remove")}
                     >
                       <Trash2 size={18} />
                     </button>
@@ -88,7 +90,7 @@ export default function LoansPage() {
                   <div className={styles.loanTop}>
                     <div>
                       <div className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-                        {loan.application?.purpose || "Manual Record"} · {loan.providerInstitution?.name}
+                        {loan.application?.purpose || t("loans.manualRecord")} - {loan.providerInstitution?.name}
                       </div>
                       <div className="stat-value text-gradient">
                         MK {loan.loanAmount.toLocaleString()}
@@ -97,27 +99,27 @@ export default function LoansPage() {
                   </div>
                   <div className={styles.loanStats}>
                     <div>
-                      <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>Monthly</div>
+                      <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>{t("loans.monthly")}</div>
                       <div style={{ fontWeight: 600 }}>MK {loan.monthlyDeduction.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
                     </div>
                     <div>
-                      <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>Paid Months</div>
+                      <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>{t("loans.paidMonths")}</div>
                       <div style={{ fontWeight: 600 }}>{loan.paidMonths}/{loan.loanTermMonths}</div>
                     </div>
                     <div>
-                      <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>Remaining</div>
+                      <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>{t("loans.remaining")}</div>
                       <div style={{ fontWeight: 600, color: "var(--color-warning)" }}>
                         MK {Math.max(0, loan.remainingBalance || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                       </div>
                     </div>
                     <div>
-                      <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>Start Date</div>
+                      <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>{t("loans.startDate")}</div>
                       <div style={{ fontWeight: 600 }}>{new Date(loan.startDate).toLocaleDateString()}</div>
                     </div>
                   </div>
                   <div style={{ margin: "16px 0" }}>
                     <div className="text-xs" style={{ color: "var(--color-text-muted)", marginBottom: 8 }}>
-                      Repayment Progress — {progress.toFixed(0)}%
+                      {t("loans.progress")} - {progress.toFixed(0)}%
                     </div>
                     <div className="progress-bar" style={{ height: 10 }}>
                       <div className="progress-fill success" style={{ width: `${progress}%` }} />
@@ -132,7 +134,7 @@ export default function LoansPage() {
                       />
                     </div>
                     <Link href={`/user/dashboard/loans/${loan.id}`} className="btn btn-outline" style={{ flexGrow: 1, justifyContent: "center" }}>
-                      View Schedule
+                      {t("loans.viewSchedule")}
                     </Link>
                   </div>
                 </div>

@@ -57,3 +57,19 @@
   .activeGrid { grid-template-columns: 1fr; }
   .loanStats { grid-template-columns: 1fr 1fr; }
 }
+
+@media (max-width: 520px) {
+  .header,
+  .loanTop {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .loanStats {
+    grid-template-columns: 1fr;
+  }
+
+  .empty {
+    padding: var(--space-xl);
+  }
+}

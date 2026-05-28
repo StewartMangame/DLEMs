@@ -42,8 +42,8 @@
   display: flex; align-items: center; gap: var(--space-md);
   padding: var(--space-md); border-radius: var(--radius-md);
   font-size: 0.9rem; font-weight: 500;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--color-subtle-bg);
+  border: 1px solid var(--color-border);
 }
 
 .insightDot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
@@ -63,4 +63,27 @@
 @media (max-width: 600px) {
   .actions { grid-template-columns: 1fr; }
   .kpiGrid { grid-template-columns: 1fr 1fr; }
+
+  .header,
+  .appsHeader,
+  .dtiHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .kpiCard,
+  .dtiCard,
+  .healthCard {
+    padding: var(--space-lg);
+  }
+
+  .actionCard {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 420px) {
+  .kpiGrid {
+    grid-template-columns: 1fr;
+  }
 }

@@ -6,6 +6,33 @@ import { ArrowLeft, Building2, CheckCircle2, Upload, XCircle, X } from 'lucide-r
 import { ModalCloseButton } from '../../icons';
 import styles from '../../institutions/institutions.module.css';
 
+function normalizeDocuments(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map(String).map((doc) => doc.trim()).filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return normalizeDocuments(parsed);
+      }
+    } catch {
+      // Older data can be stored as a plain comma-separated string.
+    }
+
+    return trimmed
+      .split(',')
+      .map((doc) => doc.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
 export default function EditInstitutionPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -57,7 +84,7 @@ export default function EditInstitutionPage() {
         setLogoPreview(d.institution.logoUrl || '');
         setLogoFile(null);
         setRemoveLogo(false);
-        setDocs(d.institution.requiredDocuments || []);
+        setDocs(normalizeDocuments(d.institution.requiredDocuments));
         if (d.institution.criteria) {
           const c = d.institution.criteria;
           setCriteriaForm({
@@ -136,12 +163,12 @@ export default function EditInstitutionPage() {
 
   function addDoc() {
     if (newDoc.trim()) {
-      setDocs((d) => [...d, newDoc.trim()]);
+      setDocs((d) => [...normalizeDocuments(d), newDoc.trim()]);
       setNewDoc('');
     }
   }
   function removeDoc(i: number) {
-    setDocs((d) => d.filter((_, idx) => idx !== i));
+    setDocs((d) => normalizeDocuments(d).filter((_, idx) => idx !== i));
   }
 
   function handleLogoUpload(event: React.ChangeEvent<HTMLInputElement>) {

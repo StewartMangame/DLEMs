@@ -22,7 +22,6 @@ import {
   VerifyInstitutionDto,
 } from './dto/institution.dto';
 import { CreateProductDto, UpdateProductDto } from './dto/loan-product.dto';
-import { CreateSaccoDto, UpdateSaccoDto } from './dto/sacco.dto';
 import { CreateContentDto, UpdateContentDto } from './dto/content.dto';
 import {
   CreateAnnouncementDto,
@@ -239,26 +238,30 @@ export class AdminPanelController {
   // ── Section 2: SACCOs ──────────────────────────────────────────────────────
   @Get('saccos')
   listSaccos() {
-    return this.svc.listSaccos();
+    throw new BadRequestException(
+      'SACCOs are managed as standalone institutions.',
+    );
   }
 
   @Post('saccos')
-  createSacco(@Req() req: any, @Body() body: CreateSaccoDto) {
-    return this.svc.createSacco(req.user, body);
+  createSacco() {
+    throw new BadRequestException(
+      'Add SACCOs from the Add Institution form.',
+    );
   }
 
   @Put('saccos/:id')
-  updateSacco(
-    @Req() req: any,
-    @Param('id') id: string,
-    @Body() body: UpdateSaccoDto,
-  ) {
-    return this.svc.updateSacco(req.user, +id, body);
+  updateSacco() {
+    throw new BadRequestException(
+      'SACCOs are managed as standalone institutions.',
+    );
   }
 
   @Delete('saccos/:id')
-  deactivateSacco(@Req() req: any, @Param('id') id: string) {
-    return this.svc.deleteSacco(req.user, +id);
+  deactivateSacco() {
+    throw new BadRequestException(
+      'SACCOs are managed as standalone institutions.',
+    );
   }
 
   // ── Section 3: Users ───────────────────────────────────────────────────────
@@ -302,6 +305,16 @@ export class AdminPanelController {
   }
 
   // ── Section 4: Eligibility Monitoring ─────────────────────────────────────
+  @Get('eligibility/summary')
+  getEligibilitySummary() {
+    return this.svc.getEligibilitySummary();
+  }
+
+  @Get('eligibility/breakdown')
+  getEligibilityBreakdown(@Query('period') period?: string) {
+    return this.svc.getEligibilityBreakdown(period);
+  }
+
   @Get('eligibility/stats')
   getEligibilityStats(@Query('period') period?: string) {
     return this.svc.getEligibilityStats(period);

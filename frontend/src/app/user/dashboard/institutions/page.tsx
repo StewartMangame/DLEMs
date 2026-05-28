@@ -8,31 +8,25 @@ import {
   fetchFincaProducts,
   fetchInstitutionCriteria,
   fetchInstitutions,
-  fetchSaccoBranches,
 } from "@/lib/api";
+import { useLanguage } from "@/lib/LanguageContext";
+import { readJson } from "@/lib/http";
 import {
   Building2,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  RefreshCw,
 } from "lucide-react";
 
-type Step = "select" | "intake" | "results";
+type Step = "select" | "subselect" | "intake" | "results";
 
 type Institution = {
   id: string;
   name: string;
-  type: "COMMERCIAL_BANK" | "MICROFINANCE" | "SACCO_CATEGORY";
+  type: "COMMERCIAL_BANK" | "MICROFINANCE" | "SACCO";
   has_branches: boolean;
   description: string;
   logoUrl: string | null;
-  status: "ACTIVE" | "COMING_SOON";
-};
-
-type Branch = {
-  id: string;
-  branch_name: string;
   status: "ACTIVE" | "COMING_SOON";
 };
 
@@ -57,7 +51,7 @@ type Criteria = {
     repayment_periods: number[];
     processing_fee_percent: number;
   }[];
-  required_documents: string[];
+  required_documents: unknown;
   turnaround_time: string;
   crb_check_required: boolean;
 };
@@ -76,17 +70,11 @@ type EligibilityResult = {
   loan_products: { product_name: string; min_amount: number; max_amount: number }[];
 };
 
-const STEPS: Step[] = ["select", "intake", "results"];
-const STEP_LABELS: Record<Step, string> = {
-  select: "Select Institution",
-  intake: "Additional Details",
-  results: "Eligibility Results",
-};
+const STEPS: Step[] = ["select", "subselect", "intake", "results"];
 
 const LOGOS: Record<string, string> = {
   "FDH Bank": "/logos/fdh.png",
   "FINCA Malawi": "/logos/finca.png",
-  "Malawi Police SACCO": "/logos/sacco.png",
 };
 
 const currency = (value: number | null | undefined) =>
@@ -98,19 +86,73 @@ function logoFor(institution: Institution) {
   return institution.logoUrl || LOGOS[institution.name];
 }
 
+function displayInstitutionName(institution: Institution) {
+  return institution.name;
+}
+
 function resultColor(result: EligibilityResult["result"]) {
   if (result === "LIKELY_ELIGIBLE") return "var(--color-success)";
   if (result === "NOT_ELIGIBLE") return "var(--color-danger)";
   return "var(--color-warning)";
 }
 
+function resultLabel(result: EligibilityResult["result"]) {
+  const labels: Record<EligibilityResult["result"], string> = {
+    LIKELY_ELIGIBLE: "Eligible",
+    BORDERLINE: "Borderline",
+    NOT_ELIGIBLE: "Not eligible",
+    NOT_YET_ELIGIBLE: "Not yet eligible",
+  };
+  return labels[result];
+}
+
+function contactUrlFor(institution: Institution) {
+  if (institution.type === "MICROFINANCE") {
+    return "https://finca.mw/borrow/village-bank-loan-group-loan/";
+  }
+
+  if (institution.type === "SACCO") {
+    return "https://www.malawipolicesacco.com/contact/";
+  }
+
+  return "https://www.fdh.co.mw/fdhbankplc/branches";
+}
+
+function formatRequiredDocuments(value: unknown) {
+  if (Array.isArray(value)) {
+    const documents = value.map(String).map((item) => item.trim()).filter(Boolean);
+    return documents.length ? documents.join(", ") : "None listed";
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return "None listed";
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return formatRequiredDocuments(parsed);
+      }
+    } catch {
+      // Plain comma-separated strings from older data are handled below.
+    }
+
+    return trimmed;
+  }
+
+  return "None listed";
+}
+
+function isActivationKey(key: string) {
+  return key === "Enter" || key === " ";
+}
+
 export default function InstitutionsPage() {
+  const { t } = useLanguage();
   const [institutions, setInstitutions] = useState<Institution[]>([]);
-  const [branches, setBranches] = useState<Branch[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [criteria, setCriteria] = useState<Record<string, Criteria>>({});
   const [selectedId, setSelectedId] = useState<string>("");
-  const [selectedBranchId, setSelectedBranchId] = useState("");
   const [selectedProductId, setSelectedProductId] = useState("");
   const [profile, setProfile] = useState<any>(null);
   const [result, setResult] = useState<EligibilityResult | null>(null);
@@ -133,24 +175,34 @@ export default function InstitutionsPage() {
     [institutions, selectedId],
   );
 
+  const selectedProduct = useMemo(
+    () => products.find((product) => product.id === selectedProductId) ?? null,
+    [products, selectedProductId],
+  );
+
   const selectedCriteria = selectedId ? criteria[selectedId] : null;
-  const activeBranches = branches.filter((branch) => branch.status === "ACTIVE");
-  const activeProducts = products.filter((product) => product.status === "ACTIVE");
+  const contactUrl = selectedInstitution ? contactUrlFor(selectedInstitution) : "";
+  const visibleInstitutions = institutions.filter((institution) => {
+    if (institution.type === "COMMERCIAL_BANK") return true;
+    if (institution.type === "SACCO") return true;
+    return (
+      institution.type === "MICROFINANCE" &&
+      institution.name.toLowerCase().includes("finca")
+    );
+  });
 
   async function loadAll() {
     setLoading(true);
     setError(null);
     try {
-      const [institutionData, branchData, productData] =
+      const [institutionData, productData] =
         await Promise.all([
           fetchInstitutions(),
-          fetchSaccoBranches(),
           fetchFincaProducts(),
         ]);
 
       const liveInstitutions = Array.isArray(institutionData) ? institutionData : [];
       setInstitutions(liveInstitutions);
-      setBranches(Array.isArray(branchData) ? branchData : []);
       setProducts(Array.isArray(productData) ? productData : []);
 
       const criteriaEntries = await Promise.all(
@@ -169,7 +221,7 @@ export default function InstitutionsPage() {
 
       const profileResponse = await fetch("/api/profile", { cache: "no-store" });
       if (profileResponse.ok) {
-        const profileJson = await profileResponse.json();
+        const profileJson = await readJson(profileResponse, "Failed to load profile");
         setProfile(profileJson.profile ?? null);
       }
     } catch (err) {
@@ -185,36 +237,65 @@ export default function InstitutionsPage() {
 
   function chooseInstitution(id: string) {
     setSelectedId(id);
-    setSelectedBranchId("");
     setSelectedProductId("");
     setResult(null);
+    setError(null);
   }
 
   function resetFlow() {
     setStep("select");
     setResult(null);
+    setError(null);
   }
 
-  function proceedToIntake() {
+  function proceedFromInstitutionSelection() {
     if (!selectedInstitution) return;
+    setError(null);
+    if (
+      selectedInstitution.type === "MICROFINANCE"
+    ) {
+      setStep("subselect");
+      return;
+    }
     setStep("intake");
+  }
+
+  function proceedFromSubSelection() {
+    if (!selectedInstitution) return;
+    if (selectedInstitution.type === "MICROFINANCE" && !selectedProductId) {
+      setError(t("check.fincaValidation"));
+      return;
+    }
+    setError(null);
+    setStep("intake");
+  }
+
+  function backToInstitutionSelection() {
+    setStep("select");
+    setSelectedProductId("");
+    setError(null);
+  }
+
+  function previousFromIntake() {
+    if (selectedInstitution?.type === "MICROFINANCE") {
+      setStep("subselect");
+    } else {
+      setStep("select");
+    }
+    setError(null);
   }
 
   async function runCheck() {
     if (!selectedInstitution) return;
-    if (selectedInstitution.type === "SACCO_CATEGORY" && !selectedBranchId) {
-      setError("Please select your SACCO before checking eligibility.");
-      return;
-    }
-    if (selectedInstitution.type === "MICROFINANCE" && activeProducts.length > 0 && !selectedProductId) {
-      setError("Please select a FINCA loan product before checking eligibility.");
+    if (selectedInstitution.type === "MICROFINANCE" && !selectedProductId) {
+      setError(t("check.fincaValidation"));
       return;
     }
 
     setChecking(true);
     setError(null);
     try {
-      const isSacco = selectedInstitution.type === "SACCO_CATEGORY";
+      const isSacco = selectedInstitution.type === "SACCO";
       const employmentCategory =
         isSacco && isSaccoMember
           ? "SACCO_MEMBER"
@@ -238,7 +319,10 @@ export default function InstitutionsPage() {
             : null,
         has_finca_account: selectedInstitution.type === "MICROFINANCE" ? hasFincaAccount : null,
       };
-      const data = await checkEligibility(userProfile, [selectedInstitution.id]);
+      const data = await checkEligibility(userProfile, [selectedInstitution.id], {
+        selectedProductId:
+          selectedInstitution.type === "MICROFINANCE" ? selectedProductId : undefined,
+      });
       setResult(Array.isArray(data) ? data[0] ?? null : null);
       setStep("results");
     } catch (err) {
@@ -249,7 +333,7 @@ export default function InstitutionsPage() {
   }
 
   if (loading) {
-    return <div className={styles.page}>Loading live institution data...</div>;
+    return <div className={styles.page}>{t("check.loading")}</div>;
   }
 
   return (
@@ -259,17 +343,14 @@ export default function InstitutionsPage() {
           <Link href="/user/dashboard" className="btn btn-ghost btn-sm" style={{ gap: "8px", marginBottom: "var(--space-md)" }}>
             <ChevronLeft size={16} /> Back
           </Link>
-          <h1 className="text-h2">Check Eligibility</h1>
+          <h1 className="text-h2">{t("check.title")}</h1>
           <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-            Choose one lender and answer the guided questions before checking.
+            {t("check.subtitle")}
           </p>
         </div>
-        <button className="btn btn-ghost btn-sm" onClick={loadAll}>
-          <RefreshCw size={16} /> Refresh
-        </button>
       </div>
 
-      <StepIndicator step={step} />
+      <StepIndicator step={step} t={t} />
 
       {error && (
         <div className="alert alert-danger">
@@ -278,19 +359,25 @@ export default function InstitutionsPage() {
       )}
 
       {step === "select" && (
-        <>
-          {institutions.length === 0 ? (
-            <div className="card">No institutions are currently available. Please check back soon.</div>
+        <div key="select" className={styles.stepPanel}>
+          {visibleInstitutions.length === 0 ? (
+            <div className="card">{t("check.emptyInstitutions")}</div>
           ) : (
             <div className={styles.institutionGrid}>
-              {institutions.map((institution) => (
-                <button
+              {visibleInstitutions.map((institution) => (
+                <div
                   key={institution.id}
-                  type="button"
+                  role="button"
+                  tabIndex={0}
                   className={`card ${styles.institutionCard} ${
                     selectedId === institution.id ? styles.selected : ""
                   }`}
                   onClick={() => chooseInstitution(institution.id)}
+                  onKeyDown={(event) => {
+                    if (!isActivationKey(event.key)) return;
+                    event.preventDefault();
+                    chooseInstitution(institution.id);
+                  }}
                 >
                   <div className={styles.cardTop}>
                     <div className={styles.cardIcon}>
@@ -308,34 +395,92 @@ export default function InstitutionsPage() {
                       <CheckCircle2 size={14} />
                     </span>
                   </div>
-                  <div className={styles.cardName}>{institution.name}</div>
+                  <div className={styles.cardName}>{displayInstitutionName(institution)}</div>
                   <div className="badge badge-neutral text-xs">{institution.type}</div>
                   <p className={styles.cardDesc}>{institution.description}</p>
-                </button>
+                </div>
               ))}
             </div>
           )}
 
           <div className={styles.actionRow}>
             <button
-              className="btn btn-primary"
+              className={`btn btn-primary btn-lg ${styles.primaryActionButton}`}
               disabled={!selectedInstitution}
-              onClick={proceedToIntake}
+              onClick={proceedFromInstitutionSelection}
             >
-              Continue <ChevronRight size={16} />
+              {t("check.continue")} <ChevronRight size={16} />
             </button>
           </div>
-        </>
+        </div>
+      )}
+
+      {step === "subselect" && selectedInstitution?.type === "MICROFINANCE" && (
+        <section key="subselect" className={`card ${styles.subSelectionCard}`}>
+          <div>
+            <h2 className="text-h2">{t("check.fincaProductTitle")}</h2>
+            <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+              {t("check.fincaProductDescription")}
+            </p>
+          </div>
+          {products.length === 0 ? (
+            <div className={styles.emptySubSelection}>{t("check.fincaEmptyProducts")}</div>
+          ) : (
+            <>
+              <div className={styles.productGrid}>
+                {products.map((product) => (
+                  <button
+                    key={product.id}
+                    type="button"
+                    disabled={product.status === "COMING_SOON"}
+                    className={`${styles.productCard} ${
+                      selectedProductId === product.id ? styles.selectedProduct : ""
+                    }`}
+                    onClick={() => {
+                      setSelectedProductId(product.id);
+                      setError(null);
+                    }}
+                  >
+                    <span>
+                      <span className={styles.productCardLabel}>{product.product_name}</span>
+                      <span className={styles.productDescription}>
+                        {product.description || t("check.productFallbackDescription")}
+                      </span>
+                    </span>
+                    {product.status === "COMING_SOON" && (
+                      <span className="badge badge-neutral text-xs">{t("check.comingSoon")}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <div className="form-help">{t("check.fincaMoreSoon")}</div>
+            </>
+          )}
+          <div className={`${styles.actionRow} ${styles.splitActionRow}`}>
+            <button
+              className={`btn btn-ghost btn-lg ${styles.previousActionButton}`}
+              onClick={backToInstitutionSelection}
+            >
+              <ChevronLeft size={16} /> Previous
+            </button>
+            <button
+              className={`btn btn-primary btn-lg ${styles.primaryActionButton}`}
+              onClick={proceedFromSubSelection}
+            >
+              {t("check.continue")} <ChevronRight size={16} />
+            </button>
+          </div>
+        </section>
       )}
 
       {step === "intake" && selectedInstitution && (
-        <section className={`card ${styles.intakeCard}`}>
+        <section key="intake" className={`card ${styles.intakeCard}`}>
           <div className={styles.intakeTitle}>
             <div className={styles.intakeIcon}>
               {logoFor(selectedInstitution) ? (
                 <img
                   src={logoFor(selectedInstitution)}
-                  alt={selectedInstitution.name}
+                  alt={displayInstitutionName(selectedInstitution)}
                   className={styles.partnerLogo}
                 />
               ) : (
@@ -343,7 +488,11 @@ export default function InstitutionsPage() {
               )}
             </div>
             <div>
-              <h2 className="text-h3">{selectedInstitution.name}</h2>
+              <h2 className="text-h3">
+                {selectedInstitution.type === "MICROFINANCE"
+                    ? `${selectedInstitution.name}${selectedProduct ? ` — ${selectedProduct.product_name}` : ""}`
+                    : selectedInstitution.name}
+              </h2>
               <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
                 Answer these questions for this institution only.
               </p>
@@ -368,35 +517,8 @@ export default function InstitutionsPage() {
               </>
             )}
 
-            {selectedInstitution.type === "SACCO_CATEGORY" && (
+            {selectedInstitution.type === "SACCO" && (
               <>
-                <div className="form-group" style={{ gridColumn: "1 / -1" }}>
-                  <label className="form-label" htmlFor="saccoBranch">Which SACCO do you belong to?</label>
-                  {activeBranches.length === 0 ? (
-                    <div className="alert alert-warning">
-                      No SACCOs are currently available. Please check back soon.
-                    </div>
-                  ) : (
-                    <select
-                      id="saccoBranch"
-                      className="form-select"
-                      value={selectedBranchId}
-                      onChange={(event) => setSelectedBranchId(event.target.value)}
-                    >
-                      <option value="">Select your SACCO...</option>
-                      {branches.map((branch) => (
-                        <option
-                          key={branch.id}
-                          value={branch.id}
-                          disabled={branch.status === "COMING_SOON"}
-                        >
-                          {branch.branch_name}
-                          {branch.status === "COMING_SOON" ? " - Coming Soon" : ""}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
                 <YesNoField
                   label="Are you a registered SACCO member?"
                   value={isSaccoMember}
@@ -416,31 +538,6 @@ export default function InstitutionsPage() {
 
             {selectedInstitution.type === "MICROFINANCE" && (
               <>
-                <div className="form-group" style={{ gridColumn: "1 / -1" }}>
-                  <label className="form-label">Select FINCA loan product</label>
-                  {activeProducts.length === 0 ? (
-                    <div className="alert alert-warning">
-                      No loan products are currently available. Please check back soon.
-                    </div>
-                  ) : (
-                    <div className={styles.productGrid}>
-                      {products.map((product) => (
-                        <button
-                          key={product.id}
-                          type="button"
-                          disabled={product.status === "COMING_SOON"}
-                          className={`${styles.productCard} ${
-                            selectedProductId === product.id ? styles.selectedProduct : ""
-                          }`}
-                          onClick={() => setSelectedProductId(product.id)}
-                        >
-                          <span>{product.product_name}</span>
-                          {product.status === "COMING_SOON" && <span>Coming Soon</span>}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
                 <YesNoField
                   label="Are you part of an active business group?"
                   value={isPartOfGroup}
@@ -474,11 +571,21 @@ export default function InstitutionsPage() {
             )}
           </div>
 
-          <div className={styles.actionRow} style={{ marginTop: "var(--space-lg)" }}>
-            <button className="btn btn-ghost" onClick={() => setStep("select")}>
-              <ChevronLeft size={16} /> Back
+          <div
+            className={`${styles.actionRow} ${styles.splitActionRow}`}
+            style={{ marginTop: "var(--space-lg)" }}
+          >
+            <button
+              className={`btn btn-ghost btn-lg ${styles.previousActionButton}`}
+              onClick={previousFromIntake}
+            >
+              <ChevronLeft size={16} /> Previous
             </button>
-            <button className="btn btn-primary" onClick={runCheck} disabled={checking}>
+            <button
+              className={`btn btn-primary btn-lg ${styles.primaryActionButton}`}
+              onClick={runCheck}
+              disabled={checking}
+            >
               {checking ? "Checking..." : "Check Eligibility"} <ChevronRight size={16} />
             </button>
           </div>
@@ -486,7 +593,7 @@ export default function InstitutionsPage() {
       )}
 
       {step === "results" && selectedInstitution && (
-        <section>
+        <section key="results" className={styles.resultSection}>
           {result ? (
             <div
               className={`card ${styles.resultCard}`}
@@ -505,13 +612,15 @@ export default function InstitutionsPage() {
                   )}
                 </div>
                 <div>
-                  <div className={styles.resultTitle} style={{ color: resultColor(result.result) }}>
-                    {result.result.replaceAll("_", " ")}
-                  </div>
-                  <div className={styles.resultSubtitle}>{result.institution_name}</div>
+                  <div className={styles.resultTitle}>{result.institution_name}</div>
+                  <div className={styles.resultSubtitle}>Eligibility result</div>
                 </div>
               </div>
-              <p>{result.reason}</p>
+              <div className={styles.resultMessage}>
+                <div className={styles.resultStatus} style={{ color: resultColor(result.result) }}>
+                  {resultLabel(result.result)}
+                </div>
+              </div>
               <AdvisoryExplanation
                 institution={selectedInstitution}
                 result={result}
@@ -531,6 +640,16 @@ export default function InstitutionsPage() {
                 <SummaryItem label="Available repayment" value={currency(result.available_monthly_repayment)} />
                 <SummaryItem label="Requested amount" value={currency(loanAmount)} />
               </div>
+              <p className={styles.contactNote}>
+                For more information details contact{" "}
+                <a
+                  href={contactUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {contactUrl}
+                </a>
+              </p>
             </div>
           ) : (
             <div className="card">No result returned for this institution.</div>
@@ -545,7 +664,7 @@ export default function InstitutionsPage() {
                     <tr><td>Minimum income</td><td>{currency(selectedCriteria.min_income)}</td></tr>
                     <tr><td>DTI cap</td><td>{selectedCriteria.dti_cap_percent}%</td></tr>
                     <tr><td>CRB check</td><td>{selectedCriteria.crb_check_required ? "Required" : "Not required"}</td></tr>
-                    <tr><td>Required documents</td><td>{selectedCriteria.required_documents.join(", ") || "None listed"}</td></tr>
+                    <tr><td>Required documents</td><td>{formatRequiredDocuments(selectedCriteria.required_documents)}</td></tr>
                     <tr><td>Turnaround time</td><td>{selectedCriteria.turnaround_time}</td></tr>
                   </tbody>
                 </table>
@@ -553,11 +672,17 @@ export default function InstitutionsPage() {
             </details>
           )}
 
-          <div className={styles.actionRow}>
-            <button className="btn btn-ghost" onClick={() => setStep("intake")}>
-              <ChevronLeft size={16} /> Edit Answers
+          <div className={`${styles.actionRow} ${styles.resultActions}`}>
+            <button
+              className={`btn btn-ghost btn-lg ${styles.previousActionButton}`}
+              onClick={() => setStep("intake")}
+            >
+              <ChevronLeft size={16} /> Edit Input
             </button>
-            <button className="btn btn-primary" onClick={resetFlow}>
+            <button
+              className={`btn btn-primary btn-lg ${styles.primaryActionButton}`}
+              onClick={resetFlow}
+            >
               Check Another Institution
             </button>
           </div>
@@ -567,8 +692,20 @@ export default function InstitutionsPage() {
   );
 }
 
-function StepIndicator({ step }: { step: Step }) {
+function StepIndicator({
+  step,
+  t,
+}: {
+  step: Step;
+  t: (key: string, values?: Record<string, string | number>) => string;
+}) {
   const activeIndex = STEPS.indexOf(step);
+  const labels: Record<Step, string> = {
+    select: t("check.selectInstitutionStep"),
+    subselect: t("check.subselectStep"),
+    intake: t("check.additionalDetailsStep"),
+    results: t("check.resultsStep"),
+  };
   return (
     <div className={styles.stepIndicator}>
       {STEPS.map((item, index) => (
@@ -585,7 +722,7 @@ function StepIndicator({ step }: { step: Step }) {
               index === activeIndex ? styles.active : index < activeIndex ? styles.done : ""
             }`}
           >
-            {STEP_LABELS[item]}
+            {labels[item]}
           </span>
           {index < STEPS.length - 1 && (
             <span className={`${styles.stepConnector} ${index < activeIndex ? styles.done : ""}`} />
@@ -698,13 +835,7 @@ function AdvisoryExplanation({
 
   if (result.result === "BORDERLINE") {
     points.push(
-      "This is an amber result. It means the application may still proceed, but one or more answers could trigger manual review or extra verification.",
-    );
-  }
-
-  if (result.result === "NOT_ELIGIBLE") {
-    points.push(
-      "This is a red result because at least one key lender rule was not met. The reason above shows the first major issue found.",
+      "Borderline means the lender may still consider your application, but one or more issues need extra review before they can approve it.",
     );
   }
 
@@ -725,7 +856,7 @@ function AdvisoryExplanation({
     }
   }
 
-  if (institution.type === "SACCO_CATEGORY") {
+  if (institution.type === "SACCO") {
     points.push(
       "Police SACCO lending is member-based. Membership status and membership duration are checked before affordability is considered.",
     );

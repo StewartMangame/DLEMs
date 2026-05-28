@@ -32,7 +32,7 @@
   justify-content: center;
   min-width: 80px;
   height: 80px;
-  background: var(--color-bg-secondary);
+  background: var(--color-bg-elevated);
   border-radius: var(--radius-lg);
 }
 
@@ -54,4 +54,26 @@
 
 .remStatusBadge {
   margin-left: auto;
+}
+
+@media (max-width: 640px) {
+  .reminderCard {
+    align-items: flex-start;
+    gap: var(--space-md);
+  }
+
+  .dateBox {
+    min-width: 68px;
+    height: 68px;
+  }
+}
+
+@media (max-width: 480px) {
+  .reminderCard {
+    flex-direction: column;
+  }
+
+  .remStatusBadge {
+    margin-left: 0;
+  }
 }

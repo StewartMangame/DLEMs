@@ -1,8 +1,9 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import styles from "./page.module.css";
-import { Save, ArrowLeft } from "lucide-react";
+import { Save, ArrowLeft, ChevronDown } from "lucide-react";
+import { useLanguage } from "@/lib/LanguageContext";
 
 interface Profile {
   bank: string;
@@ -23,7 +24,94 @@ interface Institution {
   type: string;
 }
 
+interface SelectOption {
+  value: string;
+  label: string;
+}
+
+function ProfileSelect({
+  id,
+  name,
+  value,
+  options,
+  onChange,
+  required = false,
+}: {
+  id: string;
+  name: keyof Profile;
+  value: string;
+  options: SelectOption[];
+  onChange: (name: keyof Profile, value: string) => void;
+  required?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const selected = options.find((option) => option.value === value) ?? options[0];
+
+  useEffect(() => {
+    if (!open) return;
+
+    const closeOnOutsideTap = (event: PointerEvent) => {
+      if (menuRef.current?.contains(event.target as Node)) return;
+      setOpen(false);
+    };
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsideTap);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideTap);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [open]);
+
+  return (
+    <div className={styles.selectWrap} ref={menuRef}>
+      <input
+        type="hidden"
+        name={name}
+        value={value}
+        required={required}
+      />
+      <button
+        id={id}
+        type="button"
+        className={styles.selectButton}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span>{selected?.label}</span>
+        <ChevronDown size={18} className={styles.selectChevron} aria-hidden />
+      </button>
+      {open && (
+        <div className={styles.selectMenu} role="listbox" aria-labelledby={id}>
+          {options.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              role="option"
+              aria-selected={option.value === value}
+              className={styles.selectOption}
+              onClick={() => {
+                onChange(name, option.value);
+                setOpen(false);
+              }}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ProfilePage() {
+  const { t } = useLanguage();
   const [form, setForm] = useState<Profile>({
     bank: "", employer: "", employmentCategory: "", monthlySalary: 0,
     employmentYears: 0, age: 0, housingStatus: "", existingLoanAmount: 0, bankingYears: 0,
@@ -60,6 +148,10 @@ export default function ProfilePage() {
     setForm({ ...form, [e.target.name]: val });
   };
 
+  const handleSelectChange = (name: keyof Profile, value: string) => {
+    setForm({ ...form, [name]: value });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true); setMsg(null);
     const res = await fetch("/api/profile", {
@@ -67,24 +159,24 @@ export default function ProfilePage() {
       body: JSON.stringify(form),
     });
     const data = await res.json();
-    if (res.ok) setMsg({ type: "success", text: "Profile saved successfully!" });
-    else setMsg({ type: "error", text: data.message || data.error || "Save failed." });
+    if (res.ok) setMsg({ type: "success", text: t("profile.saved") });
+    else setMsg({ type: "error", text: data.message || data.error || t("profile.saveFailed") });
     setSaving(false);
   };
 
 
-  if (!loadedProfile) return <div style={{ padding: 40, color: "var(--color-text-muted)" }}>Loading...</div>;
+  if (!loadedProfile) return <div style={{ padding: 40, color: "var(--color-text-muted)" }}>{t("common.loading")}</div>;
 
   return (
     <div className={styles.page}>
       <div className={styles.header} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 'var(--space-md)', marginBottom: '2rem' }}>
         <Link href="/user/dashboard" className="btn btn-ghost btn-sm" style={{ gap: '8px' }}>
-          <ArrowLeft size={16} /> Back
+          <ArrowLeft size={16} /> {t("common.back")}
         </Link>
         <div>
-          <h1 className="text-h2">Financial Profile</h1>
+          <h1 className="text-h2">{t("profile.title")}</h1>
           <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-            This information is used to calculate your loan eligibility and risk score across Malawian lenders.
+            {t("profile.subtitle")}
           </p>
         </div>
       </div>
@@ -93,88 +185,102 @@ export default function ProfilePage() {
 
       <form onSubmit={handleSubmit} className={styles.form}>
         <div className={`card ${styles.section}`}>
-          <h2 className="text-h3">Employment Details</h2>
+          <h2 className="text-h3">{t("profile.employmentDetails")}</h2>
           <div className="grid-2">
             <div className="form-group">
-              <label className="form-label" htmlFor="employer">Employer / Organization</label>
+              <label className="form-label" htmlFor="employer">{t("profile.employer")}</label>
               <input id="employer" name="employer" required className="form-input"
-                placeholder="e.g. Ministry of Health, Airtel, etc." value={form.employer || ""} onChange={handleChange} />
+                placeholder={t("profile.employerPlaceholder")} value={form.employer || ""} onChange={handleChange} />
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="employmentCategory">Employment Category</label>
-              <select id="employmentCategory" name="employmentCategory" required className="form-select"
-                value={form.employmentCategory || ""} onChange={handleChange}>
-                <option value="">Select Category</option>
-                <option value="civil_servant">Civil Servant (Government)</option>
-                <option value="private_sector">Private Sector</option>
-                <option value="self_employed">Self-Employed / Business Owner</option>
-              </select>
-              <div className="form-help">This determines which lenders and multipliers you are eligible for.</div>
+              <label className="form-label" htmlFor="employmentCategory">{t("profile.employmentCategory")}</label>
+              <ProfileSelect
+                id="employmentCategory"
+                name="employmentCategory"
+                required
+                value={form.employmentCategory || ""}
+                onChange={handleSelectChange}
+                options={[
+                  { value: "", label: t("profile.selectCategory") },
+                  { value: "civil_servant", label: t("profile.civilServant") },
+                  { value: "private_sector", label: t("profile.privateSector") },
+                  { value: "self_employed", label: t("profile.selfEmployed") },
+                ]}
+              />
+              <div className="form-help">{t("profile.categoryHelp")}</div>
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="monthlySalary">Net Monthly Salary (MK)</label>
+              <label className="form-label" htmlFor="monthlySalary">{t("profile.netSalary")}</label>
               <input id="monthlySalary" name="monthlySalary" type="number" required min={0} className="form-input"
                 placeholder="e.g. 250000" value={form.monthlySalary || ""} onChange={handleChange} />
-              <div className="form-help">Enter your monthly take-home pay in Malawian Kwacha (after all standard tax deductions).</div>
+              <div className="form-help">{t("profile.salaryHelp")}</div>
             </div>
             <div className="form-group">
               <label className="form-label" htmlFor="employmentYears">
-                Length of Service / Time in Business
-                <span style={{ fontWeight: 400, color: "var(--color-text-muted)", marginLeft: 6 }}>(months)</span>
+                {t("profile.serviceLength")}
+                <span style={{ fontWeight: 400, color: "var(--color-text-muted)", marginLeft: 6 }}>{t("profile.monthsLabel")}</span>
               </label>
               <input id="employmentYears" name="employmentYears" type="number" min={0} step={1} required className="form-input"
                 placeholder="e.g. 36" value={form.employmentYears || ""} onChange={handleChange} />
               <div className="form-help">
-                Enter the total number of months you have been employed or in business.
-                Used by SACCO and other lenders to verify minimum service requirements.
+                {t("profile.serviceHelp")}
               </div>
             </div>
           </div>
         </div>
 
         <div className={`card ${styles.section}`}>
-          <h2 className="text-h3">Personal & Financial Details</h2>
+          <h2 className="text-h3">{t("profile.personalFinancial")}</h2>
           <div className="grid-2">
             <div className="form-group">
-              <label className="form-label" htmlFor="bank">Primary Salary Bank</label>
-              <select id="bank" name="bank" className="form-select"
-                value={form.bank || ""} onChange={handleChange}>
-                <option value="">Unbanked / Other</option>
-                {institutions.map(inst => (
-                  <option key={inst.id} value={inst.name}>{inst.name}</option>
-                ))}
-              </select>
-              <div className="form-help">Where your salary is deposited. Leave blank if unbanked.</div>
+              <label className="form-label" htmlFor="bank">{t("profile.primaryBank")}</label>
+              <ProfileSelect
+                id="bank"
+                name="bank"
+                value={form.bank || ""}
+                onChange={handleSelectChange}
+                options={[
+                  { value: "", label: t("profile.unbanked") },
+                  ...institutions.map(inst => ({ value: inst.name, label: inst.name })),
+                ]}
+              />
+              <div className="form-help">{t("profile.bankHelp")}</div>
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="age">Age</label>
+              <label className="form-label" htmlFor="age">{t("profile.age")}</label>
               <input id="age" name="age" type="number" min={18} max={70} required className="form-input"
                 placeholder="e.g. 35" value={form.age || ""} onChange={handleChange} />
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="housingStatus">Housing Status</label>
-              <select id="housingStatus" name="housingStatus" required className="form-select"
-                value={form.housingStatus || ""} onChange={handleChange}>
-                <option value="">Select status</option>
-                <option value="owner">Property Owner</option>
-                <option value="tenant">Tenant / Renting</option>
-                <option value="family">Living with Family</option>
-              </select>
+              <label className="form-label" htmlFor="housingStatus">{t("profile.housingStatus")}</label>
+              <ProfileSelect
+                id="housingStatus"
+                name="housingStatus"
+                required
+                value={form.housingStatus || ""}
+                onChange={handleSelectChange}
+                options={[
+                  { value: "", label: t("profile.selectStatus") },
+                  { value: "owner", label: t("profile.owner") },
+                  { value: "tenant", label: t("profile.tenant") },
+                  { value: "family", label: t("profile.family") },
+                ]}
+              />
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="existingLoanAmount">Monthly Existing Loan Repayments (MK)</label>
+              <label className="form-label" htmlFor="existingLoanAmount">{t("profile.existingRepayments")}</label>
               <input id="existingLoanAmount" name="existingLoanAmount" type="number" min={0} className="form-input"
                 placeholder="0 if none" value={form.existingLoanAmount || ""} onChange={handleChange} />
-              <div className="form-help">Total monthly repayments on all current loans. Affects your DTI ratio.</div>
+              <div className="form-help">{t("profile.existingHelp")}</div>
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="dependants">Number of Dependants</label>
+              <label className="form-label" htmlFor="dependants">{t("profile.dependants")}</label>
               <input id="dependants" name="dependants" type="number" min={0} max={20} className="form-input"
                 placeholder="e.g. 3" value={form.dependants || ""} onChange={handleChange} />
-              <div className="form-help">Total number of people financially dependent on you (children, spouse, parents, etc.).</div>
+              <div className="form-help">{t("profile.dependantsHelp")}</div>
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="bankingYears">Years with Current Bank</label>
+              <label className="form-label" htmlFor="bankingYears">{t("profile.bankingYears")}</label>
               <input id="bankingYears" name="bankingYears" type="number" min={0} step={0.5} className="form-input"
                 placeholder="e.g. 2" value={form.bankingYears || ""} onChange={handleChange} />
             </div>
@@ -190,7 +296,7 @@ export default function ProfilePage() {
 
         <div className={styles.formActions}>
           <button type="submit" className="btn btn-primary btn-lg" disabled={saving} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {saving ? <><span className="loading-spinner" /> Saving...</> : <><Save size={20} /> Save Profile</>}
+            {saving ? <><span className="loading-spinner" /> {t("profile.saving")}</> : <><Save size={20} /> {t("profile.saveProfile")}</>}
           </button>
         </div>
       </form>

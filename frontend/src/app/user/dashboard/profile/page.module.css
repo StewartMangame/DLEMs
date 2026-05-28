@@ -26,3 +26,132 @@
   display: flex;
   justify-content: flex-end;
 }
+
+.selectWrap {
+  position: relative;
+  width: 100%;
+}
+
+.selectButton {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: 12px 16px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-subtle-bg);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-align: left;
+  touch-action: manipulation;
+  transition:
+    border-color var(--transition-base),
+    background var(--transition-base),
+    box-shadow var(--transition-base);
+}
+
+.selectButton:focus-visible,
+.selectButton[aria-expanded="true"] {
+  border-color: var(--color-primary);
+  background: rgba(30, 111, 255, 0.05);
+  box-shadow: 0 0 0 3px var(--color-primary-glow);
+  outline: none;
+}
+
+.selectButton span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selectChevron {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  transition:
+    color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.selectButton:hover .selectChevron,
+.selectButton:focus-visible .selectChevron,
+.selectButton[aria-expanded="true"] .selectChevron {
+  color: var(--color-primary);
+}
+
+.selectButton[aria-expanded="true"] .selectChevron {
+  transform: rotate(180deg);
+}
+
+.selectMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 2000;
+  max-height: min(280px, 50vh);
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-card);
+  box-shadow: var(--shadow-lg);
+}
+
+.selectOption {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: left;
+  touch-action: manipulation;
+}
+
+.selectOption:hover,
+.selectOption:focus-visible {
+  background: var(--color-subtle-bg);
+  color: var(--color-text-primary);
+  outline: none;
+}
+
+.selectOption[aria-selected="true"] {
+  background: var(--color-primary-glow);
+  color: var(--color-primary-light);
+}
+
+@media (max-width: 640px) {
+  .formActions {
+    justify-content: stretch;
+  }
+
+  .formActions button {
+    width: 100%;
+  }
+
+  .selectButton {
+    min-height: 52px;
+    font-size: 1rem;
+  }
+
+  .selectMenu {
+    max-height: min(320px, 55vh);
+  }
+
+  .selectOption {
+    min-height: 48px;
+    font-size: 1rem;
+  }
+}

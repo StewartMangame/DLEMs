@@ -602,13 +602,15 @@
 .multiplierTableContainer {
   width: 100%;
   border-radius: 10px;
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1.5px solid var(--ap-border);
   background: rgba(255, 255, 255, 0.02);
 }
 
 .multiplierTable {
   width: 100%;
+  min-width: 520px;
   border-collapse: collapse;
 }
 
@@ -878,7 +880,7 @@
 
 @media (max-width: 640px) {
   .container {
-    padding: 1rem;
+    padding: 0;
   }
 
   .pageHeader {
@@ -889,6 +891,28 @@
   .headerIcon {
     width: 48px;
     height: 48px;
+  }
+
+  .headerInfo {
+    min-width: 0;
+    gap: 1rem;
+  }
+
+  .headerActions,
+  .btnPrimary,
+  .btnSecondary,
+  .uploadButton {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .cardHeader,
+  .cardHeaderContent {
+    align-items: flex-start;
+  }
+
+  .cardHeader {
+    padding: 1.25rem;
   }
 
   .pageTitle {
@@ -906,5 +930,9 @@
 
   .multiplierInput {
     width: 100px;
+  }
+
+  .uploadZone {
+    padding: 2rem 1rem;
   }
 }

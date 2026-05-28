@@ -144,4 +144,38 @@
 }
 @media (max-width: 600px) {
   .grid3, .grid4, .grid2, .quickLinks { grid-template-columns: 1fr; }
+
+  .page {
+    gap: 24px;
+  }
+
+  .pageTitle {
+    font-size: 24px;
+  }
+
+  .statCard {
+    min-height: 128px;
+    padding: 20px;
+  }
+
+  .statValue {
+    font-size: 28px;
+  }
+
+  .topInstRow {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+    padding: 1rem;
+  }
+
+  .topInstName {
+    min-width: 0;
+    font-size: 1rem;
+  }
+
+  .topInstCount {
+    width: 100%;
+    padding-left: 2.75rem;
+  }
 }

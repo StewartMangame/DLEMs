@@ -1,6 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import styles from "./page.module.css";
+import PreferenceControls from "@/components/PreferenceControls";
+import MobileNavMenu from "@/components/MobileNavMenu";
 import { 
   Hexagon, 
   Zap, 
@@ -29,8 +31,8 @@ export default function LandingPage() {
             <a href="#banks">Partners</a>
           </div>
           <div className={styles.navCta}>
-            <Link href="/user/login" className="btn btn-ghost btn-sm">Sign In</Link>
-            <Link href="/user/register" className="btn btn-primary btn-sm">Get Started</Link>
+            <PreferenceControls />
+            <MobileNavMenu />
           </div>
         </div>
       </nav>
@@ -44,20 +46,18 @@ export default function LandingPage() {
         </div>
         <div className={`container ${styles.heroContent}`}>
           <h1 className={`text-display ${styles.heroTitle} animate-fadeInUp animate-delay-1`}>
-            Your Loan <span className="text-gradient">Eligibility</span>.<br />
-            Instant. Digital. <span className="text-gradient">Transparent</span>.
+            Smart Loans,<br />
+            <span className="text-gradient">Trusted Advisor.</span>
           </h1>
           <p className={`text-body ${styles.heroSub} animate-fadeInUp animate-delay-2`}>
-            Check if you qualify for a personal loan in minutes — without visiting a branch.
-            Apply online, track repayments, and get real-time decisions from FDH Bank,
-            Malawi Police SACCO, and FINCA Malawi.
+            Loan eligibility check | Track repayment | lender comparison
           </p>
           <div className={`${styles.heroActions} animate-fadeInUp animate-delay-3`}>
             <Link href="/user/register" className="btn btn-primary btn-lg">
-              Check My Eligibility <ArrowRight size={20} style={{ marginLeft: 8 }} />
+              Get Started <ArrowRight size={20} style={{ marginLeft: 8 }} />
             </Link>
             <Link href="/user/login" className="btn btn-outline btn-lg">
-              Sign In to Dashboard
+              Sign In
             </Link>
           </div>
 
@@ -77,7 +77,7 @@ export default function LandingPage() {
 
           <div className={`${styles.heroStats} animate-fadeInUp animate-delay-5`}>
             <div className={styles.heroStat}>
-              <span className={styles.heroStatValue}>3 Institutions</span>
+              <span className={styles.heroStatValue}>Multi-Institution</span>
               <span className={styles.heroStatLabel}>Supported</span>
             </div>
             <div className={styles.heroStatDivider} />
@@ -104,7 +104,7 @@ export default function LandingPage() {
             </p>
           </div>
           <div className={`grid-3 ${styles.featuresGrid}`}>
-            {FEATURES.map((f, i) => (
+            {FEATURES.filter((f) => !HIDDEN_FEATURES.has(f.title)).map((f, i) => (
               <div key={i} className={`card card-hover ${styles.featureCard}`}
                 style={{ animationDelay: `${i * 0.1}s` }}>
                 <div className={styles.featureIcon}>
@@ -124,7 +124,7 @@ export default function LandingPage() {
           <div className={styles.sectionHeader}>
             <h2 className="text-h2">How It Works</h2>
             <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-              Four simple steps from eligibility to approval
+              
             </p>
           </div>
           <div className={styles.steps}>
@@ -145,7 +145,7 @@ export default function LandingPage() {
           <div className={styles.sectionHeader}>
             <h2 className="text-h2">Our Institution Partners</h2>
             <p className="text-body" style={{ color: "var(--color-text-secondary)" }}>
-              Trusted Malawian lenders — one eligibility check covers all of them.
+              
             </p>
           </div>
           <div className={styles.banks}>
@@ -194,7 +194,7 @@ export default function LandingPage() {
               <span>DLEM</span>
             </div>
             <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-              © 2026 Digital Loan Eligibility & Management System | Malawi
+              © 2026 Smart Loans, Trusted Advisor | Malawi
               Your trusted partner in financial inclusion
             </p>
             
@@ -214,11 +214,17 @@ const FEATURES = [
   { icon: ShieldCheck, title: "Secure & Private", desc: "Your financial data is encrypted and protected. Only you and your bank officer can access your profile." },
 ];
 
+const HIDDEN_FEATURES = new Set([
+  "Apply From Anywhere",
+  "Loan Repayment Simulator",
+  "Real-Time Status Tracking",
+]);
+
 const STEPS = [
   { title: "Create Account", desc: "Register with your National ID, phone number, and select your bank in under 2 minutes." },
   { title: "Set Financial Profile", desc: "Enter your employment details, monthly salary, housing, and existing loan obligations." },
   { title: "Check Eligibility", desc: "Our engine runs automated risk scoring using real banking criteria and gives you instant feedback." },
-  { title: "Apply & Track", desc: "Submit your formal application and track status as your credit officer reviews and approves it." },
+  { title: "Loan Tracking", desc: "Monitor your active loan balance, repayment progress, paid months, and upcoming payment schedule from your dashboard." },
 ];
 
 const BANKS = [

@@ -24,12 +24,24 @@ export class AuthController {
   ) {
     const result = await this.authService.login(body);
 
-    res.cookie('jwt', result.access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 3600 * 1000 * 24, // 24 hours
-    });
+    if (result.role === 'super_admin' || result.role === 'content_admin') {
+      res.clearCookie('jwt');
+      res.cookie('admin_jwt', result.access_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 8 * 3600 * 1000,
+      });
+    } else {
+      res.clearCookie('admin_jwt', { path: '/' });
+      res.cookie('jwt', result.access_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 3600 * 1000 * 24, // 24 hours
+      });
+    }
 
     return result;
   }

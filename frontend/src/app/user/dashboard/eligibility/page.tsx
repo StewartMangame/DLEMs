@@ -227,11 +227,13 @@ export default function EligibilityPage() {
           </div>
         </div>
 
+      </div>
+
+      <div className={styles.compareActions}>
         <button
           className="btn btn-primary btn-lg"
           onClick={runCheck}
           disabled={!profile || loading || selectedInstitutionIds.length === 0}
-          style={{ marginTop: "var(--space-lg)", width: "100%" }}
         >
           {loading ? (
             <>
@@ -323,7 +325,7 @@ export default function EligibilityPage() {
         </div>
       )}
 
-      {!checked && !loading && institutions.length > 0 && (
+      {false && !checked && !loading && institutions.length > 0 && (
         <div style={{ marginTop: "3rem" }}>
           <h3 className="text-h3" style={{ marginBottom: "1rem" }}>
             {t("eligibility.availableLenders")}

@@ -3,8 +3,9 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import styles from "./layout.module.css";
-import { LanguageProvider, useLanguage } from "@/lib/LanguageContext";
+import { useLanguage } from "@/lib/LanguageContext";
 import { fetchActiveAnnouncements } from "@/lib/api";
+import PreferenceControls from "@/components/PreferenceControls";
 import {
   Hexagon,
   LayoutDashboard,
@@ -13,8 +14,6 @@ import {
   Scale,
   Wallet,
   LogOut,
-  Sun,
-  Moon,
   Menu,
   ArrowLeft,
   Bell,
@@ -28,24 +27,29 @@ const NAV_ITEMS = [
   { href: "/user/dashboard/loans", icon: Wallet, key: "nav.loans" },
 ];
 
-type Theme = "dark" | "light";
+const SEEN_ANNOUNCEMENTS_KEY = "dlem_seen_announcements";
 
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [theme, setTheme] = useState<Theme>("dark");
   const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [seenAnnouncementIds, setSeenAnnouncementIds] = useState<string[]>([]);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { t, language, setLanguage } = useLanguage();
+  const { t, language } = useLanguage();
   const sidebarRef = useRef<HTMLElement | null>(null);
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedTheme = window.localStorage.getItem("dlem_theme");
-      if (savedTheme === "light" || savedTheme === "dark") {
-        setTheme(savedTheme as Theme);
+    const savedSeenIds = window.localStorage.getItem(SEEN_ANNOUNCEMENTS_KEY);
+    if (savedSeenIds) {
+      try {
+        const parsed = JSON.parse(savedSeenIds);
+        if (Array.isArray(parsed)) {
+          setSeenAnnouncementIds(parsed.map(String));
+        }
+      } catch {
+        window.localStorage.removeItem(SEEN_ANNOUNCEMENTS_KEY);
       }
     }
 
@@ -53,10 +57,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       .then((data) => setAnnouncements(Array.isArray(data) ? data : []))
       .catch(() => setAnnouncements([]));
   }, []);
-
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-  }, [theme]);
 
   useEffect(() => {
     if (!sidebarOpen) return;
@@ -76,15 +76,40 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, [sidebarOpen]);
 
-  const toggleTheme = () => {
-    const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    window.localStorage.setItem("dlem_theme", next);
-  };
-
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/user/login");
+  };
+
+  const unreadCount = announcements.filter(
+    (announcement) => !seenAnnouncementIds.includes(String(announcement.id)),
+  ).length;
+
+  const markNotificationsAsSeen = () => {
+    if (announcements.length === 0) return;
+
+    const nextSeenIds = Array.from(
+      new Set([
+        ...seenAnnouncementIds,
+        ...announcements.map((announcement) => String(announcement.id)),
+      ]),
+    );
+
+    setSeenAnnouncementIds(nextSeenIds);
+    window.localStorage.setItem(
+      SEEN_ANNOUNCEMENTS_KEY,
+      JSON.stringify(nextSeenIds),
+    );
+  };
+
+  const toggleNotifications = () => {
+    setNotificationsOpen((open) => {
+      const nextOpen = !open;
+      if (nextOpen) {
+        markNotificationsAsSeen();
+      }
+      return nextOpen;
+    });
   };
 
   return (
@@ -144,34 +169,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             </button>
 
             <div className={styles.topbarActions} style={{ position: "relative" }}>
-              <select
-                value={language}
-                onChange={(event) => setLanguage(event.target.value as "en" | "ny")}
-                className="form-select"
-                aria-label="Language"
-              >
-                <option value="en">English</option>
-                <option value="ny">Chichewa</option>
-              </select>
+              <PreferenceControls />
 
               <button
-                onClick={toggleTheme}
-                className="btn btn-ghost"
-                aria-label="Toggle theme"
-              >
-                {theme === "dark" ? (
-                  <>
-                    <Sun size={18} /> {t("theme.light")}
-                  </>
-                ) : (
-                  <>
-                    <Moon size={18} /> {t("theme.dark")}
-                  </>
-                )}
-              </button>
-
-              <button
-                onClick={() => setNotificationsOpen(!notificationsOpen)}
+                onClick={toggleNotifications}
                 className={styles.notificationBtn}
                 aria-label="Notifications"
                 aria-expanded={notificationsOpen}
@@ -179,9 +180,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                 title="Notifications"
               >
                 <Bell size={24} strokeWidth={2.4} />
-                {announcements.length > 0 && (
+                {unreadCount > 0 && (
                   <span className={styles.notificationBadge}>
-                    {announcements.length}
+                    {unreadCount}
                   </span>
                 )}
               </button>
@@ -193,9 +194,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               >
                 <div className={styles.notificationsHeader}>
                   <span>Notifications</span>
-                  {announcements.length > 0 && (
+                  {unreadCount > 0 && (
                     <span className={styles.notificationsCount}>
-                      {announcements.length}
+                      {unreadCount}
                     </span>
                   )}
                 </div>
@@ -247,9 +248,5 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <LanguageProvider>
-      <DashboardLayoutInner>{children}</DashboardLayoutInner>
-    </LanguageProvider>
-  );
+  return <DashboardLayoutInner>{children}</DashboardLayoutInner>;
 }
