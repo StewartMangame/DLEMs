@@ -35,6 +35,8 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { ProfileModule } from './profile/profile.module';
 import { ReminderModule } from './reminder/reminder.module';
 
+import { dataSourceOptions } from './data-source';
+
 // ── Root ─────────────────────────────────────────────────────────────────────
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -43,33 +45,20 @@ import { AppService } from './app.service';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['backend/.env', '.env'],
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'sqlite',
-        database: config.get<string>('SQLITE_DB_PATH', 'loan_db.sqlite'),
-        entities: [
-          User,
-          Institution,
-          InstitutionCriteria,
-          FinancialProfile,
-          Loan,
-          LoanApplication,
-          Reminder,
-          NotificationLog,
-          AdminUser,
-          AdminActivityLog,
-          Sacco,
-          LoanProduct,
-          ContentString,
-          Announcement,
-          EligibilityCheckLog,
-          Otp,
-        ],
-        synchronize: config.get<string>('TYPEORM_SYNC', 'true') === 'true',
-      }),
+      useFactory: (config: ConfigService) => {
+        const isProduction = config.get<string>('NODE_ENV') === 'production';
+        const databaseUrl = config.get<string>('POSTGRES_URL') || config.get<string>('DATABASE_URL');
+
+        // Dynamically override url and synchronize based on runtime environment
+        return {
+          ...dataSourceOptions,
+          ...(databaseUrl ? { url: databaseUrl } : {}),
+          synchronize: !isProduction && config.get<string>('TYPEORM_SYNC', 'true') === 'true',
+        } as any;
+      },
     }),
 
     ScheduleModule.forRoot(),

@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
 
 /** Anonymised aggregate record of one institution eligibility result. */
 @Entity('eligibility_checks')
@@ -15,13 +15,12 @@ export class EligibilityCheckLog {
   @Column({ name: 'institution_type', type: 'text' })
   institutionType: string;
 
+  @CreateDateColumn()
+  createdAt: Date;
+
   @Column({ type: 'text' })
   result: string;
 
-  @Column({
-    name: 'checked_at',
-    type: 'datetime',
-    default: () => 'CURRENT_TIMESTAMP',
-  })
+  @CreateDateColumn()
   checkedAt: Date;
 }
