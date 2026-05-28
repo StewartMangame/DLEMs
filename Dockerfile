@@ -4,8 +4,9 @@ WORKDIR /app
 
 RUN apk add --no-cache python3 make g++ sqlite-dev
 
-ENV NEXT_PUBLIC_USER_API_URL=http://127.0.0.1:3001
-ENV NEXT_PUBLIC_ADMIN_API_URL=http://127.0.0.1:3001
+ENV INTERNAL_BACKEND_PORT=4001
+ENV NEXT_PUBLIC_USER_API_URL=http://127.0.0.1:4001
+ENV NEXT_PUBLIC_ADMIN_API_URL=http://127.0.0.1:4001
 
 COPY package*.json ./
 COPY frontend/package*.json frontend/
@@ -20,4 +21,4 @@ ENV NODE_ENV=production
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "PORT=3001 node backend/dist/main & PORT=${PORT:-3000} HOSTNAME=0.0.0.0 npm run start --workspace=frontend"]
+CMD ["sh", "-c", "PUBLIC_PORT=${PORT:-3000}; BACKEND_PORT=${INTERNAL_BACKEND_PORT:-4001}; PORT=$BACKEND_PORT node backend/dist/main & PORT=$PUBLIC_PORT HOSTNAME=0.0.0.0 npm run start --workspace=frontend"]
