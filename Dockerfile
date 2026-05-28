@@ -2,7 +2,8 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-ENV NODE_ENV=production
+RUN apk add --no-cache python3 make g++ sqlite-dev
+
 ENV NEXT_PUBLIC_USER_API_URL=http://127.0.0.1:3001
 ENV NEXT_PUBLIC_ADMIN_API_URL=http://127.0.0.1:3001
 
@@ -14,6 +15,8 @@ RUN npm install
 COPY . .
 
 RUN npm run build
+
+ENV NODE_ENV=production
 
 EXPOSE 3000
 
