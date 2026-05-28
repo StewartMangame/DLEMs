@@ -51,7 +51,7 @@ export class AppModule implements OnModuleInit {
   constructor(
     private readonly instService: InstitutionsService,
     private readonly authService: AuthService,
-  ) { }
+  ) {}
 
   async onModuleInit() {
     await this.instService.seedDefaultInstitutions();

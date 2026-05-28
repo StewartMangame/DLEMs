@@ -10,18 +10,6 @@ coverage/
 .env
 .env.local
 .env.development
-# Dependencies
-node_modules/
-dist/
-backend/dist/
-frontend/.next/
-.next/
-coverage/
-
-# Environment files
-.env
-.env.local
-.env.development
 .env.production
 .env.*.local
 frontend/.env.local
@@ -36,11 +24,12 @@ backend/loan_db.sqlite
 backend/*.sqlite
 backend/prisma/*.db
 backend/prisma/*.sqlite
-backend/database_export.sql
+
+# SQLite tools / exports (never commit these)
 backend/sqlite-tools/
 backend/sqlite.zip
-*.sql
-*.zip
+backend/*.sql
+backend/ca.pem
 
 # Build files
 *.tsbuildinfo
