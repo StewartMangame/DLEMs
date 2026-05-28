@@ -8,7 +8,6 @@ import {
   fetchFincaProducts,
   fetchInstitutionCriteria,
   fetchInstitutions,
-  fetchSaccoBranches,
 } from "@/lib/api";
 import { useLanguage } from "@/lib/LanguageContext";
 import { readJson } from "@/lib/http";
@@ -17,7 +16,6 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  RefreshCw,
 } from "lucide-react";
 
 type Step = "select" | "subselect" | "intake" | "results";
@@ -25,16 +23,10 @@ type Step = "select" | "subselect" | "intake" | "results";
 type Institution = {
   id: string;
   name: string;
-  type: "COMMERCIAL_BANK" | "MICROFINANCE" | "SACCO_CATEGORY";
+  type: "COMMERCIAL_BANK" | "MICROFINANCE" | "SACCO";
   has_branches: boolean;
   description: string;
   logoUrl: string | null;
-  status: "ACTIVE" | "COMING_SOON";
-};
-
-type Branch = {
-  id: string;
-  branch_name: string;
   status: "ACTIVE" | "COMING_SOON";
 };
 
@@ -59,7 +51,7 @@ type Criteria = {
     repayment_periods: number[];
     processing_fee_percent: number;
   }[];
-  required_documents: string[];
+  required_documents: unknown;
   turnaround_time: string;
   crb_check_required: boolean;
 };
@@ -95,15 +87,7 @@ function logoFor(institution: Institution) {
 }
 
 function displayInstitutionName(institution: Institution) {
-  if (institution.type === "SACCO_CATEGORY") return "SACCO";
   return institution.name;
-}
-
-function isMainSaccoCategory(institution: Institution) {
-  return (
-    institution.type === "SACCO_CATEGORY" &&
-    institution.name.toLowerCase().includes("sacco institutions")
-  );
 }
 
 function resultColor(result: EligibilityResult["result"]) {
@@ -112,14 +96,63 @@ function resultColor(result: EligibilityResult["result"]) {
   return "var(--color-warning)";
 }
 
+function resultLabel(result: EligibilityResult["result"]) {
+  const labels: Record<EligibilityResult["result"], string> = {
+    LIKELY_ELIGIBLE: "Eligible",
+    BORDERLINE: "Borderline",
+    NOT_ELIGIBLE: "Not eligible",
+    NOT_YET_ELIGIBLE: "Not yet eligible",
+  };
+  return labels[result];
+}
+
+function contactUrlFor(institution: Institution) {
+  if (institution.type === "MICROFINANCE") {
+    return "https://finca.mw/borrow/village-bank-loan-group-loan/";
+  }
+
+  if (institution.type === "SACCO") {
+    return "https://www.malawipolicesacco.com/contact/";
+  }
+
+  return "https://www.fdh.co.mw/fdhbankplc/branches";
+}
+
+function formatRequiredDocuments(value: unknown) {
+  if (Array.isArray(value)) {
+    const documents = value.map(String).map((item) => item.trim()).filter(Boolean);
+    return documents.length ? documents.join(", ") : "None listed";
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return "None listed";
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return formatRequiredDocuments(parsed);
+      }
+    } catch {
+      // Plain comma-separated strings from older data are handled below.
+    }
+
+    return trimmed;
+  }
+
+  return "None listed";
+}
+
+function isActivationKey(key: string) {
+  return key === "Enter" || key === " ";
+}
+
 export default function InstitutionsPage() {
   const { t } = useLanguage();
   const [institutions, setInstitutions] = useState<Institution[]>([]);
-  const [branches, setBranches] = useState<Branch[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [criteria, setCriteria] = useState<Record<string, Criteria>>({});
   const [selectedId, setSelectedId] = useState<string>("");
-  const [selectedBranchId, setSelectedBranchId] = useState("");
   const [selectedProductId, setSelectedProductId] = useState("");
   const [profile, setProfile] = useState<any>(null);
   const [result, setResult] = useState<EligibilityResult | null>(null);
@@ -142,20 +175,16 @@ export default function InstitutionsPage() {
     [institutions, selectedId],
   );
 
-  const selectedBranch = useMemo(
-    () => branches.find((branch) => branch.id === selectedBranchId) ?? null,
-    [branches, selectedBranchId],
-  );
-
   const selectedProduct = useMemo(
     () => products.find((product) => product.id === selectedProductId) ?? null,
     [products, selectedProductId],
   );
 
   const selectedCriteria = selectedId ? criteria[selectedId] : null;
+  const contactUrl = selectedInstitution ? contactUrlFor(selectedInstitution) : "";
   const visibleInstitutions = institutions.filter((institution) => {
     if (institution.type === "COMMERCIAL_BANK") return true;
-    if (institution.type === "SACCO_CATEGORY") return isMainSaccoCategory(institution);
+    if (institution.type === "SACCO") return true;
     return (
       institution.type === "MICROFINANCE" &&
       institution.name.toLowerCase().includes("finca")
@@ -166,16 +195,14 @@ export default function InstitutionsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [institutionData, branchData, productData] =
+      const [institutionData, productData] =
         await Promise.all([
           fetchInstitutions(),
-          fetchSaccoBranches(),
           fetchFincaProducts(),
         ]);
 
       const liveInstitutions = Array.isArray(institutionData) ? institutionData : [];
       setInstitutions(liveInstitutions);
-      setBranches(Array.isArray(branchData) ? branchData : []);
       setProducts(Array.isArray(productData) ? productData : []);
 
       const criteriaEntries = await Promise.all(
@@ -210,7 +237,6 @@ export default function InstitutionsPage() {
 
   function chooseInstitution(id: string) {
     setSelectedId(id);
-    setSelectedBranchId("");
     setSelectedProductId("");
     setResult(null);
     setError(null);
@@ -226,7 +252,6 @@ export default function InstitutionsPage() {
     if (!selectedInstitution) return;
     setError(null);
     if (
-      selectedInstitution.type === "SACCO_CATEGORY" ||
       selectedInstitution.type === "MICROFINANCE"
     ) {
       setStep("subselect");
@@ -237,10 +262,6 @@ export default function InstitutionsPage() {
 
   function proceedFromSubSelection() {
     if (!selectedInstitution) return;
-    if (selectedInstitution.type === "SACCO_CATEGORY" && !selectedBranchId) {
-      setError(t("check.saccoValidation"));
-      return;
-    }
     if (selectedInstitution.type === "MICROFINANCE" && !selectedProductId) {
       setError(t("check.fincaValidation"));
       return;
@@ -251,17 +272,21 @@ export default function InstitutionsPage() {
 
   function backToInstitutionSelection() {
     setStep("select");
-    setSelectedBranchId("");
     setSelectedProductId("");
+    setError(null);
+  }
+
+  function previousFromIntake() {
+    if (selectedInstitution?.type === "MICROFINANCE") {
+      setStep("subselect");
+    } else {
+      setStep("select");
+    }
     setError(null);
   }
 
   async function runCheck() {
     if (!selectedInstitution) return;
-    if (selectedInstitution.type === "SACCO_CATEGORY" && !selectedBranchId) {
-      setError(t("check.saccoValidation"));
-      return;
-    }
     if (selectedInstitution.type === "MICROFINANCE" && !selectedProductId) {
       setError(t("check.fincaValidation"));
       return;
@@ -270,7 +295,7 @@ export default function InstitutionsPage() {
     setChecking(true);
     setError(null);
     try {
-      const isSacco = selectedInstitution.type === "SACCO_CATEGORY";
+      const isSacco = selectedInstitution.type === "SACCO";
       const employmentCategory =
         isSacco && isSaccoMember
           ? "SACCO_MEMBER"
@@ -295,8 +320,6 @@ export default function InstitutionsPage() {
         has_finca_account: selectedInstitution.type === "MICROFINANCE" ? hasFincaAccount : null,
       };
       const data = await checkEligibility(userProfile, [selectedInstitution.id], {
-        selectedSaccoId:
-          selectedInstitution.type === "SACCO_CATEGORY" ? selectedBranchId : undefined,
         selectedProductId:
           selectedInstitution.type === "MICROFINANCE" ? selectedProductId : undefined,
       });
@@ -325,9 +348,6 @@ export default function InstitutionsPage() {
             {t("check.subtitle")}
           </p>
         </div>
-        <button className="btn btn-ghost btn-sm" onClick={loadAll}>
-          <RefreshCw size={16} /> {t("check.refresh")}
-        </button>
       </div>
 
       <StepIndicator step={step} t={t} />
@@ -339,19 +359,25 @@ export default function InstitutionsPage() {
       )}
 
       {step === "select" && (
-        <>
+        <div key="select" className={styles.stepPanel}>
           {visibleInstitutions.length === 0 ? (
             <div className="card">{t("check.emptyInstitutions")}</div>
           ) : (
             <div className={styles.institutionGrid}>
               {visibleInstitutions.map((institution) => (
-                <button
+                <div
                   key={institution.id}
-                  type="button"
+                  role="button"
+                  tabIndex={0}
                   className={`card ${styles.institutionCard} ${
                     selectedId === institution.id ? styles.selected : ""
                   }`}
                   onClick={() => chooseInstitution(institution.id)}
+                  onKeyDown={(event) => {
+                    if (!isActivationKey(event.key)) return;
+                    event.preventDefault();
+                    chooseInstitution(institution.id);
+                  }}
                 >
                   <div className={styles.cardTop}>
                     <div className={styles.cardIcon}>
@@ -372,75 +398,25 @@ export default function InstitutionsPage() {
                   <div className={styles.cardName}>{displayInstitutionName(institution)}</div>
                   <div className="badge badge-neutral text-xs">{institution.type}</div>
                   <p className={styles.cardDesc}>{institution.description}</p>
-                </button>
+                </div>
               ))}
             </div>
           )}
 
           <div className={styles.actionRow}>
             <button
-              className="btn btn-primary"
+              className={`btn btn-primary btn-lg ${styles.primaryActionButton}`}
               disabled={!selectedInstitution}
               onClick={proceedFromInstitutionSelection}
             >
               {t("check.continue")} <ChevronRight size={16} />
             </button>
           </div>
-        </>
-      )}
-
-      {step === "subselect" && selectedInstitution?.type === "SACCO_CATEGORY" && (
-        <section className={`card ${styles.subSelectionCard}`}>
-          <button className="btn btn-ghost btn-sm" onClick={backToInstitutionSelection}>
-            <ChevronLeft size={16} /> {t("check.backToInstitutions")}
-          </button>
-          <div>
-            <h2 className="text-h2">{t("check.saccoTitle")}</h2>
-            <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-              {t("check.saccoDescription")}
-            </p>
-          </div>
-          {branches.length === 0 ? (
-            <div className={styles.emptySubSelection}>{t("check.saccoEmpty")}</div>
-          ) : (
-            <>
-              <div className={styles.productGrid}>
-                {branches.map((branch) => (
-                  <button
-                    key={branch.id}
-                    type="button"
-                    disabled={branch.status === "COMING_SOON"}
-                    className={`${styles.productCard} ${
-                      selectedBranchId === branch.id ? styles.selectedProduct : ""
-                    }`}
-                    onClick={() => {
-                      setSelectedBranchId(branch.id);
-                      setError(null);
-                    }}
-                  >
-                    <span>{branch.branch_name}</span>
-                    {branch.status === "COMING_SOON" && (
-                      <span className="badge badge-neutral text-xs">{t("check.comingSoon")}</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-              <div className="form-help">{t("check.saccoMoreSoon")}</div>
-            </>
-          )}
-          <div className={styles.actionRow}>
-            <button className="btn btn-primary" onClick={proceedFromSubSelection}>
-              {t("check.continue")} <ChevronRight size={16} />
-            </button>
-          </div>
-        </section>
+        </div>
       )}
 
       {step === "subselect" && selectedInstitution?.type === "MICROFINANCE" && (
-        <section className={`card ${styles.subSelectionCard}`}>
-          <button className="btn btn-ghost btn-sm" onClick={backToInstitutionSelection}>
-            <ChevronLeft size={16} /> {t("check.backToInstitutions")}
-          </button>
+        <section key="subselect" className={`card ${styles.subSelectionCard}`}>
           <div>
             <h2 className="text-h2">{t("check.fincaProductTitle")}</h2>
             <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
@@ -480,8 +456,17 @@ export default function InstitutionsPage() {
               <div className="form-help">{t("check.fincaMoreSoon")}</div>
             </>
           )}
-          <div className={styles.actionRow}>
-            <button className="btn btn-primary" onClick={proceedFromSubSelection}>
+          <div className={`${styles.actionRow} ${styles.splitActionRow}`}>
+            <button
+              className={`btn btn-ghost btn-lg ${styles.previousActionButton}`}
+              onClick={backToInstitutionSelection}
+            >
+              <ChevronLeft size={16} /> Previous
+            </button>
+            <button
+              className={`btn btn-primary btn-lg ${styles.primaryActionButton}`}
+              onClick={proceedFromSubSelection}
+            >
               {t("check.continue")} <ChevronRight size={16} />
             </button>
           </div>
@@ -489,7 +474,7 @@ export default function InstitutionsPage() {
       )}
 
       {step === "intake" && selectedInstitution && (
-        <section className={`card ${styles.intakeCard}`}>
+        <section key="intake" className={`card ${styles.intakeCard}`}>
           <div className={styles.intakeTitle}>
             <div className={styles.intakeIcon}>
               {logoFor(selectedInstitution) ? (
@@ -504,9 +489,7 @@ export default function InstitutionsPage() {
             </div>
             <div>
               <h2 className="text-h3">
-                {selectedInstitution.type === "SACCO_CATEGORY"
-                  ? selectedBranch?.branch_name || displayInstitutionName(selectedInstitution)
-                  : selectedInstitution.type === "MICROFINANCE"
+                {selectedInstitution.type === "MICROFINANCE"
                     ? `${selectedInstitution.name}${selectedProduct ? ` — ${selectedProduct.product_name}` : ""}`
                     : selectedInstitution.name}
               </h2>
@@ -534,7 +517,7 @@ export default function InstitutionsPage() {
               </>
             )}
 
-            {selectedInstitution.type === "SACCO_CATEGORY" && (
+            {selectedInstitution.type === "SACCO" && (
               <>
                 <YesNoField
                   label="Are you a registered SACCO member?"
@@ -588,11 +571,21 @@ export default function InstitutionsPage() {
             )}
           </div>
 
-          <div className={styles.actionRow} style={{ marginTop: "var(--space-lg)" }}>
-            <button className="btn btn-ghost" onClick={() => setStep("select")}>
-              <ChevronLeft size={16} /> Back
+          <div
+            className={`${styles.actionRow} ${styles.splitActionRow}`}
+            style={{ marginTop: "var(--space-lg)" }}
+          >
+            <button
+              className={`btn btn-ghost btn-lg ${styles.previousActionButton}`}
+              onClick={previousFromIntake}
+            >
+              <ChevronLeft size={16} /> Previous
             </button>
-            <button className="btn btn-primary" onClick={runCheck} disabled={checking}>
+            <button
+              className={`btn btn-primary btn-lg ${styles.primaryActionButton}`}
+              onClick={runCheck}
+              disabled={checking}
+            >
               {checking ? "Checking..." : "Check Eligibility"} <ChevronRight size={16} />
             </button>
           </div>
@@ -600,7 +593,7 @@ export default function InstitutionsPage() {
       )}
 
       {step === "results" && selectedInstitution && (
-        <section>
+        <section key="results" className={styles.resultSection}>
           {result ? (
             <div
               className={`card ${styles.resultCard}`}
@@ -619,13 +612,15 @@ export default function InstitutionsPage() {
                   )}
                 </div>
                 <div>
-                  <div className={styles.resultTitle} style={{ color: resultColor(result.result) }}>
-                    {result.result.replaceAll("_", " ")}
-                  </div>
-                  <div className={styles.resultSubtitle}>{result.institution_name}</div>
+                  <div className={styles.resultTitle}>{result.institution_name}</div>
+                  <div className={styles.resultSubtitle}>Eligibility result</div>
                 </div>
               </div>
-              <p>{result.reason}</p>
+              <div className={styles.resultMessage}>
+                <div className={styles.resultStatus} style={{ color: resultColor(result.result) }}>
+                  {resultLabel(result.result)}
+                </div>
+              </div>
               <AdvisoryExplanation
                 institution={selectedInstitution}
                 result={result}
@@ -645,6 +640,16 @@ export default function InstitutionsPage() {
                 <SummaryItem label="Available repayment" value={currency(result.available_monthly_repayment)} />
                 <SummaryItem label="Requested amount" value={currency(loanAmount)} />
               </div>
+              <p className={styles.contactNote}>
+                For more information details contact{" "}
+                <a
+                  href={contactUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {contactUrl}
+                </a>
+              </p>
             </div>
           ) : (
             <div className="card">No result returned for this institution.</div>
@@ -659,7 +664,7 @@ export default function InstitutionsPage() {
                     <tr><td>Minimum income</td><td>{currency(selectedCriteria.min_income)}</td></tr>
                     <tr><td>DTI cap</td><td>{selectedCriteria.dti_cap_percent}%</td></tr>
                     <tr><td>CRB check</td><td>{selectedCriteria.crb_check_required ? "Required" : "Not required"}</td></tr>
-                    <tr><td>Required documents</td><td>{selectedCriteria.required_documents.join(", ") || "None listed"}</td></tr>
+                    <tr><td>Required documents</td><td>{formatRequiredDocuments(selectedCriteria.required_documents)}</td></tr>
                     <tr><td>Turnaround time</td><td>{selectedCriteria.turnaround_time}</td></tr>
                   </tbody>
                 </table>
@@ -667,11 +672,17 @@ export default function InstitutionsPage() {
             </details>
           )}
 
-          <div className={styles.actionRow}>
-            <button className="btn btn-ghost" onClick={() => setStep("intake")}>
+          <div className={`${styles.actionRow} ${styles.resultActions}`}>
+            <button
+              className={`btn btn-ghost btn-lg ${styles.previousActionButton}`}
+              onClick={() => setStep("intake")}
+            >
               <ChevronLeft size={16} /> Edit Input
             </button>
-            <button className="btn btn-primary" onClick={resetFlow}>
+            <button
+              className={`btn btn-primary btn-lg ${styles.primaryActionButton}`}
+              onClick={resetFlow}
+            >
               Check Another Institution
             </button>
           </div>
@@ -822,6 +833,12 @@ function AdvisoryExplanation({
     );
   }
 
+  if (result.result === "BORDERLINE") {
+    points.push(
+      "Borderline means the lender may still consider your application, but one or more issues need extra review before they can approve it.",
+    );
+  }
+
   if (result.result === "NOT_YET_ELIGIBLE") {
     points.push(
       "This usually means you may qualify later after time-based requirements are met, such as SACCO membership duration.",
@@ -839,7 +856,7 @@ function AdvisoryExplanation({
     }
   }
 
-  if (institution.type === "SACCO_CATEGORY") {
+  if (institution.type === "SACCO") {
     points.push(
       "Police SACCO lending is member-based. Membership status and membership duration are checked before affordability is considered.",
     );

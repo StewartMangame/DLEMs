@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, In, Repository } from 'typeorm';
+import { EligibilityCheckLog } from '../entities/eligibility-check-log.entity';
 import { Institution } from '../entities/institution.entity';
 import { LoanProduct } from '../entities/loan-product.entity';
-import { Sacco } from '../entities/sacco.entity';
 import {
   rankInstitutions,
   CheckInstitutionParams,
@@ -52,8 +52,9 @@ function toEmploymentTypes(value: unknown): string[] {
 export class EligibilityService {
   constructor(
     @InjectRepository(Institution) private instRepo: Repository<Institution>,
+    @InjectRepository(EligibilityCheckLog)
+    private eligCheckRepo: Repository<EligibilityCheckLog>,
     @InjectRepository(LoanProduct) private productRepo: Repository<LoanProduct>,
-    @InjectRepository(Sacco) private saccoRepo: Repository<Sacco>,
   ) {}
 
   // ─── POST /eligibility/check — per-institution eligibility result ─────────────
@@ -72,7 +73,6 @@ export class EligibilityService {
       requested_term_months?: number | null;
     };
     selected_institution_ids: string[];
-    selected_sacco_id?: string | null;
     selected_product_id?: string | null;
   }) {
     const { user_profile: up, selected_institution_ids: rawIds } = body;
@@ -96,29 +96,23 @@ export class EligibilityService {
       up.employment_category,
     );
 
-    const selectedSaccoId = Number(body.selected_sacco_id);
     const selectedProductId = Number(body.selected_product_id);
-    const [selectedSacco, selectedProduct] = await Promise.all([
-      Number.isFinite(selectedSaccoId)
-        ? this.saccoRepo.findOne({
-            where: { id: selectedSaccoId, status: 'active' as any },
-          })
-        : Promise.resolve(null),
+    const selectedProduct = await (
       Number.isFinite(selectedProductId)
         ? this.productRepo.findOne({
             where: { id: selectedProductId, status: 'active' as any },
             relations: ['institution'],
           })
-        : Promise.resolve(null),
-    ]);
+        : Promise.resolve(null)
+    );
 
     const checkParams: CheckInstitutionParams[] = institutions
       .filter((inst) => inst.criteria)
       .map((inst) => {
-        const criteria = criteriaForSelection(inst, selectedSacco, selectedProduct);
+        const criteria = criteriaForSelection(inst, selectedProduct);
         return {
           institutionId: inst.id,
-          institutionName: displayNameForSelection(inst, selectedSacco, selectedProduct),
+          institutionName: displayNameForSelection(inst, selectedProduct),
           institutionType: inst.type,
           criteria,
           monthlyNetSalary: toNumber(up.monthly_net_income),
@@ -138,7 +132,7 @@ export class EligibilityService {
 
     const results = mapEngineResults(engineResult);
 
-    return results.map((result) => {
+    const finalResults = results.map((result) => {
       const institution = institutions.find(
         (inst) => String(inst.id) === result.institution_id,
       );
@@ -149,7 +143,6 @@ export class EligibilityService {
           ...result,
           institution_name: displayNameForSelection(
             institution,
-            selectedSacco,
             selectedProduct,
           ),
           max_loan_amount: maxLoanAmountForSelection(result, selectedProduct),
@@ -169,7 +162,7 @@ export class EligibilityService {
           };
         }
         const membershipMonths = toNumber(up.sacco_membership_months);
-        const minimumMembershipMonths = selectedSacco?.minMembershipMonths ?? 3;
+        const minimumMembershipMonths = 3;
         if (membershipMonths > 0 && membershipMonths < minimumMembershipMonths) {
           return {
             ...result,
@@ -192,7 +185,6 @@ export class EligibilityService {
               ...result,
               institution_name: displayNameForSelection(
                 institution,
-                selectedSacco,
                 selectedProduct,
               ),
               result: 'NOT_ELIGIBLE' as const,
@@ -258,13 +250,16 @@ export class EligibilityService {
         ...result,
         institution_name: displayNameForSelection(
           institution,
-          selectedSacco,
           selectedProduct,
         ),
         max_loan_amount: maxLoanAmountForSelection(result, selectedProduct),
         loan_products: loanProductsForSelection(result, selectedProduct),
       };
     });
+
+    await this.recordEligibilityChecks(finalResults, institutions);
+
+    return finalResults;
   }
 
   // ─── POST /eligibility/compare ──────────────────────────────────────────────
@@ -331,7 +326,9 @@ export class EligibilityService {
         requestedTermMonths: toNumber(requestedTermMonths, 1),
       }));
 
-    return rankInstitutions(checkParams);
+    const result = rankInstitutions(checkParams);
+    await this.recordEligibilityChecks(mapEngineResults(result), institutions);
+    return result;
   }
 
   // ─── POST /eligibility (legacy — single institution check) ────────────────
@@ -382,33 +379,78 @@ export class EligibilityService {
       relations: ['criteria'],
     });
 
-    return institutions.map((inst) => ({
-      id: inst.id,
-      name: inst.name,
-      type: inst.type,
-      fixedInterestRate: inst.criteria?.fixedInterestRate || null,
-      criteria: inst.criteria
-        ? {
-            interestRate: inst.criteria.interestRate,
-            fixedInterestRate: inst.criteria.fixedInterestRate,
-            interestRateLabel: inst.criteria.interestRateLabel,
-            minNetSalary: inst.criteria.minNetSalary,
-            maxDtiRatio: inst.criteria.maxDtiRatio,
-            minRepaymentMonths: inst.criteria.minRepaymentMonths,
-            maxRepaymentMonths: inst.criteria.maxRepaymentMonths,
-            processingFeePercent: inst.criteria.processingFeePercent,
-            requiresGuarantor: inst.criteria.requiresGuarantor,
-            requiresPayslip: inst.criteria.requiresPayslip,
-            eligibleEmploymentTypes: inst.criteria.eligibleEmploymentTypes,
-            civilServantMultiplier: inst.criteria.civilServantMultiplier,
-            privateMultiplier: inst.criteria.privateMultiplier,
-            selfEmployedMultiplier: inst.criteria.selfEmployedMultiplier,
-            saccoMemberMultiplier: inst.criteria.saccoMemberMultiplier,
-            notes: inst.criteria.notes,
-          }
-        : null,
-    }));
+    return institutions
+      .filter((inst) => !isSaccoParentInstitution(inst))
+      .map((inst) => ({
+        id: inst.id,
+        name: inst.name,
+        type: inst.type,
+        fixedInterestRate: inst.criteria?.fixedInterestRate || null,
+        criteria: inst.criteria
+          ? {
+              interestRate: inst.criteria.interestRate,
+              fixedInterestRate: inst.criteria.fixedInterestRate,
+              interestRateLabel: inst.criteria.interestRateLabel,
+              minNetSalary: inst.criteria.minNetSalary,
+              maxDtiRatio: inst.criteria.maxDtiRatio,
+              minRepaymentMonths: inst.criteria.minRepaymentMonths,
+              maxRepaymentMonths: inst.criteria.maxRepaymentMonths,
+              processingFeePercent: inst.criteria.processingFeePercent,
+              requiresGuarantor: inst.criteria.requiresGuarantor,
+              requiresPayslip: inst.criteria.requiresPayslip,
+              eligibleEmploymentTypes: inst.criteria.eligibleEmploymentTypes,
+              civilServantMultiplier: inst.criteria.civilServantMultiplier,
+              privateMultiplier: inst.criteria.privateMultiplier,
+              selfEmployedMultiplier: inst.criteria.selfEmployedMultiplier,
+              saccoMemberMultiplier: inst.criteria.saccoMemberMultiplier,
+              notes: inst.criteria.notes,
+            }
+          : null,
+      }));
   }
+
+  private async recordEligibilityChecks(
+    results: {
+      institution_id: string;
+      institution_name: string;
+      result:
+        | 'LIKELY_ELIGIBLE'
+        | 'BORDERLINE'
+        | 'NOT_ELIGIBLE'
+        | 'NOT_YET_ELIGIBLE';
+    }[],
+    institutions: Institution[],
+  ) {
+    if (!results.length) return;
+
+    const entries = results.map((result) => {
+      const institution = institutions.find(
+        (inst) => String(inst.id) === result.institution_id,
+      );
+
+      return this.eligCheckRepo.create({
+        institutionId: result.institution_id,
+        institutionName: result.institution_name,
+        institutionType: normalizeInstitutionType(institution?.type),
+        result: result.result,
+        checkedAt: new Date(),
+      });
+    });
+
+    await this.eligCheckRepo.save(entries);
+  }
+}
+
+function normalizeInstitutionType(value: string | undefined): string {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (normalized === 'sacco') return 'SACCO';
+  if (normalized === 'microfinance') return 'MICROFINANCE';
+  return 'COMMERCIAL_BANK';
+}
+
+function isSaccoParentInstitution(institution: Institution) {
+  const name = String(institution.name || '').trim().toLowerCase();
+  return name === 'sacco institutions' || name === 'sacco';
 }
 
 function normalizeEmploymentCategory(value: string | undefined): EmploymentCategory {
@@ -421,7 +463,6 @@ function normalizeEmploymentCategory(value: string | undefined): EmploymentCateg
 
 function criteriaForSelection(
   institution: Institution,
-  selectedSacco: Sacco | null,
   selectedProduct: LoanProduct | null,
 ): InstitutionCriteriaData {
   const base = institution.criteria;
@@ -441,29 +482,6 @@ function criteriaForSelection(
     requiresPayslip: base.requiresPayslip,
     notes: base.notes ?? '',
   };
-
-  if (institution.type === 'sacco' && selectedSacco) {
-    return {
-      ...baseCriteria,
-      interestRate: toNumber(selectedSacco.interestRate, baseCriteria.interestRate),
-      maxDtiRatio: toNumber(selectedSacco.maxDtiRatio, baseCriteria.maxDtiRatio),
-      minNetSalary: toNumber(selectedSacco.minMonthlyIncome, baseCriteria.minNetSalary),
-      minRepaymentMonths: toNumber(
-        selectedSacco.minRepaymentMonths,
-        baseCriteria.minRepaymentMonths,
-      ),
-      maxRepaymentMonths: toNumber(
-        selectedSacco.maxRepaymentMonths,
-        baseCriteria.maxRepaymentMonths,
-      ),
-      processingFeePercent: toNumber(
-        selectedSacco.processingFeePercent,
-        baseCriteria.processingFeePercent,
-      ),
-      eligibleEmploymentTypes: ['sacco_member'],
-      notes: selectedSacco.notes ?? baseCriteria.notes,
-    };
-  }
 
   if (
     institution.type === 'microfinance' &&
@@ -501,13 +519,8 @@ function parseRepaymentPeriods(raw: string | null | undefined) {
 
 function displayNameForSelection(
   institution: Institution,
-  selectedSacco: Sacco | null,
   selectedProduct: LoanProduct | null,
 ) {
-  if (institution.type === 'sacco' && selectedSacco) {
-    return selectedSacco.name;
-  }
-
   if (
     institution.type === 'microfinance' &&
     selectedProduct &&

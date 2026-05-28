@@ -202,6 +202,7 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-width: 0;
 }
 
 .main {
@@ -211,6 +212,7 @@
   width: 100%;
   margin: 0 auto;
   color: var(--ap-text);
+  min-width: 0;
 }
 
 /* Top bar */
@@ -245,6 +247,8 @@
   align-items: center;
   gap: 0.5rem;
   margin-left: auto;
+  --preference-control-bg: var(--ap-sidebar-bg);
+  --preference-control-hover-bg: var(--ap-sidebar-bg);
 }
 
 .menuBtn {
@@ -300,6 +304,18 @@
 
 @media (max-width: 640px) {
   .main {
-    padding: 1rem;
+    padding: 1rem 0.875rem;
+  }
+
+  .topBar {
+    padding: 0.75rem 0.875rem;
+  }
+
+  .sidebar {
+    width: min(var(--ap-sidebar-w), 86vw);
+  }
+
+  .logoText {
+    font-size: 1.25rem;
   }
 }

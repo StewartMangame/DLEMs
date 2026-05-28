@@ -64,7 +64,7 @@ export class Institution {
   @Column({ default: false })
   digitalApplicationAvailable: boolean;
 
-  /** Whether this institution type has configurable sub-entities (SACCO branches, FINCA products) */
+  /** Whether this institution has configurable sub-entities such as FINCA products */
   @Column({ default: false })
   hasBranches: boolean;
 

@@ -4,10 +4,8 @@ import {
   Building2,
   Users,
   CircleCheck,
-  Wallet,
   Megaphone,
   KeyRound,
-  ClipboardList,
   Hexagon,
   Menu,
   LogOut,
@@ -25,10 +23,8 @@ export const NAV_SUPER: AdminNavItem[] = [
   { href: "/admin-panel/institutions", icon: Building2, label: "Institutions" },
   { href: "/admin-panel/users", icon: Users, label: "Users" },
   { href: "/admin-panel/eligibility", icon: CircleCheck, label: "Eligibility Monitor" },
-  { href: "/admin-panel/loans", icon: Wallet, label: "Loan Tracking" },
   { href: "/admin-panel/announcements", icon: Megaphone, label: "Announcements" },
   { href: "/admin-panel/admins", icon: KeyRound, label: "Admin Accounts" },
-  { href: "/admin-panel/activity-log", icon: ClipboardList, label: "Activity Log" },
 ];
 
 export const NAV_CONTENT: AdminNavItem[] = [

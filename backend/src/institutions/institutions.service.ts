@@ -4,7 +4,6 @@ import { In, Repository } from 'typeorm';
 import { Institution } from '../entities/institution.entity';
 import { InstitutionCriteria } from '../entities/institution-criteria.entity';
 import { LoanProduct } from '../entities/loan-product.entity';
-import { Sacco } from '../entities/sacco.entity';
 import { User } from '../entities/user.entity';
 import { Loan } from '../entities/loan.entity';
 import { FinancialProfile } from '../entities/financial-profile.entity';
@@ -99,7 +98,7 @@ const SEED_INSTITUTIONS = [
   {
     name: 'Malawi Police SACCO',
     type: 'sacco',
-    hasBranches: true,
+    hasBranches: false,
     status: 'active' as const,
     criteria: {
       interestRate: 18,
@@ -120,25 +119,6 @@ const SEED_INSTITUTIONS = [
     },
   },
 ];
-
-const POLICE_SACCO_SEED = {
-  name: 'Malawi Police SACCO',
-  minMonthlyIncome: 40_000,
-  minMembershipMonths: 3,
-  minServiceMonths: 6,
-  maxDtiRatio: 0.45,
-  repaymentMethod: 'Salary deduction / stop order only',
-  loanProducts: 'Personal / Salary Loan',
-  collateralAccepted: true,
-  turnaroundTime: '1 to 3 days',
-  interestRate: 18,
-  processingFeePercent: 0.5,
-  minRepaymentMonths: 3,
-  maxRepaymentMonths: 60,
-  notes:
-    'Exclusive to registered Malawi Police SACCO members. Members can access salary-based loans after meeting the minimum membership period.',
-  status: 'active' as const,
-};
 
 const FINCA_VILLAGE_BANK_PRODUCT_SEED = {
   name: 'Village Bank Loan',
@@ -162,8 +142,6 @@ export class InstitutionsService {
     private instRepo: Repository<Institution>,
     @InjectRepository(InstitutionCriteria)
     private criteriaRepo: Repository<InstitutionCriteria>,
-    @InjectRepository(Sacco)
-    private saccoRepo: Repository<Sacco>,
     @InjectRepository(LoanProduct)
     private productRepo: Repository<LoanProduct>,
   ) {}
@@ -179,34 +157,16 @@ export class InstitutionsService {
       order: { name: 'ASC' },
     });
 
-    return institutions.map((institution) => ({
-      id: String(institution.id),
-      name: institution.name,
-      type: normalizeInstitutionType(institution.type),
-      has_branches: institution.hasBranches,
-      description: institution.description ?? '',
-      logoUrl: institution.logoUrl ?? null,
-      status: normalizeVisibleStatus(institution.status),
-    }));
-  }
-
-  /**
-   * Returns SACCO-type institutions with status ACTIVE or COMING_SOON.
-   * INACTIVE SACCOs are excluded at the query level.
-   */
-  async getSaccoBranches() {
-    await this.ensureDefaultSaccoBranches();
-
-    const branches = await this.saccoRepo.find({
-      order: { name: 'ASC' },
-    });
-
-    return branches
-      .filter((branch) => String(branch.status).toLowerCase() !== 'inactive')
-      .map((branch) => ({
-        id: String(branch.id),
-        branch_name: branch.name,
-        status: normalizeBranchStatus(branch.status),
+    return institutions
+      .filter((institution) => !isSaccoParentInstitution(institution))
+      .map((institution) => ({
+        id: String(institution.id),
+        name: institution.name,
+        type: normalizeInstitutionType(institution.type),
+        has_branches: institution.hasBranches,
+        description: institution.description ?? '',
+        logoUrl: institution.logoUrl ?? null,
+        status: normalizeVisibleStatus(institution.status),
       }));
   }
 
@@ -346,6 +306,7 @@ export class InstitutionsService {
    */
   async seedDefaultInstitutions() {
     await this.removeRetiredInstitutions();
+    await this.removeSaccoParentInstitutions();
 
     const existingSavingsSacco = await this.instRepo.findOne({
       where: { name: 'Malawi Savings SACCO' },
@@ -375,19 +336,65 @@ export class InstitutionsService {
       }
     }
 
-    await this.ensureDefaultSaccoBranches();
+    await this.ensureDefaultSaccoInstitution();
     await this.ensureDefaultLoanProducts();
   }
 
-  private async ensureDefaultSaccoBranches() {
-    const existing = await this.saccoRepo.findOne({
-      where: { name: POLICE_SACCO_SEED.name },
+  private async ensureDefaultSaccoInstitution() {
+    let institution = await this.instRepo.findOne({
+      where: { name: 'Malawi Police SACCO' },
+      relations: ['criteria'],
     });
-    const sacco = existing
-      ? this.saccoRepo.merge(existing, POLICE_SACCO_SEED)
-      : this.saccoRepo.create(POLICE_SACCO_SEED);
 
-    await this.saccoRepo.save(sacco);
+    if (!institution) {
+      institution = this.instRepo.create({
+        name: 'Malawi Police SACCO',
+        type: 'sacco',
+        status: 'active',
+        isActive: true,
+        hasBranches: false,
+        description:
+          'Member-based SACCO lending for Malawi Police SACCO members.',
+        turnaroundTime: '1 to 3 days',
+        requiresCrbCheck: false,
+        collateralAccepted: true,
+        eligibleEmploymentTypes: ['sacco_member'],
+      });
+      await this.instRepo.save(institution);
+    } else {
+      institution.type = 'sacco';
+      institution.status = 'active';
+      institution.isActive = true;
+      institution.hasBranches = false;
+      institution.description =
+        institution.description ||
+        'Member-based SACCO lending for Malawi Police SACCO members.';
+      institution.turnaroundTime = institution.turnaroundTime || '1 to 3 days';
+      institution.eligibleEmploymentTypes = ['sacco_member'];
+      await this.instRepo.save(institution);
+    }
+
+    if (!institution.criteria) {
+      const criteria = this.criteriaRepo.create({
+        institutionId: institution.id,
+        interestRate: 18,
+        maxDtiRatio: 0.45,
+        minNetSalary: 40_000,
+        minRepaymentMonths: 3,
+        maxRepaymentMonths: 60,
+        processingFeePercent: 0.5,
+        civilServantMultiplier: 3,
+        privateMultiplier: 3,
+        selfEmployedMultiplier: 2,
+        saccoMemberMultiplier: 10,
+        eligibleEmploymentTypes: ['sacco_member'],
+        requiresGuarantor: false,
+        requiresPayslip: false,
+        notes:
+          'Exclusive to registered Malawi Police SACCO members. Members can access salary-based loans after meeting the minimum membership period.',
+      });
+      await this.criteriaRepo.save(criteria);
+    }
   }
 
   private async ensureDefaultLoanProducts() {
@@ -458,14 +465,45 @@ export class InstitutionsService {
       await this.instRepo.delete(institution.id);
     }
   }
+
+  private async removeSaccoParentInstitutions() {
+    const parentNames = ['SACCO Institutions', 'SACCO'];
+    for (const name of parentNames) {
+      const institution = await this.instRepo.findOne({
+        where: { name },
+        relations: ['criteria'],
+      });
+      if (!institution) continue;
+
+      await this.instRepo.manager
+        .getRepository(User)
+        .update({ institutionId: institution.id }, { institutionId: null });
+      await this.instRepo.manager
+        .getRepository(FinancialProfile)
+        .update(
+          { salaryInstitutionId: institution.id },
+          { salaryInstitutionId: null },
+        );
+      await this.productRepo.delete({ institutionId: institution.id });
+      if (institution.criteria) {
+        await this.criteriaRepo.delete({ institutionId: institution.id });
+      }
+      await this.instRepo.delete(institution.id);
+    }
+  }
 }
 
 function normalizeInstitutionType(type: string) {
   const normalized = String(type).toLowerCase();
   if (normalized === 'bank') return 'COMMERCIAL_BANK';
   if (normalized === 'microfinance') return 'MICROFINANCE';
-  if (normalized === 'sacco') return 'SACCO_CATEGORY';
+  if (normalized === 'sacco' || normalized === 'sacco_category') return 'SACCO';
   return String(type).toUpperCase();
+}
+
+function isSaccoParentInstitution(institution: Institution) {
+  const name = String(institution.name || '').trim().toLowerCase();
+  return name === 'sacco institutions' || name === 'sacco';
 }
 
 function normalizeVisibleStatus(status: string) {

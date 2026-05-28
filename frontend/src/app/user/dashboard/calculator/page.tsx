@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import styles from "./page.module.css";
 import { fetchInstitutionCriteria, fetchInstitutions } from "@/lib/api";
+import { useLanguage } from "@/lib/LanguageContext";
 
 type Institution = { id: string; name: string };
 type Product = {
@@ -34,6 +35,7 @@ function monthlyInstallment(amount: number, annualRate: number, months: number) 
 }
 
 export default function CalculatorPage() {
+  const { t } = useLanguage();
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [selectedId, setSelectedId] = useState("");
   const [criteria, setCriteria] = useState<Criteria | null>(null);
@@ -51,7 +53,7 @@ export default function CalculatorPage() {
         setInstitutions(list);
         if (list[0]) setSelectedId(list[0].id);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load institutions."))
+      .catch((err) => setError(err instanceof Error ? err.message : t("check.emptyInstitutions")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -69,7 +71,7 @@ export default function CalculatorPage() {
       })
       .catch((err) => {
         setCriteria(null);
-        setError(err instanceof Error ? err.message : "Failed to load criteria.");
+        setError(err instanceof Error ? err.message : t("check.productFallbackDescription"));
       });
   }, [selectedId]);
 
@@ -80,14 +82,14 @@ export default function CalculatorPage() {
   );
   const total = installment * months;
 
-  if (loading) return <div className={styles.page}>Loading calculator...</div>;
+  if (loading) return <div className={styles.page}>{t("calc.loading")}</div>;
 
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <h1 className="text-h2">Loan Calculator</h1>
+        <h1 className="text-h2">{t("calc.title")}</h1>
         <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-          Caps, rates, and terms come from the live institution criteria API.
+          {t("calc.subtitle")}
         </p>
       </div>
 
@@ -96,7 +98,7 @@ export default function CalculatorPage() {
       <div className={styles.grid}>
         <div className={`card ${styles.controls}`}>
           <div className="form-group">
-            <label className="form-label" htmlFor="institution">Institution</label>
+            <label className="form-label" htmlFor="institution">{t("calc.institution")}</label>
             <select
               id="institution"
               className="form-select"
@@ -114,7 +116,7 @@ export default function CalculatorPage() {
           {criteria && product && (
             <>
               <div className="form-group">
-                <label className="form-label" htmlFor="product">Loan Product</label>
+                <label className="form-label" htmlFor="product">{t("calc.loanProduct")}</label>
                 <select
                   id="product"
                   className="form-select"
@@ -141,7 +143,7 @@ export default function CalculatorPage() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Loan Amount: {currency(amount)}</label>
+                <label className="form-label">{t("calc.loanAmount")}: {currency(amount)}</label>
                 <input
                   type="range"
                   className={styles.slider}
@@ -159,7 +161,7 @@ export default function CalculatorPage() {
 
               {!product.interest_rate_fixed && (
                 <div className="form-group">
-                  <label className="form-label" htmlFor="rate">Annual Interest Rate</label>
+                  <label className="form-label" htmlFor="rate">{t("calc.annualInterest")}</label>
                   <input
                     id="rate"
                     type="number"
@@ -174,13 +176,13 @@ export default function CalculatorPage() {
 
               {product.interest_rate_fixed && (
                 <div className="form-group">
-                  <label className="form-label">Annual Interest Rate</label>
-                  <input className="form-input" value={`${rate}% fixed`} disabled />
+                  <label className="form-label">{t("calc.annualInterest")}</label>
+                  <input className="form-input" value={t("calc.fixed", { rate })} disabled />
                 </div>
               )}
 
               <div className="form-group">
-                <label className="form-label" htmlFor="months">Repayment Period</label>
+                <label className="form-label" htmlFor="months">{t("calc.repaymentPeriod")}</label>
                 <select
                   id="months"
                   className="form-select"
@@ -189,7 +191,7 @@ export default function CalculatorPage() {
                 >
                   {product.repayment_periods.map((period) => (
                     <option key={period} value={period}>
-                      {period} months
+                      {period} {t("home.months")}
                     </option>
                   ))}
                 </select>
@@ -200,19 +202,19 @@ export default function CalculatorPage() {
 
         <div className={styles.summary}>
           <div className={`card ${styles.summaryCard}`}>
-            <div className="stat-label">Monthly Installment</div>
+            <div className="stat-label">{t("calc.monthlyInstallment")}</div>
             <div className="stat-value text-gradient">{currency(installment)}</div>
           </div>
           <div className={`card ${styles.summaryCard}`}>
-            <div className="stat-label">Total Repayable</div>
+            <div className="stat-label">{t("calc.totalRepayable")}</div>
             <div className="stat-value">{currency(total)}</div>
           </div>
           <div className={`card ${styles.summaryCard}`}>
-            <div className="stat-label">DTI Cap</div>
+            <div className="stat-label">{t("calc.dtiCap")}</div>
             <div className="stat-value">{criteria?.dti_cap_percent ?? "-"}%</div>
           </div>
           <div className={`card ${styles.summaryCard}`}>
-            <div className="stat-label">Processing Fee</div>
+            <div className="stat-label">{t("calc.processingFee")}</div>
             <div className="stat-value">
               {product ? `${product.processing_fee_percent ?? 0}%` : "-"}
             </div>

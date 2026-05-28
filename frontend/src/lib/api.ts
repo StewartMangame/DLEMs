@@ -13,13 +13,6 @@ export async function fetchInstitutions() {
   return readJson(res, 'Failed to fetch institutions');
 }
 
-export async function fetchSaccoBranches() {
-  const res = await fetch(apiUrl('/api/institutions/sacco/branches'), {
-    cache: 'no-store',
-  });
-  return readJson(res, 'Failed to fetch SACCO branches');
-}
-
 export async function fetchFincaProducts() {
   const res = await fetch(apiUrl('/api/institutions/finca/products'), {
     cache: 'no-store',
@@ -37,7 +30,7 @@ export async function fetchInstitutionCriteria(id: number) {
 export async function checkEligibility(
   userProfile: any,
   selectedInstitutionIds: string[],
-  options: { selectedSaccoId?: string; selectedProductId?: string } = {},
+  options: { selectedProductId?: string } = {},
 ) {
   const res = await fetch(apiUrl('/api/eligibility/check'), {
     method: 'POST',
@@ -47,7 +40,6 @@ export async function checkEligibility(
     body: JSON.stringify({
       user_profile: userProfile,
       selected_institution_ids: selectedInstitutionIds,
-      selected_sacco_id: options.selectedSaccoId,
       selected_product_id: options.selectedProductId,
     }),
   });

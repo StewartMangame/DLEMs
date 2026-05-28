@@ -27,3 +27,21 @@
   display: flex;
   justify-content: flex-end;
 }
+
+@media (max-width: 640px) {
+  .header {
+    margin-bottom: var(--space-lg);
+  }
+
+  .formCard {
+    margin-top: var(--space-lg);
+  }
+
+  .actions {
+    justify-content: stretch;
+  }
+
+  .actions button {
+    width: 100%;
+  }
+}

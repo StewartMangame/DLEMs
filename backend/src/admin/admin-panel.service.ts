@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -91,10 +92,10 @@ export class AdminPanelService {
 
     const [checksToday, checksThisMonth] = await Promise.all([
       this.eligCheckRepo.count({
-        where: { createdAt: MoreThanOrEqual(startOfDay) },
+        where: { checkedAt: MoreThanOrEqual(startOfDay) },
       }),
       this.eligCheckRepo.count({
-        where: { createdAt: MoreThanOrEqual(startOfMonth) },
+        where: { checkedAt: MoreThanOrEqual(startOfMonth) },
       }),
     ]);
 
@@ -128,6 +129,9 @@ export class AdminPanelService {
     const qb = this.instRepo
       .createQueryBuilder('i')
       .leftJoinAndSelect('i.criteria', 'c');
+    qb.andWhere('LOWER(i.name) NOT IN (:...hiddenNames)', {
+      hiddenNames: ['sacco institutions', 'sacco'],
+    });
     if (search) qb.andWhere('i.name LIKE :s', { s: `%${search}%` });
     if (type) qb.andWhere('i.type = :type', { type });
     qb.orderBy('i.name', 'ASC')
@@ -402,11 +406,9 @@ export class AdminPanelService {
     if (!institution) throw new NotFoundException('Institution not found');
 
     if (institution.type === 'sacco') {
-      return this.createSacco(admin, {
-        name: data.branch_name ?? data.name,
-        status: data.status ?? 'active',
-        notes: data.description ?? data.notes,
-      });
+      throw new BadRequestException(
+        'SACCO institutions are standalone records. Add a new SACCO from the Add Institution form.',
+      );
     }
 
     return this.createProduct(admin, institutionId, {
@@ -627,60 +629,107 @@ export class AdminPanelService {
   }
 
   // ─── Section 4: Eligibility Check Monitoring ───────────────────────────────
-  async getEligibilityStats(period?: string) {
+  async getEligibilitySummary() {
     const now = new Date();
-    const startOfDay = new Date(now);
-    startOfDay.setHours(0, 0, 0, 0);
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - 7);
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const { startOfDay, startOfWeek, startOfMonth } = getEligibilityDateBounds(now);
 
-    const [today, thisWeek, thisMonth, allTime] = await Promise.all([
+    const [today, this_week, this_month, all_time] = await Promise.all([
       this.eligCheckRepo.count({
-        where: { createdAt: MoreThanOrEqual(startOfDay) },
+        where: { checkedAt: MoreThanOrEqual(startOfDay) },
       }),
       this.eligCheckRepo.count({
-        where: { createdAt: MoreThanOrEqual(startOfWeek) },
+        where: { checkedAt: MoreThanOrEqual(startOfWeek) },
       }),
       this.eligCheckRepo.count({
-        where: { createdAt: MoreThanOrEqual(startOfMonth) },
+        where: { checkedAt: MoreThanOrEqual(startOfMonth) },
       }),
       this.eligCheckRepo.count(),
     ]);
 
-    const byInstitution = await this.eligCheckRepo
+    return { today, this_week, this_month, all_time };
+  }
+
+  async getEligibilityBreakdown(period = 'all_time') {
+    const qb = this.eligCheckRepo
       .createQueryBuilder('e')
-      .select('e.institutionName', 'institution')
-      .addSelect('e.institutionType', 'type')
+      .select('e.institutionId', 'institution_id')
+      .addSelect('e.institutionName', 'institution_name')
+      .addSelect('e.institutionType', 'institution_type')
       .addSelect('COUNT(*)', 'total')
       .addSelect(
-        "SUM(CASE WHEN e.result = 'eligible' THEN 1 ELSE 0 END)",
-        'eligible',
+        "SUM(CASE WHEN e.result = 'LIKELY_ELIGIBLE' THEN 1 ELSE 0 END)",
+        'likely_eligible',
       )
       .addSelect(
-        "SUM(CASE WHEN e.result = 'borderline' THEN 1 ELSE 0 END)",
+        "SUM(CASE WHEN e.result = 'BORDERLINE' THEN 1 ELSE 0 END)",
         'borderline',
       )
       .addSelect(
-        "SUM(CASE WHEN e.result = 'ineligible' THEN 1 ELSE 0 END)",
-        'ineligible',
+        "SUM(CASE WHEN e.result IN ('NOT_ELIGIBLE', 'NOT_YET_ELIGIBLE') THEN 1 ELSE 0 END)",
+        'not_eligible',
       )
-      .groupBy('e.institutionName')
-      .orderBy('total', 'DESC')
-      .getRawMany();
+      .groupBy('e.institutionId')
+      .addGroupBy('e.institutionName')
+      .addGroupBy('e.institutionType')
+      .orderBy('total', 'DESC');
 
-    return { today, thisWeek, thisMonth, allTime, byInstitution };
+    const startDate = getEligibilityPeriodStart(period);
+    if (startDate) {
+      qb.where('e.checkedAt >= :startDate', { startDate });
+    }
+
+    const rows = await qb.getRawMany();
+
+    return rows.map((row) => {
+      const totalChecks = Number(row.total) || 0;
+      const likelyEligible = Number(row.likely_eligible) || 0;
+      return {
+        institution_id: String(row.institution_id),
+        institution_name: row.institution_name,
+        institution_type: row.institution_type,
+        total_checks: totalChecks,
+        likely_eligible: likelyEligible,
+        borderline: Number(row.borderline) || 0,
+        not_eligible: Number(row.not_eligible) || 0,
+        eligible_rate:
+          totalChecks > 0
+            ? Number(((likelyEligible / totalChecks) * 100).toFixed(1))
+            : 0,
+      };
+    });
+  }
+
+  async getEligibilityStats(period?: string) {
+    const summary = await this.getEligibilitySummary();
+    const breakdown = await this.getEligibilityBreakdown(period);
+    return {
+      today: summary.today,
+      thisWeek: summary.this_week,
+      thisMonth: summary.this_month,
+      allTime: summary.all_time,
+      byInstitution: breakdown.map((row) => ({
+        institution: row.institution_name,
+        type: row.institution_type,
+        total: row.total_checks,
+        eligible: row.likely_eligible,
+        borderline: row.borderline,
+        ineligible: row.not_eligible,
+      })),
+    };
   }
 
   async logEligibilityCheck(
+    institutionId: string,
     institutionName: string,
     institutionType: string,
     result: string,
   ) {
     const entry = this.eligCheckRepo.create({
+      institutionId,
       institutionName,
       institutionType,
       result,
+      checkedAt: new Date(),
     });
     await this.eligCheckRepo.save(entry);
   }
@@ -888,5 +937,36 @@ export class AdminPanelService {
       .take(limit);
     const [items, total] = await qb.getManyAndCount();
     return { items, total, page, pages: Math.ceil(total / limit) };
+  }
+}
+
+function getEligibilityDateBounds(now: Date) {
+  const startOfDay = new Date(now);
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const startOfWeek = new Date(startOfDay);
+  const day = startOfWeek.getDay();
+  const daysSinceMonday = day === 0 ? 6 : day - 1;
+  startOfWeek.setDate(startOfWeek.getDate() - daysSinceMonday);
+
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  return { startOfDay, startOfWeek, startOfMonth };
+}
+
+function getEligibilityPeriodStart(period: string) {
+  const { startOfDay, startOfWeek, startOfMonth } = getEligibilityDateBounds(
+    new Date(),
+  );
+
+  switch (period) {
+    case 'today':
+      return startOfDay;
+    case 'this_week':
+      return startOfWeek;
+    case 'this_month':
+      return startOfMonth;
+    default:
+      return null;
   }
 }

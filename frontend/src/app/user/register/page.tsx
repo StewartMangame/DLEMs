@@ -3,7 +3,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import styles from "../auth.module.css";
-import { Hexagon, Eye, EyeOff, Mail, ArrowLeft, User, IdCard, Badge, Phone, CheckCircle2 } from "lucide-react";
+import { Hexagon, Eye, EyeOff, Mail, ArrowLeft, User, IdCard, Badge, Phone } from "lucide-react";
+import { useLanguage } from "@/lib/LanguageContext";
 
 // ─── Helpers 
 function isValidEmail(email: string): boolean {
@@ -27,6 +28,7 @@ interface FormData {
 // ─── Component 
 export default function RegisterPage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   // Step tracking
   const [step, setStep] = useState<Step>("details");
@@ -73,9 +75,9 @@ export default function RegisterPage() {
     e.preventDefault();
     setError("");
 
-    if (!emailValid) { setError("Please enter a valid email address."); return; }
-    if (!passwordLongEnough) { setError("Password must be at least 8 characters."); return; }
-    if (!passwordsMatch) { setError("Passwords do not match."); return; }
+    if (!emailValid) { setError(t("auth.invalidEmail")); return; }
+    if (!passwordLongEnough) { setError(t("auth.passwordTooShort")); return; }
+    if (!passwordsMatch) { setError(t("auth.passwordMismatch")); return; }
 
     setLoading(true);
     try {
@@ -96,7 +98,7 @@ export default function RegisterPage() {
       if (!res.ok) {
         const msg: string = Array.isArray(data.message)
           ? data.message.join(", ")
-          : data.message || data.error || "Registration failed. Please try again.";
+          : data.message || data.error || t("auth.registrationFailed");
         setError(msg);
         return;
       }
@@ -107,7 +109,7 @@ export default function RegisterPage() {
       setStep("otp");
       startResendCooldown();
     } catch {
-      setError("Network error — could not reach the server. Please check your connection.");
+      setError(t("auth.registrationNetworkError"));
     } finally {
       setLoading(false);
     }
@@ -136,7 +138,7 @@ export default function RegisterPage() {
   const handleOtpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = otp.join("");
-    if (code.length < 6) { setOtpError("Please enter all 6 digits."); return; }
+    if (code.length < 6) { setOtpError(t("auth.enterAllDigits")); return; }
 
     setOtpLoading(true);
     setOtpError("");
@@ -149,13 +151,13 @@ export default function RegisterPage() {
       const data = await readJson(res);
 
       if (!res.ok) {
-        setOtpError(data.message || data.error || "Invalid or expired code. Please try again.");
+        setOtpError(data.message || data.error || t("auth.invalidOtp"));
         return;
       }
 
       router.push("/user/dashboard");
     } catch {
-      setOtpError("Network error — could not verify your code. Please try again.");
+      setOtpError(t("auth.verifyNetworkError"));
     } finally {
       setOtpLoading(false);
     }
@@ -183,13 +185,13 @@ export default function RegisterPage() {
       });
       const data = await readJson(res);
       if (!res.ok) {
-        setOtpError(data.message || data.error || "Could not resend code. Please try again.");
+        setOtpError(data.message || data.error || t("auth.resendError"));
         return;
       }
       setDevOtp(data.devOtp || "");
       startResendCooldown();
     } catch {
-      setOtpError("Could not resend code. Please try again.");
+      setOtpError(t("auth.resendError"));
     }
   };
 
@@ -199,18 +201,25 @@ export default function RegisterPage() {
       <div className={styles.bgOrb1} />
       <div className={styles.bgOrb2} />
       <div className={styles.container}>
-        <Link href="/" className={styles.logo}>
-          <Hexagon size={28} className={styles.logoIcon} />
-          <span>DLEM</span>
-        </Link>
+        <div className={styles.authBackRow}>
+          <Link href="/" className={styles.authBackButton} aria-label={t("auth.back")}>
+            <ArrowLeft size={20} aria-hidden />
+          </Link>
+        </div>
+        <div className={styles.authLogoRow}>
+          <Link href="/" className={styles.logo}>
+            <Hexagon size={28} className={styles.logoIcon} />
+            <span>DLEM</span>
+          </Link>
+        </div>
 
         {/* ── STEP 1: Details ── */}
         {step === "details" && (
           <div className={`card ${styles.card}`}>
             <div className={styles.cardHeader}>
-              <h1 className="text-h2">Create Account</h1>
+              <h1 className="text-h2">{t("auth.registerTitle")}</h1>
               <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-                Join thousands of Malawians managing loans digitally
+                {t("auth.registerSubtitle")}
               </p>
               <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
                 <span style={stepDot(true)} />
@@ -227,51 +236,51 @@ export default function RegisterPage() {
             <form onSubmit={handleDetailsSubmit} className={styles.form} noValidate>
               <div className="grid-2">
                 <div className="form-group">
-                  <label className="form-label" htmlFor="fullName">Full Name</label>
+                  <label className="form-label" htmlFor="fullName">{t("auth.fullName")}</label>
                   <div className={styles.inputWrapper}>
                     <User size={18} className={styles.fieldIcon} />
                     <input id="fullName" name="fullName" required className="form-input"
-                      placeholder="e.g. John Banda" value={form.fullName} onChange={handleChange} />
+                      placeholder={t("auth.fullNamePlaceholder")} value={form.fullName} onChange={handleChange} />
                   </div>
                 </div>
                 <div className="form-group">
-                  <label className="form-label" htmlFor="nationalId">National ID</label>
+                  <label className="form-label" htmlFor="nationalId">{t("auth.nationalId")}</label>
                   <div className={styles.inputWrapper}>
                     <IdCard size={18} className={styles.fieldIcon} />
                     <input id="nationalId" name="nationalId" required className="form-input"
-                      placeholder="MW-XXXXXXXXXX" value={form.nationalId} onChange={handleChange} />
+                      placeholder={t("auth.nationalIdPlaceholder")} value={form.nationalId} onChange={handleChange} />
                   </div>
                 </div>
               </div>
 
               <div className="grid-2">
                 <div className="form-group">
-                  <label className="form-label" htmlFor="employeeNumber">Employee / Member ID</label>
+                  <label className="form-label" htmlFor="employeeNumber">{t("auth.employeeNumber")}</label>
                   <div className={styles.inputWrapper}>
                     <Badge size={18} className={styles.fieldIcon} />
                     <input id="employeeNumber" name="employeeNumber" required className="form-input"
-                      placeholder="e.g. CS-2024-XXXX" value={form.employeeNumber} onChange={handleChange} />
+                      placeholder={t("auth.employeeNumberPlaceholder")} value={form.employeeNumber} onChange={handleChange} />
                   </div>
                 </div>
                 <div className="form-group">
-                  <label className="form-label" htmlFor="phone">Phone Number</label>
+                  <label className="form-label" htmlFor="phone">{t("auth.phone")}</label>
                   <div className={styles.inputWrapper}>
                     <Phone size={18} className={styles.fieldIcon} />
                     <input id="phone" name="phone" required className="form-input" type="tel"
-                      placeholder="+265 XXXXXXXX" value={form.phone} onChange={handleChange} />
+                      placeholder={t("auth.phonePlaceholder")} value={form.phone} onChange={handleChange} />
                   </div>
                 </div>
               </div>
 
               {/* Email with live validation */}
               <div className="form-group">
-                <label className="form-label" htmlFor="email">Email Address</label>
+                <label className="form-label" htmlFor="email">{t("auth.email")}</label>
                 <div className={styles.inputWrapper}>
                   <Mail size={18} className={styles.fieldIcon} />
                   <input
                     id="email" name="email" type="email" required className="form-input"
                     autoComplete="email"
-                    placeholder="yourname@example.com"
+                    placeholder={t("auth.emailRegisterPlaceholder")}
                     value={form.email}
                     onChange={handleChange}
                     onBlur={() => setEmailTouched(true)}
@@ -284,27 +293,27 @@ export default function RegisterPage() {
                 </div>
                 {emailTouched && !emailValid && (
                   <div style={{ marginTop: 4, fontSize: "0.8rem", color: "var(--color-danger)" }}>
-                    ✗ Enter a valid email address (e.g. john@example.com)
+                    x {t("auth.invalidEmail")}
                   </div>
                 )}
                 {emailTouched && emailValid && (
                   <div style={{ marginTop: 4, fontSize: "0.8rem", color: "var(--color-success)" }}>
-                    ✓ Valid email
+                    {t("auth.validEmail")}
                   </div>
                 )}
                 <div className="form-help">
-                  Your login details and notifications will be sent here.
+                  {t("auth.emailHelp")}
                 </div>
               </div>
 
               {/* Passwords */}
               <div className="grid-2">
                 <div className="form-group">
-                  <label className="form-label" htmlFor="password">Password</label>
+                  <label className="form-label" htmlFor="password">{t("auth.password")}</label>
                   <div style={{ position: "relative" }}>
                     <input id="password" name="password" type={showPw ? "text" : "password"}
                       required className="form-input" autoComplete="new-password"
-                      placeholder="Min. 8 characters" value={form.password} onChange={handleChange}
+                      placeholder={t("auth.passwordMin")} value={form.password} onChange={handleChange}
                       style={{ paddingRight: "3rem" }}
                     />
                     <button type="button" onClick={() => setShowPw(p => !p)}
@@ -314,24 +323,24 @@ export default function RegisterPage() {
                         color: "var(--color-text-muted)", fontSize: "1rem", padding: 4,
                         display: 'flex', alignItems: 'center', justifyContent: 'center'
                       }}
-                      aria-label={showPw ? "Hide password" : "Show password"}
+                      aria-label={showPw ? t("auth.hidePassword") : t("auth.showPassword")}
                     >
                       {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                   {form.password.length > 0 && form.password.length < 8 && (
                     <div style={{ marginTop: 4, fontSize: "0.8rem", color: "var(--color-danger)" }}>
-                      ✗ At least 8 characters required
+                      x {t("auth.passwordTooShort")}
                     </div>
                   )}
                 </div>
                 <div className="form-group">
-                  <label className="form-label" htmlFor="confirmPassword">Confirm Password</label>
+                  <label className="form-label" htmlFor="confirmPassword">{t("auth.confirmPassword")}</label>
                   <div style={{ position: "relative" }}>
                     <input id="confirmPassword" name="confirmPassword"
                       type={showPw ? "text" : "password"} required className="form-input"
                       autoComplete="new-password"
-                      placeholder="Repeat password" value={form.confirmPassword} onChange={handleChange}
+                      placeholder={t("auth.confirmPasswordPlaceholder")} value={form.confirmPassword} onChange={handleChange}
                       style={{ paddingRight: "3rem" }}
                     />
                     <button type="button" onClick={() => setShowPw(p => !p)}
@@ -341,19 +350,19 @@ export default function RegisterPage() {
                         color: "var(--color-text-muted)", fontSize: "1rem", padding: 4,
                         display: 'flex', alignItems: 'center', justifyContent: 'center'
                       }}
-                      aria-label={showPw ? "Hide password" : "Show password"}
+                      aria-label={showPw ? t("auth.hidePassword") : t("auth.showPassword")}
                     >
                       {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                   {form.confirmPassword && !passwordsMatch && (
                     <div style={{ marginTop: 4, fontSize: "0.8rem", color: "var(--color-danger)" }}>
-                      ✗ Passwords do not match
+                      x {t("auth.passwordMismatch")}
                     </div>
                   )}
                   {form.confirmPassword && passwordsMatch && passwordLongEnough && (
                     <div style={{ marginTop: 4, fontSize: "0.8rem", color: "var(--color-success)" }}>
-                      ✓ Passwords match
+                      {t("auth.passwordsMatch")}
                     </div>
                   )}
                 </div>
@@ -366,14 +375,14 @@ export default function RegisterPage() {
                 style={{ width: "100%", marginTop: 8 }}
               >
                 {loading
-                  ? <><span className="loading-spinner" /> Creating Account…</>
-                  : "Create Account →"}
+                  ? <><span className="loading-spinner" /> {t("auth.creatingAccount")}</>
+                  : t("auth.createAccountButton")}
               </button>
             </form>
 
             <p className={styles.switchLink}>
-              Already have an account?{" "}
-              <Link href="/user/login">Sign In</Link>
+              {t("auth.alreadyHaveAccount")}{" "}
+              <Link href="/user/login">{t("auth.signIn")}</Link>
             </p>
           </div>
         )}
@@ -395,9 +404,9 @@ export default function RegisterPage() {
                   <Mail size={40} color="var(--color-primary)" />
                 </div>
               </div>
-              <h1 className="text-h2">Check Your Email</h1>
+              <h1 className="text-h2">{t("auth.checkEmailTitle")}</h1>
               <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-                We sent a 6-digit verification code to
+                {t("auth.checkEmailSubtitle")}
               </p>
               <p style={{ fontWeight: 600, fontSize: "0.95rem", marginTop: 4, color: "var(--color-primary)" }}>
                 {form.email}
@@ -419,7 +428,7 @@ export default function RegisterPage() {
             {devOtp && (
               <div className="alert alert-info" role="status">
                 <span>i</span>
-                <div>Development code: <strong>{devOtp}</strong></div>
+                <div>{t("auth.developmentCode")}: <strong>{devOtp}</strong></div>
               </div>
             )}
 
@@ -451,7 +460,7 @@ export default function RegisterPage() {
                       outline: "none",
                       transition: "border-color 0.15s",
                     }}
-                    aria-label={`OTP digit ${i + 1}`}
+                    aria-label={`OTP ${i + 1}`}
                   />
                 ))}
               </div>
@@ -463,15 +472,15 @@ export default function RegisterPage() {
                 style={{ width: "100%", marginBottom: "var(--space-md)" }}
               >
                 {otpLoading
-                  ? <><span className="loading-spinner" /> Verifying…</>
-                  : "Verify & Create Account →"}
+                  ? <><span className="loading-spinner" /> {t("auth.verifying")}</>
+                  : t("auth.verifyCreate")}
               </button>
             </form>
 
             <div style={{ textAlign: "center", fontSize: "0.875rem", color: "var(--color-text-muted)" }}>
-              Didn't receive a code?{" "}
+              {t("auth.didNotReceive")}{" "}
               {resendCooldown > 0 ? (
-                <span>Resend in {resendCooldown}s</span>
+                <span>{t("auth.resendIn", { seconds: resendCooldown })}</span>
               ) : (
                 <button
                   type="button"
@@ -481,7 +490,7 @@ export default function RegisterPage() {
                     color: "var(--color-primary)", fontWeight: 600, fontSize: "inherit", padding: 0,
                   }}
                 >
-                  Resend code
+                  {t("auth.resendCode")}
                 </button>
               )}
             </div>
@@ -496,7 +505,7 @@ export default function RegisterPage() {
                   display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center', width: '100%'
                 }}
               >
-                <ArrowLeft size={14} /> Back
+                <ArrowLeft size={14} /> {t("auth.back")}
               </button>
             </div>
           </div>

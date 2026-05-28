@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import styles from "../auth.module.css";
 import { Hexagon, ArrowLeft, KeyRound } from "lucide-react";
+import PreferenceControls from "@/components/PreferenceControls";
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -94,13 +95,14 @@ export default function ResetPasswordPage() {
       <div className={styles.bgOrb1} />
       <div className={styles.bgOrb2} />
       <div className={styles.container}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
+        <div className={styles.authTopbar}>
           <Link href="/user/login" className="btn btn-ghost btn-sm" style={{ gap: '8px' }}>
             <ArrowLeft size={16} /> Back
           </Link>
           <Link href="/" className={styles.logo}>
             <Hexagon size={24} className={styles.logoIcon} /> DLEM
           </Link>
+          <PreferenceControls />
         </div>
         <div className={`card ${styles.card} ${styles.cardNarrow}`}>
           <div className={styles.cardHeader}>

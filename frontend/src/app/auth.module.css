@@ -21,7 +21,7 @@
 
 .container {
   width: 100%; max-width: 640px;
-  display: flex; flex-direction: column; gap: var(--space-xl);
+  display: flex; flex-direction: column; gap: var(--space-lg);
   position: relative; z-index: 1;
   padding-top: var(--space-xl);
 }
@@ -35,8 +35,58 @@
 }
 .logoIcon { font-size: 1.5rem; color: var(--color-primary); }
 
-.card {
-  animation: fadeInUp 0.5s ease;
+.authBackRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  margin-bottom: var(--space-sm);
+}
+
+.authBackButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.authBackButton:hover,
+.authBackButton:focus-visible {
+  border-color: var(--color-border-active);
+  background: var(--color-subtle-bg);
+  color: var(--color-text-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-glow);
+  outline: none;
+}
+
+.authLogoRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 480px;
+  align-self: center;
+}
+
+.authLogoRow .logo {
+  gap: 14px;
+  font-size: 1.65rem;
+  font-weight: 900;
+}
+
+.authLogoRow .logoIcon {
+  width: 36px;
+  height: 36px;
 }
 
 .cardNarrow { max-width: 480px; width: 100%; align-self: center; }
@@ -57,3 +107,47 @@
   margin-top: var(--space-md);
 }
 
+.card {
+  animation: fadeInUp 0.5s ease;
+}
+
+.authTopbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .page {
+    align-items: stretch;
+    padding: var(--space-lg) var(--space-md);
+    overflow-y: auto;
+  }
+
+  .container {
+    max-width: 100%;
+    gap: var(--space-md);
+    padding-top: 0;
+  }
+
+  .authTopbar {
+    flex-wrap: wrap;
+  }
+
+  .authLogoRow .logo {
+    font-size: 1.35rem;
+  }
+
+  .cardHeader {
+    margin-bottom: var(--space-lg);
+  }
+}
+
+@media (max-width: 380px) {
+  .authTopbar {
+    align-items: flex-start;
+    flex-direction: column-reverse;
+  }
+}

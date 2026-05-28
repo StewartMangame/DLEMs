@@ -41,8 +41,9 @@
 .tableWrap {
   background: var(--ap-surface); border: 1px solid var(--ap-border);
   border-radius: 14px; overflow: hidden; overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
-.table { width: 100%; border-collapse: collapse; }
+.table { width: 100%; min-width: 760px; border-collapse: collapse; }
 .table th {
   background: var(--ap-table-header);
   padding: 0.875rem 1rem; text-align: left;
@@ -262,7 +263,38 @@
 }
 
 @media (max-width: 640px) {
+  .pageHeader {
+    align-items: stretch;
+  }
+
+  .pageTitle {
+    font-size: 1.5rem;
+  }
+
+  .pageSub {
+    font-size: 0.95rem;
+  }
+
+  .addBtn,
+  .searchInput,
+  .select {
+    width: 100%;
+  }
+
+  .filters {
+    flex-direction: column;
+  }
+
   .formGrid, .checkboxGrid { grid-template-columns: 1fr; }
   .modal { border-radius: 12px; }
   .modalBody, .modalHeader, .modalFooter { padding: 1.25rem; }
+
+  .modalFooter {
+    flex-direction: column-reverse;
+  }
+
+  .cancelBtn,
+  .saveBtn {
+    width: 100%;
+  }
 }

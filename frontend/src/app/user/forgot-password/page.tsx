@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import styles from "../auth.module.css";
 import { Hexagon, ArrowLeft, Mail } from "lucide-react";
+import PreferenceControls from "@/components/PreferenceControls";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -39,13 +40,14 @@ export default function ForgotPasswordPage() {
       <div className={styles.bgOrb1} />
       <div className={styles.bgOrb2} />
       <div className={styles.container}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
+        <div className={styles.authTopbar}>
           <Link href="/user/login" className="btn btn-ghost btn-sm" style={{ gap: '8px' }}>
             <ArrowLeft size={16} /> Back
           </Link>
           <Link href="/" className={styles.logo}>
             <Hexagon size={24} className={styles.logoIcon} /> DLEM
           </Link>
+          <PreferenceControls />
         </div>
         <div className={`card ${styles.card} ${styles.cardNarrow}`}>
           <div className={styles.cardHeader}>

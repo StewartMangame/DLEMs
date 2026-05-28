@@ -1,28 +1,27 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
-/** Anonymised record of a single eligibility check run by a user */
-@Entity('eligibility_check_log')
+/** Anonymised aggregate record of one institution eligibility result. */
+@Entity('eligibility_checks')
 export class EligibilityCheckLog {
   @PrimaryGeneratedColumn()
   id: number;
 
-  /** Institution checked — not linked by FK to avoid cascade issues */
-  @Column()
+  @Column({ name: 'institution_id', type: 'text' })
+  institutionId: string;
+
+  @Column({ name: 'institution_name', type: 'text' })
   institutionName: string;
 
-  @Column({ nullable: true })
+  @Column({ name: 'institution_type', type: 'text' })
   institutionType: string;
 
-  /** Result: 'eligible' | 'borderline' | 'ineligible' */
-  @Column()
+  @Column({ type: 'text' })
   result: string;
 
-  @CreateDateColumn()
-  createdAt: Date;
+  @Column({
+    name: 'checked_at',
+    type: 'datetime',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  checkedAt: Date;
 }
