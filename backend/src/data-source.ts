@@ -30,7 +30,7 @@ export const dataSourceOptions: DataSourceOptions = isPostgres
   ? {
       type: 'postgres',
       url: databaseUrl,
-      ssl: isProduction ? { rejectUnauthorized: false } : false,
+      ssl: { rejectUnauthorized: false },
       synchronize: false, // Must be false in production, migrations will handle changes
       entities: [
         User,
@@ -54,7 +54,7 @@ export const dataSourceOptions: DataSourceOptions = isPostgres
       extra: {
         max: 10, // Serverless connection pooling limit
         idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 2000,
+        connectionTimeoutMillis: 10000,
       },
     }
   : {

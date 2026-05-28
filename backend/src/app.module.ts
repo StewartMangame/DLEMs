@@ -1,4 +1,6 @@
 import { Module, OnModuleInit } from '@nestjs/common';
+import * as fs from 'fs';
+import * as path from 'path';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -53,9 +55,15 @@ import { AppService } from './app.service';
         const databaseUrl = config.get<string>('POSTGRES_URL') || config.get<string>('DATABASE_URL');
 
         // Dynamically override url and synchronize based on runtime environment
+        const caPath = path.resolve(__dirname, '../ca.pem');
+        const sslOptions = {
+          rejectUnauthorized: false,
+          ca: fs.readFileSync(caPath).toString(),
+        };
         return {
           ...dataSourceOptions,
           ...(databaseUrl ? { url: databaseUrl } : {}),
+          ssl: sslOptions,
           synchronize: !isProduction && config.get<string>('TYPEORM_SYNC', 'true') === 'true',
         } as any;
       },
