@@ -1,121 +1,149 @@
+/**
+ * migrate-data.ts
+ * ---------------
+ * One-shot script that copies all data from a local SQLite database into a
+ * remote PostgreSQL database (Neon / Aiven / any standard Postgres).
+ *
+ * Usage:
+ *   npx ts-node src/migrate-data.ts
+ *
+ * Required env vars (in backend/.env):
+ *   POSTGRES_URL=postgres://user:pass@host:port/dbname
+ *   SQLITE_DB_PATH=loan_db_safe.sqlite   (default: loan_db.sqlite)
+ */
 import { DataSource } from 'typeorm';
-import { dataSourceOptions } from './data-source';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
-// Load both .env files
+// ── Load env files ────────────────────────────────────────────────────────────
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
-const VERCEL_POSTGRES_URL = process.env.POSTGRES_URL || process.env.DATABASE_URL;
-const SQLITE_DB_PATH = process.env.SQLITE_DB_PATH || 'loan_db_safe.sqlite';
+import { dataSourceOptions } from './data-source';
 
-if (!VERCEL_POSTGRES_URL || (!VERCEL_POSTGRES_URL.startsWith('postgres://') && !VERCEL_POSTGRES_URL.startsWith('postgresql://'))) {
-  console.error('❌ Error: POSTGRES_URL is not set or invalid in .env');
-  console.error('Please add your Vercel Postgres URL to backend/.env and run this script again.');
+// ── Validate ──────────────────────────────────────────────────────────────────
+const POSTGRES_URL = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+const SQLITE_PATH  = process.env.SQLITE_DB_PATH || 'loan_db_safe.sqlite';
+
+if (
+  !POSTGRES_URL ||
+  (!POSTGRES_URL.startsWith('postgres://') &&
+    !POSTGRES_URL.startsWith('postgresql://'))
+) {
+  console.error('❌  POSTGRES_URL is not set or is not a valid postgres:// URL.');
+  console.error('    Add it to backend/.env and try again.');
   process.exit(1);
 }
 
-// 1. Configure SQLite source (Read)
+// ── Two separate DataSources ──────────────────────────────────────────────────
 const sqliteSource = new DataSource({
   type: 'sqlite',
-  database: SQLITE_DB_PATH,
+  database: SQLITE_PATH,
   entities: dataSourceOptions.entities,
+  synchronize: false,
 });
 
-// 2. Configure Postgres source (Write)
 const postgresSource = new DataSource({
   type: 'postgres',
-  url: VERCEL_POSTGRES_URL,
-  ssl: { rejectUnauthorized: false }, // Neon requires SSL
+  url: POSTGRES_URL,
+  ssl: { rejectUnauthorized: false },
   entities: dataSourceOptions.entities,
-  synchronize: true, // Auto-create tables in Postgres for the migration
+  synchronize: true, // create tables if they don't exist yet
+  extra: { max: 3, connectionTimeoutMillis: 20000 },
 });
 
-async function migrateData() {
-  console.log('🔄 Starting Data Migration from SQLite to PostgreSQL...\n');
+// ── Entity order respects FK dependencies ────────────────────────────────────
+const ENTITY_ORDER = [
+  'AdminUser',
+  'User',
+  'Sacco',
+  'Institution',
+  'InstitutionCriteria',
+  'LoanProduct',
+  'FinancialProfile',
+  'Loan',
+  'LoanApplication',
+  'Reminder',
+  'Otp',
+  'Announcement',
+  'EligibilityCheckLog',
+  'AdminActivityLog',
+  'NotificationLog',
+  'ContentString',
+];
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function transformRecord(record: any, repo: any): any {
+  const out: any = { ...record };
+  for (const key of Object.keys(out)) {
+    const col = repo.metadata.findColumnWithPropertyName(key);
+    if (!col) continue;
+    const t = col.type;
+    // SQLite stores booleans as 0/1
+    if ((t === 'boolean' || t === Boolean) && (out[key] === 0 || out[key] === 1)) {
+      out[key] = out[key] === 1;
+    }
+    // SQLite stores dates as strings
+    if (
+      (t === 'timestamp' || t === 'datetime' || t === Date) &&
+      typeof out[key] === 'string' &&
+      out[key]
+    ) {
+      out[key] = new Date(out[key]);
+    }
+  }
+  return out;
+}
+
+async function migrateEntity(name: string): Promise<void> {
+  const sqliteRepo   = sqliteSource.getRepository(name);
+  const postgresRepo = postgresSource.getRepository(name);
+
+  const records = await sqliteRepo.find();
+  if (records.length === 0) {
+    console.log(`  ↳ ${name}: 0 records — skipping`);
+    return;
+  }
+
+  const transformed = records.map(r => transformRecord(r, sqliteRepo));
+
+  // Upsert in chunks of 50 to stay within payload limits
+  const CHUNK = 50;
+  for (let i = 0; i < transformed.length; i += CHUNK) {
+    await postgresRepo.save(transformed.slice(i, i + CHUNK));
+  }
+  console.log(`  ✅  ${name}: ${records.length} records migrated`);
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+async function main() {
+  console.log('\n🔄  Starting SQLite → PostgreSQL migration\n');
 
   try {
-    console.log('📦 Initializing SQLite connection...');
+    console.log(`📂  SQLite: ${SQLITE_PATH}`);
     await sqliteSource.initialize();
-    console.log('✅ SQLite connected.\n');
+    console.log('    connected ✓\n');
 
-    console.log('📦 Initializing PostgreSQL connection...');
+    console.log(`🐘  PostgreSQL: ${POSTGRES_URL!.replace(/:([^:@]+)@/, ':***@')}`);
     await postgresSource.initialize();
-    console.log('✅ PostgreSQL connected.\n');
+    console.log('    connected ✓\n');
 
-    const entitiesToMigrate = [
-      'AdminUser',
-      'User',
-      'Sacco',
-      'Institution',
-      'InstitutionCriteria',
-      'LoanProduct',
-      'FinancialProfile',
-      'Loan',
-      'Reminder',
-      'Otp',
-      'Announcement',
-      'EligibilityCheckLog',
-      'AdminActivityLog',
-      'NotificationLog',
-      'ContentString'
-    ];
-
-    for (const entityName of entitiesToMigrate) {
+    for (const name of ENTITY_ORDER) {
       try {
-        console.log(`\n▶ Migrating ${entityName}...`);
-        
-        const sqliteRepo = sqliteSource.getRepository(entityName);
-        const postgresRepo = postgresSource.getRepository(entityName);
-        
-        const allRecords = await sqliteRepo.find();
-        
-        if (allRecords.length === 0) {
-          console.log(`  └ 0 records found. Skipping.`);
-          continue;
-        }
-
-        console.log(`  └ Found ${allRecords.length} records. Inserting to Postgres...`);
-        
-        // Transform data (e.g., boolean 1/0 to true/false)
-        const transformedRecords = allRecords.map(record => {
-          const newRecord: any = { ...record };
-          
-          for (const key in newRecord) {
-            // SQLite booleans are stored as 1/0, convert them to true/false for Postgres
-            if (newRecord[key] === 1 || newRecord[key] === 0) {
-              const metaType = sqliteRepo.metadata.findColumnWithPropertyName(key)?.type;
-              if (metaType === 'boolean' || metaType === Boolean) {
-                newRecord[key] = newRecord[key] === 1;
-              }
-            }
-          }
-          return newRecord;
-        });
-
-        // Insert in batches to prevent payload limits
-        const chunkSize = 100;
-        for (let i = 0; i < transformedRecords.length; i += chunkSize) {
-          const chunk = transformedRecords.slice(i, i + chunkSize);
-          await postgresRepo.save(chunk);
-        }
-
-        console.log(`  └ ✅ Success: ${allRecords.length} records migrated.`);
-
+        await migrateEntity(name);
       } catch (err: any) {
-        console.error(`  └ ❌ Error migrating ${entityName}:`, err.message);
+        console.error(`  ❌  ${name}: ${err.message}`);
       }
     }
 
-    console.log('\n🎉 Data Migration Completed Successfully!');
-
-  } catch (error) {
-    console.error('\n❌ Migration Failed:', error);
+    console.log('\n🎉  Migration complete!\n');
+  } catch (err) {
+    console.error('\n💥  Migration failed:', err);
+    process.exit(1);
   } finally {
-    if (sqliteSource.isInitialized) await sqliteSource.destroy();
+    if (sqliteSource.isInitialized)   await sqliteSource.destroy();
     if (postgresSource.isInitialized) await postgresSource.destroy();
   }
 }
 
-migrateData();
+main();

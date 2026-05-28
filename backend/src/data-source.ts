@@ -22,77 +22,66 @@ import * as path from 'path';
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
-const isProduction = process.env.NODE_ENV === 'production';
 const databaseUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
-const isPostgres = !!databaseUrl && (databaseUrl.startsWith('postgres://') || databaseUrl.startsWith('postgresql://'));
+const isPostgres =
+  !!databaseUrl &&
+  (databaseUrl.startsWith('postgres://') ||
+    databaseUrl.startsWith('postgresql://'));
+
+const ALL_ENTITIES = [
+  User,
+  Institution,
+  InstitutionCriteria,
+  FinancialProfile,
+  Loan,
+  LoanApplication,
+  Reminder,
+  NotificationLog,
+  AdminUser,
+  AdminActivityLog,
+  Sacco,
+  LoanProduct,
+  ContentString,
+  Announcement,
+  EligibilityCheckLog,
+  Otp,
+];
 
 export const dataSourceOptions: DataSourceOptions = isPostgres
   ? {
       type: 'postgres',
       url: databaseUrl,
+      // Neon requires SSL. rejectUnauthorized:false accepts Neon's CA without
+      // needing to bundle a ca.pem file.
       ssl: { rejectUnauthorized: false },
-      synchronize: false, // Must be false in production, migrations will handle changes
-      entities: [
-        User,
-        Institution,
-        InstitutionCriteria,
-        FinancialProfile,
-        Loan,
-        LoanApplication,
-        Reminder,
-        NotificationLog,
-        AdminUser,
-        AdminActivityLog,
-        Sacco,
-        LoanProduct,
-        ContentString,
-        Announcement,
-        EligibilityCheckLog,
-        Otp,
-      ],
+      synchronize: false, // controlled by app.module at runtime
+      entities: ALL_ENTITIES,
       migrations: [path.join(__dirname, 'migrations/*.{ts,js}')],
       extra: {
-        max: 10, // Serverless connection pooling limit
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 10000,
+        // Keep pool small — Neon free tier allows ~5 simultaneous connections.
+        max: 3,
+        idleTimeoutMillis: 10000,
+        connectionTimeoutMillis: 15000,
       },
     }
   : {
+      // ── Local SQLite fallback (no POSTGRES_URL set) ──────────────────────
       type: 'sqlite',
       database: process.env.SQLITE_DB_PATH || 'loan_db.sqlite',
       synchronize: process.env.TYPEORM_SYNC === 'true',
-      entities: [
-        User,
-        Institution,
-        InstitutionCriteria,
-        FinancialProfile,
-        Loan,
-        LoanApplication,
-        Reminder,
-        NotificationLog,
-        AdminUser,
-        AdminActivityLog,
-        Sacco,
-        LoanProduct,
-        ContentString,
-        Announcement,
-        EligibilityCheckLog,
-        Otp,
-      ],
+      entities: ALL_ENTITIES,
       migrations: [path.join(__dirname, 'migrations/*.{ts,js}')],
     };
 
-// Singleton instance for serverless environments
-let connection: DataSource | null = null;
+// ── Singleton for serverless (reuse across warm invocations) ─────────────────
+let _connection: DataSource | null = null;
 
 export const getDataSource = async (): Promise<DataSource> => {
-  if (!connection) {
-    connection = new DataSource(dataSourceOptions);
-    await connection.initialize();
-  } else if (!connection.isInitialized) {
-    await connection.initialize();
-  }
-  return connection;
+  if (_connection && _connection.isInitialized) return _connection;
+  _connection = new DataSource(dataSourceOptions);
+  await _connection.initialize();
+  return _connection;
 };
 
+// Named export used by TypeORM CLI for migrations
 export const AppDataSource = new DataSource(dataSourceOptions);
