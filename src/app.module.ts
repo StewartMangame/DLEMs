@@ -31,8 +31,9 @@ import { AuthService } from './auth/auth.service';
       isGlobal: true,
     }),
     TypeOrmModule.forRoot({
-      type: 'sqlite',
-      database: 'loan_db.sqlite',
+      type: 'postgres',
+      url: process.env.POSTGRES_URL || process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
       entities: [
         User, Institution, InstitutionCriteria, FinancialProfile,
         Loan, LoanApplication, Reminder, NotificationLog
@@ -50,7 +51,7 @@ export class AppModule implements OnModuleInit {
   constructor(
     private readonly instService: InstitutionsService,
     private readonly authService: AuthService,
-  ) {}
+  ) { }
 
   async onModuleInit() {
     await this.instService.seedDefaultInstitutions();
