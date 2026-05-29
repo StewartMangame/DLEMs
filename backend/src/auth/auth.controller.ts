@@ -49,8 +49,22 @@ export class AuthController {
   }
 
   @Post('register')
-  async register(@Body() body: RegisterDto) {
-    return this.authService.register(body);
+  async register(
+    @Body() body: RegisterDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.register(body);
+
+    if (result.access_token) {
+      res.cookie('jwt', result.access_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 3600 * 1000 * 24,
+      });
+    }
+
+    return result;
   }
 
   @Post('verify-otp')

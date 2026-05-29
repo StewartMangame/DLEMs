@@ -103,11 +103,16 @@ export default function RegisterPage() {
         return;
       }
 
-      setDevOtp(data.devOtp || "");
-      setOtp(["", "", "", "", "", ""]);
-      setOtpError("");
-      setStep("otp");
-      startResendCooldown();
+      if (data.requiresOtp) {
+        setDevOtp(data.devOtp || "");
+        setOtp(["", "", "", "", "", ""]);
+        setOtpError("");
+        setStep("otp");
+        startResendCooldown();
+        return;
+      }
+
+      router.push("/user/dashboard");
     } catch {
       setError(t("auth.registrationNetworkError"));
     } finally {
