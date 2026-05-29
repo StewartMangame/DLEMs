@@ -147,7 +147,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         <div className={styles.sidebarBottom}>
           <div className={styles.divider} />
           <Link href="/" className="btn btn-ghost btn-sm" style={{ width: "100%", marginBottom: 12, display: "flex", alignItems: "center", gap: "8px" }}>
-            <ArrowLeft size={16} /> Back
+            <ArrowLeft size={16} /> {t("nav.back")}
           </Link>
           <button onClick={handleLogout} className={styles.logoutBtn} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <LogOut size={18} /> {t("nav.logout")}
@@ -174,10 +174,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               <button
                 onClick={toggleNotifications}
                 className={styles.notificationBtn}
-                aria-label="Notifications"
+                aria-label={t("common.notifications")}
                 aria-expanded={notificationsOpen}
                 aria-haspopup="menu"
-                title="Notifications"
+                title={t("common.notifications")}
               >
                 <Bell size={24} strokeWidth={2.4} />
                 {unreadCount > 0 && (
@@ -193,7 +193,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                 hidden={!notificationsOpen}
               >
                 <div className={styles.notificationsHeader}>
-                  <span>Notifications</span>
+                  <span>{t("common.notifications")}</span>
                   {unreadCount > 0 && (
                     <span className={styles.notificationsCount}>
                       {unreadCount}
@@ -202,7 +202,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                 </div>
                 {announcements.length === 0 ? (
                   <p className={styles.notificationsEmpty}>
-                    {t("home.noAnnouncements") || "No announcements"}
+                    {t("home.noAnnouncements", { default: "No announcements" })}
                   </p>
                 ) : (
                   <>
@@ -215,7 +215,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                     ))}
                     <div className={styles.notificationsFooter}>
                       <Link href="/user/dashboard/announcements" className="btn btn-ghost btn-sm">
-                        {t("home.viewAllAnnouncements") || "View all announcements"}
+                        {t("home.viewAllAnnouncements", { default: "View all announcements" })}
                       </Link>
                     </div>
                   </>
@@ -231,7 +231,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               <div
                 style={{ padding: 40, color: "var(--color-text-muted)" }}
               >
-                Loading content...
+                {t("common.loadingContent")}
               </div>
             }
           >

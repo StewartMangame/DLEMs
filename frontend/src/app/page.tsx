@@ -1,8 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import styles from "./page.module.css";
 import PreferenceControls from "@/components/PreferenceControls";
 import MobileNavMenu from "@/components/MobileNavMenu";
+import { useLanguage } from "@/lib/LanguageContext";
 import { 
   Hexagon, 
   Zap, 
@@ -16,6 +19,8 @@ import {
 } from "lucide-react";
 
 export default function LandingPage() {
+  const { t } = useLanguage();
+
   return (
     <div className={styles.wrapper}>
       {/* ── Navigation ── */}
@@ -26,9 +31,9 @@ export default function LandingPage() {
             <span>DLEM</span>
           </div>
           <div className={styles.navLinks}>
-            <a href="#features">Features</a>
-            <a href="#how">How It Works</a>
-            <a href="#banks">Partners</a>
+            <a href="#features">{t("landing.nav.features")}</a>
+            <a href="#how">{t("landing.nav.how")}</a>
+            <a href="#banks">{t("landing.nav.partners")}</a>
           </div>
           <div className={styles.navCta}>
             <PreferenceControls />
@@ -46,18 +51,18 @@ export default function LandingPage() {
         </div>
         <div className={`container ${styles.heroContent}`}>
           <h1 className={`text-display ${styles.heroTitle} animate-fadeInUp animate-delay-1`}>
-            Smart Loans,<br />
-            <span className="text-gradient">Trusted Advisor.</span>
+            {t("landing.hero.title")}<br />
+            <span className="text-gradient">{t("landing.hero.highlight")}</span>
           </h1>
           <p className={`text-body ${styles.heroSub} animate-fadeInUp animate-delay-2`}>
-            Loan eligibility check | Track repayment | lender comparison
+            {t("landing.hero.subtitle")}
           </p>
           <div className={`${styles.heroActions} animate-fadeInUp animate-delay-3`}>
             <Link href="/user/register" className="btn btn-primary btn-lg">
-              Get Started <ArrowRight size={20} style={{ marginLeft: 8 }} />
+              {t("landing.hero.getStarted")} <ArrowRight size={20} style={{ marginLeft: 8 }} />
             </Link>
             <Link href="/user/login" className="btn btn-outline btn-lg">
-              Sign In
+              {t("landing.hero.signIn")}
             </Link>
           </div>
 
@@ -77,18 +82,18 @@ export default function LandingPage() {
 
           <div className={`${styles.heroStats} animate-fadeInUp animate-delay-5`}>
             <div className={styles.heroStat}>
-              <span className={styles.heroStatValue}>Multi-Institution</span>
-              <span className={styles.heroStatLabel}>Supported</span>
+              <span className={styles.heroStatValue}>{t("landing.stats.institutions")}</span>
+              <span className={styles.heroStatLabel}>{t("landing.stats.supported")}</span>
             </div>
             <div className={styles.heroStatDivider} />
             <div className={styles.heroStat}>
-              <span className={styles.heroStatValue}>&lt; 5 min</span>
-              <span className={styles.heroStatLabel}>Eligibility Check</span>
+              <span className={styles.heroStatValue}>{t("landing.stats.time")}</span>
+              <span className={styles.heroStatLabel}>{t("landing.stats.eligibility")}</span>
             </div>
             <div className={styles.heroStatDivider} />
             <div className={styles.heroStat}>
-              <span className={styles.heroStatValue}>100%</span>
-              <span className={styles.heroStatLabel}>Digital Process</span>
+              <span className={styles.heroStatValue}>{t("landing.stats.digital")}</span>
+              <span className={styles.heroStatLabel}>{t("landing.stats.process")}</span>
             </div>
           </div>
         </div>
@@ -98,20 +103,20 @@ export default function LandingPage() {
       <section id="features" className={styles.section}>
         <div className="container">
           <div className={styles.sectionHeader}>
-            <h2 className="text-h2">Everything You Need, Digitally</h2>
+            <h2 className="text-h2">{t("landing.features.title")}</h2>
             <p className="text-body" style={{ color: "var(--color-text-secondary)" }}>
-              No queues. No paperwork. No branch visits required.
+              {t("landing.features.subtitle")}
             </p>
           </div>
           <div className={`grid-3 ${styles.featuresGrid}`}>
-            {FEATURES.filter((f) => !HIDDEN_FEATURES.has(f.title)).map((f, i) => (
+            {FEATURES.filter((f) => !HIDDEN_FEATURES.has(f.titleKey)).map((f, i) => (
               <div key={i} className={`card card-hover ${styles.featureCard}`}
                 style={{ animationDelay: `${i * 0.1}s` }}>
                 <div className={styles.featureIcon}>
                   <f.icon size={32} color="var(--color-primary)" />
                 </div>
-                <h3 className="text-h3">{f.title}</h3>
-                <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>{f.desc}</p>
+                <h3 className="text-h3">{t(f.titleKey)}</h3>
+                <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>{t(f.descKey)}</p>
               </div>
             ))}
           </div>
@@ -122,7 +127,7 @@ export default function LandingPage() {
       <section id="how" className={styles.section} style={{ background: "rgba(255,255,255,0.015)" }}>
         <div className="container">
           <div className={styles.sectionHeader}>
-            <h2 className="text-h2">How It Works</h2>
+            <h2 className="text-h2">{t("landing.how.title")}</h2>
             <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
               
             </p>
@@ -131,8 +136,8 @@ export default function LandingPage() {
             {STEPS.map((s, i) => (
               <div key={i} className={styles.step}>
                 <div className={styles.stepNumber}>{i + 1}</div>
-                <h3 className="text-h3">{s.title}</h3>
-                <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>{s.desc}</p>
+                <h3 className="text-h3">{t(s.titleKey)}</h3>
+                <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>{t(s.descKey)}</p>
               </div>
             ))}
           </div>
@@ -143,7 +148,7 @@ export default function LandingPage() {
       <section id="banks" className={styles.section}>
         <div className="container">
           <div className={styles.sectionHeader}>
-            <h2 className="text-h2">Our Institution Partners</h2>
+            <h2 className="text-h2">{t("landing.partners.title")}</h2>
             <p className="text-body" style={{ color: "var(--color-text-secondary)" }}>
               
             </p>
@@ -162,7 +167,7 @@ export default function LandingPage() {
                 </div>
                 <div>
                   <div className="text-h3">{b.name}</div>
-                  <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>{b.tagline}</div>
+                  <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>{t(b.taglineKey)}</div>
                 </div>
               </div>
             ))}
@@ -174,12 +179,12 @@ export default function LandingPage() {
       <section className={styles.ctaBanner}>
         <div className="container">
           <div className={styles.ctaContent}>
-            <h2 className="text-h2">Ready to Apply?</h2>
+            <h2 className="text-h2">{t("landing.cta.title")}</h2>
             <p style={{ color: "var(--color-text-secondary)" }}>
-              Join thousands of Malawians easing their banking experience digitally.
+              {t("landing.cta.subtitle")}
             </p>
             <Link href="/user/register" className="btn btn-primary btn-lg">
-              Create Free Account <ArrowRight size={20} style={{ marginLeft: 8 }} />
+              {t("landing.cta.button")} <ArrowRight size={20} style={{ marginLeft: 8 }} />
             </Link>
           </div>
         </div>
@@ -195,7 +200,7 @@ export default function LandingPage() {
             </div>
             <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
               © 2026 Smart Loans, Trusted Advisor | Malawi
-              Your trusted partner in financial inclusion
+              {" "}{t("landing.footer")}
             </p>
             
           </div>
@@ -206,29 +211,29 @@ export default function LandingPage() {
 }
 
 const FEATURES = [
-  { icon: Zap, title: "Instant Eligibility Check", desc: "Get an automated risk score and eligibility verdict in under 2 minutes based on your financial profile." },
-  { icon: Globe, title: "Apply From Anywhere", desc: "Submit your personal loan application from your phone or computer — no branch visit required." },
-  { icon: Calculator, title: "Loan Repayment Simulator", desc: "Calculate your monthly installments, total cost, and full amortization schedule before you commit." },
-  { icon: Clock, title: "Real-Time Status Tracking", desc: "Track your application status from submission through credit officer review to final decision." },
-  { icon: LayoutDashboard, title: "Active Loan Dashboard", desc: "Monitor outstanding balance, paid months, and upcoming payments from your personal dashboard." },
-  { icon: ShieldCheck, title: "Secure & Private", desc: "Your financial data is encrypted and protected. Only you and your bank officer can access your profile." },
+  { icon: Zap, titleKey: "landing.feature.instantTitle", descKey: "landing.feature.instantDesc" },
+  { icon: Globe, titleKey: "landing.feature.applyTitle", descKey: "landing.feature.applyDesc" },
+  { icon: Calculator, titleKey: "landing.feature.simulatorTitle", descKey: "landing.feature.simulatorDesc" },
+  { icon: Clock, titleKey: "landing.feature.statusTitle", descKey: "landing.feature.statusDesc" },
+  { icon: LayoutDashboard, titleKey: "landing.feature.dashboardTitle", descKey: "landing.feature.dashboardDesc" },
+  { icon: ShieldCheck, titleKey: "landing.feature.secureTitle", descKey: "landing.feature.secureDesc" },
 ];
 
 const HIDDEN_FEATURES = new Set([
-  "Apply From Anywhere",
-  "Loan Repayment Simulator",
-  "Real-Time Status Tracking",
+  "landing.feature.applyTitle",
+  "landing.feature.simulatorTitle",
+  "landing.feature.statusTitle",
 ]);
 
 const STEPS = [
-  { title: "Create Account", desc: "Register with your National ID, phone number, and select your bank in under 2 minutes." },
-  { title: "Set Financial Profile", desc: "Enter your employment details, monthly salary, housing, and existing loan obligations." },
-  { title: "Check Eligibility", desc: "Our engine runs automated risk scoring using real banking criteria and gives you instant feedback." },
-  { title: "Loan Tracking", desc: "Monitor your active loan balance, repayment progress, paid months, and upcoming payment schedule from your dashboard." },
+  { titleKey: "landing.step.accountTitle", descKey: "landing.step.accountDesc" },
+  { titleKey: "landing.step.profileTitle", descKey: "landing.step.profileDesc" },
+  { titleKey: "landing.step.checkTitle", descKey: "landing.step.checkDesc" },
+  { titleKey: "landing.step.trackTitle", descKey: "landing.step.trackDesc" },
 ];
 
 const BANKS = [
-  { logo: "/logos/fdh.png", name: "FDH Bank", tagline: "Personal & salary loans · civil servants & private sector" },
-  { logo: "/logos/sacco.png", name: "Malawi Police SACCO", tagline: "Member loans · competitive rates · Malawi Police SACCO" },
-  { logo: "/logos/finca.png", name: "FINCA Malawi", tagline: "Group / Village Bank loans · business owners" },
+  { logo: "/logos/fdh.png", name: "FDH Bank", taglineKey: "landing.partner.fdh" },
+  { logo: "/logos/sacco.png", name: "Malawi Police SACCO", taglineKey: "landing.partner.sacco" },
+  { logo: "/logos/finca.png", name: "FINCA Malawi", taglineKey: "landing.partner.finca" },
 ];

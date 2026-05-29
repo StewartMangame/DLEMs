@@ -31,7 +31,7 @@ export default function AnnouncementsPage() {
   if (loading) {
     return (
       <div style={{ padding: 40, color: "var(--color-text-muted)" }}>
-        Loading announcements…
+        {t("home.loadingAnnouncements")}
       </div>
     );
   }
@@ -42,16 +42,16 @@ export default function AnnouncementsPage() {
         <Link href="/user/dashboard" className="btn btn-ghost btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <ArrowLeft size={16} /> {t("nav.back")}
         </Link>
-        <h1 className="text-h2">{t("home.announcements") || "Announcements"}</h1>
+        <h1 className="text-h2">{t("home.announcements")}</h1>
       </div>
 
       {announcements.length === 0 ? (
         <div style={{ padding: 40, textAlign: 'center', color: "var(--color-text-muted)" }}>
-          <p>{t('home.noAnnouncements') || 'No announcements available'}</p>
+          <p>{t("home.noAnnouncements")}</p>
         </div>
       ) : (
         <div className={styles.actionsSection}>
-          <h2 className="text-h3">{t('home.recentAnnouncements') || 'Recent Announcements'}</h2>
+          <h2 className="text-h3">{t("home.recentAnnouncements")}</h2>
           <div className={styles.actions}>
             {announcements.map((announcement) => (
               <Link key={announcement.id} href="#" className={`card card-hover ${styles.actionCard}`} style={{ display: 'block', width: '100%' }}>

@@ -4,6 +4,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { NAV_SUPER, NAV_CONTENT, Hexagon, Menu, LogOut } from "./icons";
 import PreferenceControls from "@/components/PreferenceControls";
+import { useLanguage } from "@/lib/LanguageContext";
 import styles from "./layout.module.css";
 
 export default function AdminPanelLayout({ children }: { children: React.ReactNode }) {
@@ -12,6 +13,7 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
   const [admin, setAdmin] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { t } = useLanguage();
   const sidebarRef = useRef<HTMLElement | null>(null);
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
 
@@ -51,7 +53,7 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
   if (loading) return (
     <div className={styles.loadScreen}>
       <div className={styles.loadSpinner} />
-      <div>Verifying admin session…</div>
+      <div>{t("admin.verifying")}</div>
     </div>
   );
   if (!admin) return null;
@@ -64,9 +66,9 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
         <div className={styles.sidebarHeader}>
           <Hexagon className={styles.logoIcon} size={28} aria-hidden />
           <div>
-            <div className={styles.logoText}>DLEM Admin</div>
+            <div className={styles.logoText}>{t("admin.title")}</div>
             <div className={styles.logoRole}>
-              {admin.role === "super_admin" ? "Super Administrator" : "Content Administrator"}
+              {admin.role === "super_admin" ? t("admin.superAdministrator") : t("admin.contentAdministrator")}
             </div>
           </div>
         </div>
@@ -82,7 +84,7 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
                 onClick={() => setSidebarOpen(false)}
               >
                 <NavIcon className={styles.navIcon} size={18} aria-hidden />
-                <span>{item.label}</span>
+                <span>{t(item.labelKey, { default: item.label })}</span>
               </Link>
             );
           })}
@@ -94,13 +96,13 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
             <div>
               <div className={styles.adminEmail}>{admin.email}</div>
               <div className={styles.adminRolePill}>
-                {admin.role === "super_admin" ? "Super Admin" : "Content Admin"}
+                {admin.role === "super_admin" ? t("admin.superAdmin") : t("admin.contentAdmin")}
               </div>
             </div>
           </div>
           <button type="button" onClick={logout} className={styles.logoutBtn}>
             <LogOut size={16} aria-hidden />
-            Sign out
+            {t("nav.logout")}
           </button>
         </div>
       </aside>
@@ -118,7 +120,7 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
             >
               <Menu size={22} aria-hidden />
             </button>
-            <span className={styles.topBarTitle}>DLEM Admin</span>
+            <span className={styles.topBarTitle}>{t("admin.title")}</span>
             <div className={styles.topBarActions}>
               <PreferenceControls />
             </div>
