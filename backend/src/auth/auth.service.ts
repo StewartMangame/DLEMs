@@ -212,21 +212,19 @@ export class AuthService implements OnModuleInit {
           }
         }
 
-        // User exists but is unverified. Update details and send a fresh OTP.
+        // User exists but is unverified. Update details and activate it.
         existing.fullName = registerDto.fullName;
         existing.nationalId = registerDto.nationalId;
         existing.employeeNumber = registerDto.employeeNumber;
         existing.phone = registerDto.phone;
         existing.passwordHash = await bcrypt.hash(registerDto.password, 10);
-        existing.isEmailVerified = false;
+        existing.isEmailVerified = true;
         await this.userRepository.save(existing);
 
-        const otpCode = await this.generateAndSendOtp(email);
         return {
-          message:
-            'Account details updated successfully. Please verify the OTP sent to your email.',
-          requiresOtp: true,
-          devOtp: this.isDevOtpEnabled() ? otpCode : undefined,
+          message: 'Account details updated successfully.',
+          requiresOtp: false,
+          ...this.createAuthResponse(existing),
         };
       }
 
@@ -249,14 +247,13 @@ export class AuthService implements OnModuleInit {
     user.phone = registerDto.phone;
     user.bank = registerDto.bank || null;
     user.role = 'customer';
-    user.isEmailVerified = false;
-    await this.userRepository.save(user);
+    user.isEmailVerified = true;
+    const savedUser = await this.userRepository.save(user);
 
-    const otpCode = await this.generateAndSendOtp(email);
     return {
-      message: 'Account created successfully. Please verify the OTP sent to your email.',
-      requiresOtp: true,
-      devOtp: this.isDevOtpEnabled() ? otpCode : undefined,
+      message: 'Account created successfully.',
+      requiresOtp: false,
+      ...this.createAuthResponse(savedUser),
     };
   }
 
