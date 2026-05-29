@@ -5,8 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import styles from "../auth.module.css";
 import { Hexagon, ArrowLeft, KeyRound } from "lucide-react";
 import PreferenceControls from "@/components/PreferenceControls";
+import { useLanguage } from "@/lib/LanguageContext";
 
 function ResetPasswordForm() {
+  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
@@ -23,12 +25,12 @@ function ResetPasswordForm() {
     setMessage("");
 
     if (!token) {
-      setError("Invalid or missing reset token.");
+      setError(t("reset.invalidToken"));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+      setError(t("auth.passwordMismatch"));
       return;
     }
 
@@ -41,15 +43,15 @@ function ResetPasswordForm() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.message || data.error || "Failed to reset password.");
+        setError(data.message || data.error || t("reset.failed"));
         return;
       }
-      setMessage("Password has been reset successfully. Redirecting to login...");
+      setMessage(t("reset.success"));
       setTimeout(() => {
         router.push("/user/login");
       }, 2000);
     } catch {
-      setError("Network error. Please try again.");
+      setError(t("auth.networkError"));
     } finally {
       setLoading(false);
     }
@@ -58,7 +60,7 @@ function ResetPasswordForm() {
   if (!token) {
     return (
       <div className="alert alert-danger">
-        Invalid or missing reset token. Please request a new password reset link.
+        {t("reset.invalidTokenHelp")}
       </div>
     );
   }
@@ -71,17 +73,17 @@ function ResetPasswordForm() {
       {!message && (
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className="form-group">
-            <label className="form-label" htmlFor="password">New Password</label>
+            <label className="form-label" htmlFor="password">{t("reset.newPassword")}</label>
             <input id="password" name="password" type="password" required className="form-input"
-              placeholder="Enter new password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              placeholder={t("reset.newPasswordPlaceholder")} value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
           <div className="form-group">
-            <label className="form-label" htmlFor="confirmPassword">Confirm Password</label>
+            <label className="form-label" htmlFor="confirmPassword">{t("auth.confirmPassword")}</label>
             <input id="confirmPassword" name="confirmPassword" type="password" required className="form-input"
-              placeholder="Confirm new password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+              placeholder={t("reset.confirmPlaceholder")} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
           </div>
           <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: "100%", marginTop: 4 }}>
-            {loading ? <><span className="loading-spinner" /> Resetting…</> : <><KeyRound size={20} style={{ marginRight: 8 }} /> Reset Password</>}
+            {loading ? <><span className="loading-spinner" /> {t("reset.resetting")}</> : <><KeyRound size={20} style={{ marginRight: 8 }} /> {t("reset.submit")}</>}
           </button>
         </form>
       )}
@@ -90,6 +92,8 @@ function ResetPasswordForm() {
 }
 
 export default function ResetPasswordPage() {
+  const { t } = useLanguage();
+
   return (
     <div className={styles.page}>
       <div className={styles.bgOrb1} />
@@ -97,7 +101,7 @@ export default function ResetPasswordPage() {
       <div className={styles.container}>
         <div className={styles.authTopbar}>
           <Link href="/user/login" className="btn btn-ghost btn-sm" style={{ gap: '8px' }}>
-            <ArrowLeft size={16} /> Back
+            <ArrowLeft size={16} /> {t("auth.back")}
           </Link>
           <Link href="/" className={styles.logo}>
             <Hexagon size={24} className={styles.logoIcon} /> DLEM
@@ -106,16 +110,16 @@ export default function ResetPasswordPage() {
         </div>
         <div className={`card ${styles.card} ${styles.cardNarrow}`}>
           <div className={styles.cardHeader}>
-            <h1 className="text-h2">Set New Password</h1>
+            <h1 className="text-h2">{t("reset.title")}</h1>
             <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-              Please enter your new password below.
+              {t("reset.subtitle")}
             </p>
           </div>
-          <Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<div>{t("common.loading")}</div>}>
             <ResetPasswordForm />
           </Suspense>
           <p className={styles.switchLink}>
-            <Link href="/user/login">Back</Link>
+            <Link href="/user/login">{t("auth.back")}</Link>
           </p>
         </div>
       </div>

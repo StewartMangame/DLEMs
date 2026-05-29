@@ -3,8 +3,10 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
+import { useLanguage } from '@/lib/LanguageContext';
 
 export default function LoanSchedulePage() {
+  const { t } = useLanguage();
   const params = useParams();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -15,7 +17,7 @@ export default function LoanSchedulePage() {
     if (!params.id) return;
     fetch(`/api/loans/schedule/${params.id}`)
       .then((r) => {
-        if (!r.ok) throw new Error('Failed to load schedule');
+        if (!r.ok) throw new Error(t("schedule.failed"));
         return r.json();
       })
       .then((d) => {
@@ -29,24 +31,24 @@ export default function LoanSchedulePage() {
   }, [params.id]);
 
   const markNextMonthPaid = async (month: number) => {
-    if (!confirm(`Mark month ${month} as paid?`)) return;
+    if (!confirm(t("schedule.markConfirm", { month }))) return;
     setMarkingMonth(month);
     try {
       const res = await fetch(`/api/loans/repay/${params.id}`, { method: "POST" });
       if (!res.ok) {
         const body = await res.json();
-        throw new Error(body.error || "Could not mark month as paid");
+        throw new Error(body.error || t("schedule.markFailed"));
       }
       const updated = await fetch(`/api/loans/schedule/${params.id}`).then(r => r.json());
       setData(updated);
     } catch (err: any) {
-      alert(err.message || "Network error. Please try again.");
+      alert(err.message || t("auth.networkError"));
     } finally {
       setMarkingMonth(null);
     }
   };
 
-  if (loading) return <div style={{ padding: 40 }}>Loading schedule...</div>;
+  if (loading) return <div style={{ padding: 40 }}>{t("schedule.loading")}</div>;
   if (error)
     return (
       <div className="alert alert-danger" style={{ margin: 40 }}>
@@ -54,7 +56,7 @@ export default function LoanSchedulePage() {
       </div>
     );
   if (!data || !data.loan)
-    return <div style={{ padding: 40 }}>Loan not found</div>;
+    return <div style={{ padding: 40 }}>{t("schedule.notFound")}</div>;
 
   const { loan, schedule } = data;
 
@@ -68,26 +70,26 @@ export default function LoanSchedulePage() {
     >
       <div>
         <Link href="/user/dashboard/loans" className="btn btn-ghost btn-sm" style={{ marginBottom: "var(--space-sm)" }}>
-          <ArrowLeft size={16} /> Back
+          <ArrowLeft size={16} /> {t("common.back")}
         </Link>
-        <h1 className="text-h2">Amortization Schedule</h1>
+        <h1 className="text-h2">{t("schedule.title")}</h1>
         <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-          {loan.application?.purpose || loan.loanPurpose || 'Manual Loan'} ·{' '}
-          {loan.providerInstitution?.name || loan.providerName || 'Institution'}
+          {loan.application?.purpose || loan.loanPurpose || t("schedule.manualLoan")} ·{' '}
+          {loan.providerInstitution?.name || loan.providerName || t("schedule.institution")}
         </p>
       </div>
 
       <div className="grid-4" style={{ gap: 'var(--space-md)' }}>
         <div className="card">
-          <div className="text-xs text-muted">Principal Amount</div>
+          <div className="text-xs text-muted">{t("schedule.principal")}</div>
           <div className="text-h3">MK {loan.loanAmount.toLocaleString()}</div>
         </div>
         <div className="card">
-          <div className="text-xs text-muted">Interest Rate</div>
+          <div className="text-xs text-muted">{t("schedule.interestRate")}</div>
           <div className="text-h3">{loan.interestRate}% p.a.</div>
         </div>
         <div className="card">
-          <div className="text-xs text-muted">Monthly EMI</div>
+          <div className="text-xs text-muted">{t("schedule.monthlyEmi")}</div>
           <div className="text-h3 text-primary">
             MK{' '}
             {loan.monthlyDeduction.toLocaleString(undefined, {
@@ -96,7 +98,7 @@ export default function LoanSchedulePage() {
           </div>
         </div>
         <div className="card">
-          <div className="text-xs text-muted">Remaining Balance</div>
+          <div className="text-xs text-muted">{t("schedule.remainingBalance")}</div>
           <div className="text-h3 text-warning">
             MK{' '}
             {loan.remainingBalance.toLocaleString(undefined, {
@@ -116,13 +118,13 @@ export default function LoanSchedulePage() {
         >
           <thead>
             <tr style={{ borderBottom: "1px solid var(--color-border)", color: "var(--color-text-muted)", fontSize: "0.85rem" }}>
-              <th style={{ padding: "12px 8px" }}>Month</th>
-              <th style={{ padding: "12px 8px" }}>Status</th>
-              <th style={{ padding: "12px 8px" }}>EMI (MK)</th>
-              <th style={{ padding: "12px 8px" }}>Principal (MK)</th>
-              <th style={{ padding: "12px 8px" }}>Interest (MK)</th>
-              <th style={{ padding: "12px 8px" }}>Balance (MK)</th>
-              <th style={{ padding: "12px 8px" }}>Action</th>
+              <th style={{ padding: "12px 8px" }}>{t("schedule.month")}</th>
+              <th style={{ padding: "12px 8px" }}>{t("schedule.status")}</th>
+              <th style={{ padding: "12px 8px" }}>{t("schedule.emi")}</th>
+              <th style={{ padding: "12px 8px" }}>{t("schedule.principalMk")}</th>
+              <th style={{ padding: "12px 8px" }}>{t("schedule.interestMk")}</th>
+              <th style={{ padding: "12px 8px" }}>{t("schedule.balanceMk")}</th>
+              <th style={{ padding: "12px 8px" }}>{t("schedule.action")}</th>
             </tr>
           </thead>
           <tbody>
@@ -142,9 +144,9 @@ export default function LoanSchedulePage() {
                 </td>
                 <td style={{ padding: '12px 8px' }}>
                   {row.isPaid ? (
-                    <span className="badge badge-success text-xs">Paid</span>
+                    <span className="badge badge-success text-xs">{t("schedule.paid")}</span>
                   ) : (
-                    <span className="badge badge-neutral text-xs">Pending</span>
+                    <span className="badge badge-neutral text-xs">{t("schedule.pending")}</span>
                   )}
                 </td>
                 <td style={{ padding: '12px 8px' }}>
@@ -165,17 +167,17 @@ export default function LoanSchedulePage() {
                 </td>
                 <td style={{ padding: "12px 8px" }}>
                   {row.isPaid ? (
-                    <span className="text-xs text-muted">Recorded</span>
+                    <span className="text-xs text-muted">{t("schedule.recorded")}</span>
                   ) : row.month === loan.paidMonths + 1 && loan.isActive ? (
                     <button
                       className="btn btn-primary btn-sm"
                       onClick={() => markNextMonthPaid(row.month)}
                       disabled={markingMonth === row.month}
                     >
-                      {markingMonth === row.month ? "Saving..." : "Mark Month Paid"}
+                      {markingMonth === row.month ? t("schedule.saving") : t("schedule.markPaid")}
                     </button>
                   ) : (
-                    <span className="text-xs text-muted">Pending</span>
+                    <span className="text-xs text-muted">{t("schedule.pending")}</span>
                   )}
                 </td>
               </tr>

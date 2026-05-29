@@ -33,7 +33,7 @@ export default function DashboardPage() {
       .catch(() => setLoading(false));
   }, [router]);
 
-  if (loading) return <div style={{ padding: 40, color: "var(--color-text-muted)" }}>Loading dashboard…</div>;
+  if (loading) return <div style={{ padding: 40, color: "var(--color-text-muted)" }}>{t("common.loading")}</div>;
   if (!data) return null;
 
   const { user, profile, activeLoans, applications } = data;
