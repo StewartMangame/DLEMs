@@ -4,8 +4,10 @@ import Link from "next/link";
 import styles from "../auth.module.css";
 import { Hexagon, ArrowLeft, Mail } from "lucide-react";
 import PreferenceControls from "@/components/PreferenceControls";
+import { useLanguage } from "@/lib/LanguageContext";
 
 export default function ForgotPasswordPage() {
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -24,12 +26,12 @@ export default function ForgotPasswordPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.message || data.error || "Failed to request password reset.");
+        setError(data.message || data.error || t("forgot.failed"));
         return;
       }
-      setMessage(data.message || "Password reset request successful.");
+      setMessage(data.message || t("forgot.success"));
     } catch {
-      setError("Network error. Please try again.");
+      setError(t("auth.networkError"));
     } finally {
       setLoading(false);
     }
@@ -42,7 +44,7 @@ export default function ForgotPasswordPage() {
       <div className={styles.container}>
         <div className={styles.authTopbar}>
           <Link href="/user/login" className="btn btn-ghost btn-sm" style={{ gap: '8px' }}>
-            <ArrowLeft size={16} /> Back
+            <ArrowLeft size={16} /> {t("auth.back")}
           </Link>
           <Link href="/" className={styles.logo}>
             <Hexagon size={24} className={styles.logoIcon} /> DLEM
@@ -51,9 +53,9 @@ export default function ForgotPasswordPage() {
         </div>
         <div className={`card ${styles.card} ${styles.cardNarrow}`}>
           <div className={styles.cardHeader}>
-            <h1 className="text-h2">Forgot Password</h1>
+            <h1 className="text-h2">{t("forgot.title")}</h1>
             <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-              Enter your email to receive a password reset link.
+              {t("forgot.subtitle")}
             </p>
           </div>
 
@@ -63,19 +65,19 @@ export default function ForgotPasswordPage() {
           {!message && (
             <form onSubmit={handleSubmit} className={styles.form}>
               <div className="form-group">
-                <label className="form-label" htmlFor="email">Email Address</label>
+                <label className="form-label" htmlFor="email">{t("auth.email")}</label>
                 <input id="email" name="email" type="email" required className="form-input"
-                  placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+                  placeholder={t("auth.emailPlaceholder")} value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
               <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: "100%", marginTop: 4 }}>
-                {loading ? <><span className="loading-spinner" /> Sending…</> : <><Mail size={20} style={{ marginRight: 8 }} /> Send Reset Link</>}
+                {loading ? <><span className="loading-spinner" /> {t("forgot.sending")}</> : <><Mail size={20} style={{ marginRight: 8 }} /> {t("forgot.sendLink")}</>}
               </button>
             </form>
           )}
 
           <p className={styles.switchLink}>
-            Remembered your password?{" "}
-            <Link href="/user/login">Back</Link>
+            {t("forgot.remembered")}{" "}
+            <Link href="/user/login">{t("auth.back")}</Link>
           </p>
         </div>
       </div>

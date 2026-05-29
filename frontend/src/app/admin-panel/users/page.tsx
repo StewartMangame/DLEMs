@@ -1,9 +1,11 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { readJson } from "@/lib/http";
+import { useLanguage } from "@/lib/LanguageContext";
 import styles from "../institutions/institutions.module.css";
 
 export default function UsersPage() {
+  const { t } = useLanguage();
   const [users, setUsers] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({});
   const [total, setTotal] = useState(0);
@@ -38,7 +40,7 @@ export default function UsersPage() {
   useEffect(() => { load(); }, [load]);
 
   async function action(id: number, act: "suspend" | "reactivate") {
-    if (act === "suspend" && !confirm("Suspend this user account?")) return;
+    if (act === "suspend" && !confirm(t("admin.users.suspendConfirm"))) return;
     await fetch(`/api/admin-panel/users/${id}/${act}`, { method: "POST" });
     load();
   }
@@ -49,17 +51,17 @@ export default function UsersPage() {
     <div>
       <div className={styles.pageHeader}>
         <div>
-          <h1 className={styles.pageTitle}>User Management</h1>
-          <p className={styles.pageSub}>{total.toLocaleString()} total users</p>
+          <h1 className={styles.pageTitle}>{t("admin.users.title")}</h1>
+          <p className={styles.pageSub}>{t("admin.users.totalUsers", { total: total.toLocaleString() })}</p>
         </div>
       </div>
 
       {/* Stats row */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem", marginBottom: "1.5rem" }}>
         {[
-          { label: "Total Users", value: stats.total || 0 },
-          { label: "New This Week", value: stats.thisWeek || 0 },
-          { label: "New This Month", value: stats.thisMonth || 0 },
+          { label: t("admin.dashboard.totalUsers"), value: stats.total || 0 },
+          { label: t("admin.dashboard.newThisWeek"), value: stats.thisWeek || 0 },
+          { label: t("admin.dashboard.newThisMonth"), value: stats.thisMonth || 0 },
         ].map(s => (
           <div key={s.label} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "1.25rem 1.5rem" }}>
             <div style={{ fontSize: "0.75rem", color: "var(--ap-text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.5rem" }}>{s.label}</div>
@@ -70,11 +72,11 @@ export default function UsersPage() {
 
       {/* Filters */}
       <div className={styles.filters}>
-        <input className={styles.searchInput} placeholder="Search by name or email…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
+        <input className={styles.searchInput} placeholder={t("admin.users.searchPlaceholder")} value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
         <select className={styles.select} value={status} onChange={e => { setStatus(e.target.value); setPage(1); }}>
-          <option value="">All Statuses</option>
-          <option value="active">Active</option>
-          <option value="suspended">Suspended</option>
+          <option value="">{t("admin.users.allStatuses")}</option>
+          <option value="active">{t("admin.users.active")}</option>
+          <option value="suspended">{t("admin.users.suspended")}</option>
         </select>
         <input className={styles.select} type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} style={{ color: dateFrom ? "var(--ap-text)" : "var(--ap-text-muted)" }} />
         <input className={styles.select} type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }} style={{ color: dateTo ? "var(--ap-text)" : "var(--ap-text-muted)" }} />
@@ -84,19 +86,19 @@ export default function UsersPage() {
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>User</th>
-              <th>Email</th>
-              <th>Registered</th>
-              <th>Last Active</th>
-              <th>Status</th>
-              <th>Actions</th>
+              <th>{t("admin.users.user")}</th>
+              <th>{t("admin.users.email")}</th>
+              <th>{t("admin.users.registered")}</th>
+              <th>{t("admin.users.lastActive")}</th>
+              <th>{t("admin.users.status")}</th>
+              <th>{t("admin.users.actions")}</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={6} className={styles.loadingCell}>Loading…</td></tr>
+              <tr><td colSpan={6} className={styles.loadingCell}>{t("admin.users.loading")}</td></tr>
             ) : users.length === 0 ? (
-              <tr><td colSpan={6} className={styles.emptyCell}>No users found</td></tr>
+              <tr><td colSpan={6} className={styles.emptyCell}>{t("admin.users.empty")}</td></tr>
             ) : users.map((u: any) => (
               <tr key={u.id}>
                 <td className={styles.instName}>{u.fullName}</td>
@@ -106,14 +108,14 @@ export default function UsersPage() {
                 <td>
                   <span className={styles.statusDot} style={{ background: u.accountStatus === "active" ? "var(--ap-success)" : "var(--ap-danger)" }} />
                   <span style={{ color: u.accountStatus === "active" ? "var(--ap-success)" : "var(--ap-danger)", fontSize: "0.85rem", fontWeight: 600 }}>
-                    {u.accountStatus === "active" ? "Active" : "Suspended"}
+                    {u.accountStatus === "active" ? t("admin.users.active") : t("admin.users.suspended")}
                   </span>
                 </td>
                 <td>
                   <div className={styles.actionRow}>
                     {u.accountStatus === "active"
-                      ? <button className={`${styles.actionBtn} ${styles.danger}`} onClick={() => action(u.id, "suspend")}>Suspend</button>
-                      : <button className={`${styles.actionBtn} ${styles.success}`} onClick={() => action(u.id, "reactivate")}>Reactivate</button>
+                      ? <button className={`${styles.actionBtn} ${styles.danger}`} onClick={() => action(u.id, "suspend")}>{t("admin.users.suspend")}</button>
+                      : <button className={`${styles.actionBtn} ${styles.success}`} onClick={() => action(u.id, "reactivate")}>{t("admin.users.reactivate")}</button>
                     }
                   </div>
                 </td>

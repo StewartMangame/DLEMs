@@ -17,6 +17,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { readJson } from "@/lib/http";
+import { useLanguage } from "@/lib/LanguageContext";
 import styles from "./dashboard.module.css";
 
 interface DashboardData {
@@ -66,15 +67,16 @@ function SectionTitle({ icon: Icon, children }: { icon: LucideIcon; children: Re
 }
 
 export default function AdminDashboardPage() {
+  const { t } = useLanguage();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     fetch("/api/admin-panel/dashboard")
-      .then((r) => readJson<DashboardData>(r, "Failed to load dashboard data"))
+      .then((r) => readJson<DashboardData>(r, t("admin.dashboard.loadFailed")))
       .then(setData)
-      .catch(() => setError("Failed to load dashboard data"))
+      .catch(() => setError(t("admin.dashboard.loadFailed")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -82,53 +84,53 @@ export default function AdminDashboardPage() {
     return (
       <div className={styles.loading}>
         <div className={styles.spinner} />
-        Loading dashboard…
+        {t("admin.dashboard.loading")}
       </div>
     );
   if (error) return <div className={styles.error}>{error}</div>;
   if (!data) return null;
 
   const quickLinks: { href: string; label: string; icon: LucideIcon }[] = [
-    { href: "/admin-panel/institutions", label: "Manage Institutions", icon: Building2 },
-    { href: "/admin-panel/users", label: "View Users", icon: Users },
-    { href: "/admin-panel/announcements", label: "Announcements", icon: Megaphone },
+    { href: "/admin-panel/institutions", label: t("admin.dashboard.manageInstitutions"), icon: Building2 },
+    { href: "/admin-panel/users", label: t("admin.dashboard.viewUsers"), icon: Users },
+    { href: "/admin-panel/announcements", label: t("admin.nav.announcements"), icon: Megaphone },
   ];
 
   return (
     <div className={styles.page}>
       <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>Dashboard</h1>
-        <p className={styles.pageSub}>Live system statistics</p>
+        <h1 className={styles.pageTitle}>{t("admin.nav.dashboard")}</h1>
+        <p className={styles.pageSub}>{t("admin.dashboard.subtitle")}</p>
       </div>
 
       <section className={styles.section}>
-        <SectionTitle icon={Users}>Overview</SectionTitle>
+        <SectionTitle icon={Users}>{t("admin.dashboard.overview")}</SectionTitle>
         <div className={styles.grid3}>
-          <StatCard icon={User} label="Total Registered Users" value={data.totalUsers.toLocaleString()} />
-          <StatCard icon={Calendar} label="New This Week" value={data.usersThisWeek} color="var(--ap-info)" />
-          <StatCard icon={CalendarDays} label="New This Month" value={data.usersThisMonth} color="var(--ap-accent-light)" />
+          <StatCard icon={User} label={t("admin.dashboard.totalUsers")} value={data.totalUsers.toLocaleString()} />
+          <StatCard icon={Calendar} label={t("admin.dashboard.newThisWeek")} value={data.usersThisWeek} color="var(--ap-info)" />
+          <StatCard icon={CalendarDays} label={t("admin.dashboard.newThisMonth")} value={data.usersThisMonth} color="var(--ap-accent-light)" />
         </div>
       </section>
 
       <section className={styles.section}>
-        <SectionTitle icon={CircleCheck}>Eligibility Checks</SectionTitle>
+        <SectionTitle icon={CircleCheck}>{t("admin.dashboard.eligibilityChecks")}</SectionTitle>
         <div className={styles.grid2}>
-          <StatCard icon={Sun} label="Checks Today" value={data.checksToday} color="var(--ap-warning)" />
-          <StatCard icon={BarChart3} label="Checks This Month" value={data.checksThisMonth} color="var(--ap-success)" />
+          <StatCard icon={Sun} label={t("admin.dashboard.checksToday")} value={data.checksToday} color="var(--ap-warning)" />
+          <StatCard icon={BarChart3} label={t("admin.dashboard.checksThisMonth")} value={data.checksThisMonth} color="var(--ap-success)" />
         </div>
       </section>
 
       <section className={styles.section}>
-        <SectionTitle icon={Trophy}>Top 3 Most Checked Institutions</SectionTitle>
+        <SectionTitle icon={Trophy}>{t("admin.dashboard.topInstitutions")}</SectionTitle>
         <div className={styles.topInstList}>
           {data.topInstitutions.length === 0 ? (
-            <div className={styles.emptyNote}>No eligibility check data yet.</div>
+            <div className={styles.emptyNote}>{t("admin.dashboard.noCheckData")}</div>
           ) : (
             data.topInstitutions.map((inst, i) => (
               <div key={inst.name} className={styles.topInstRow}>
                 <span className={styles.topInstRank}>#{i + 1}</span>
                 <span className={styles.topInstName}>{inst.name}</span>
-                <span className={styles.topInstCount}>{Number(inst.count).toLocaleString()} checks</span>
+                <span className={styles.topInstCount}>{Number(inst.count).toLocaleString()} {t("admin.dashboard.checks")}</span>
               </div>
             ))
           )}
@@ -136,14 +138,14 @@ export default function AdminDashboardPage() {
       </section>
 
       <section className={styles.section}>
-        <SectionTitle icon={Building2}>Institution Health</SectionTitle>
+        <SectionTitle icon={Building2}>{t("admin.dashboard.institutionHealth")}</SectionTitle>
         <div className={styles.grid2}>
-          <StatCard icon={CheckCircle2} label="Active Institutions" value={data.activeInstitutions} color="var(--ap-success)" />
+          <StatCard icon={CheckCircle2} label={t("admin.dashboard.activeInstitutions")} value={data.activeInstitutions} color="var(--ap-success)" />
         </div>
       </section>
 
       <section className={styles.section}>
-        <SectionTitle icon={Zap}>Quick Actions</SectionTitle>
+        <SectionTitle icon={Zap}>{t("admin.dashboard.quickActions")}</SectionTitle>
         <div className={styles.quickLinks}>
           {quickLinks.map((link) => {
             const LinkIcon = link.icon;

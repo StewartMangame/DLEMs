@@ -3,8 +3,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
+import { useLanguage } from "@/lib/LanguageContext";
 
 export default function RemindersPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const [reminders, setReminders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,14 +21,14 @@ export default function RemindersPage() {
       .catch(() => setLoading(false));
   }, [router]);
 
-  if (loading) return <div style={{ padding: 40, color: "var(--color-text-muted)" }}>Loading reminders…</div>;
+  if (loading) return <div style={{ padding: 40, color: "var(--color-text-muted)" }}>{t("reminders.loading")}</div>;
 
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <h1 className="text-h2">Upcoming Reminders</h1>
+        <h1 className="text-h2">{t("reminders.title")}</h1>
         <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-          Ensure funds are available on your account for these scheduled loan deductions.
+          {t("reminders.subtitle")}
         </p>
       </div>
 
@@ -34,12 +36,12 @@ export default function RemindersPage() {
         {reminders.length === 0 ? (
           <div className="card" style={{ textAlign: "center", padding: "var(--space-xl)" }}>
             <div style={{ fontSize: "2rem", marginBottom: "var(--space-md)" }}>🔔</div>
-            <h3 className="text-h3">No upcoming reminders</h3>
+            <h3 className="text-h3">{t("reminders.emptyTitle")}</h3>
             <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-              Reminders are automatically generated based on your loan start dates.
+              {t("reminders.emptyDesc")}
             </p>
             <Link href="/user/dashboard/loans/add" className="btn btn-primary btn-sm" style={{ marginTop: 16 }}>
-              Record a Loan
+              {t("reminders.recordLoan")}
             </Link>
           </div>
         ) : (
@@ -50,17 +52,17 @@ export default function RemindersPage() {
                 <div className={styles.day}>{new Date(rem.scheduledAt).getDate()}</div>
               </div>
               <div className={styles.remInfo}>
-                <h4 style={{ fontWeight: 700 }}>{rem.loan?.providerInstitution?.name} Deduction</h4>
-                <div className="text-sm">Amount: MK {rem.loan?.monthlyDeduction?.toLocaleString()}</div>
+                <h4 style={{ fontWeight: 700 }}>{t("reminders.deduction", { institution: rem.loan?.providerInstitution?.name || t("schedule.institution") })}</h4>
+                <div className="text-sm">{t("reminders.amount")}: MK {rem.loan?.monthlyDeduction?.toLocaleString()}</div>
                 <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-                  Scheduled: {new Date(rem.scheduledAt).toLocaleString()} · Status: {rem.status}
+                  {t("reminders.scheduled")}: {new Date(rem.scheduledAt).toLocaleString()} · {t("reminders.status")}: {rem.status}
                 </div>
               </div>
               <div className={styles.remStatusBadge}>
                 {rem.deductionConfirmed ? (
-                  <span className="badge badge-success">✓ Confirmed</span>
+                  <span className="badge badge-success">✓ {t("reminders.confirmed")}</span>
                 ) : (
-                  <span className="badge badge-warning">Pending Confirmation</span>
+                  <span className="badge badge-warning">{t("reminders.pendingConfirmation")}</span>
                 )}
               </div>
             </div>
